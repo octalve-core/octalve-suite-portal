@@ -1,0 +1,299 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { ChevronDown, ChevronUp, Edit3, ExternalLink, MoreVertical, Plus, Send, Trash2, UserPlus } from "lucide-react";
+import { generatePhasesFromRequest, generateProjectSummary } from "@/lib/ai";
+import { PackageType, Project, ProjectPhase, ProjectTemplate, Role, TemplatePhase, User } from "@/lib/types";
+import { useApp } from "./AppContext";
+import { BackLink, Badge, Button, Card, EmptyState, Field, formatNaira, Icons, Input, MetricCard, Modal, packageClass, PageHeader, ProgressBar, projectProgress, Select, statusClass, statusLabel, Textarea } from "./UI";
+
+function toneForPhase(status: ProjectPhase["status"]) {
+  if (status === "APPROVED") return "phase-approved";
+  if (status === "AWAITING_APPROVAL") return "phase-awaiting";
+  if (status === "IN_PROGRESS" || status === "CHANGES_REQUESTED") return "phase-in-progress";
+  if (status === "LOCKED") return "phase-locked";
+  return "";
+}
+
+function deliverableBadge(status: string) {
+  if (status === "APPROVED") return "badge-green";
+  if (status === "READY_FOR_REVIEW") return "badge-purple";
+  if (status === "NEEDS_CHANGES") return "badge-red";
+  return "badge-slate";
+}
+
+function ActionMenu({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="actions-wrap">
+      <button className="icon-btn" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen((value) => !value); }}><MoreVertical size={18} /></button>
+      {open && <div className="action-menu" onClick={(event) => event.stopPropagation()}>{children}</div>}
+    </div>
+  );
+}
+
+function RecentProjects() {
+  const { state } = useApp();
+  return (
+    <Card>
+      <div className="card-title"><h2>Recent Projects</h2><Link className="btn btn-ghost" href="/admin/projects">View All {Icons.arrow}</Link></div>
+      <div className="card-body stack">
+        {state.projects.slice(0, 6).map((project) => (
+          <Link href={`/admin/projects/${project.id}`} className="timeline-row" key={project.id}>
+            <div>
+              <strong>{project.title}</strong>
+              <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>{project.businessName}</p>
+            </div>
+            <Badge className={packageClass(project.packageType)}>{project.packageType}</Badge>
+            <strong>{project.phases.filter((p) => p.status === "APPROVED").length}/{project.phases.length}</strong>
+            <div style={{ width: 120 }}><ProgressBar value={projectProgress(project)} /></div>
+          </Link>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+export function AdminOverview() {
+  const { state } = useApp();
+  const active = state.projects.filter((p) => ["ACTIVE", "AWAITING_BALANCE"].includes(p.status)).length;
+  const awaiting = state.requests.filter((r) => r.status === "PENDING_REVIEW").length;
+  const overdue = state.projects.flatMap((p) => p.phases).filter((p) => p.status === "CHANGES_REQUESTED").length;
+  const completed = state.projects.filter((p) => p.status === "COMPLETED").length;
+  const packageCounts = (["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map((pkg) => ({ pkg, count: state.projects.filter((p) => p.packageType === pkg).length }));
+  return (
+    <div className="content">
+      <PageHeader title="Overview" subtitle="Monitor your projects and team" action={<Link href="/admin/projects/new"><Button><Plus size={18} /> Create Project</Button></Link>} />
+      <div className="metric-grid">
+        <MetricCard label="Active Projects" value={active} icon={Icons.projects} tone="blue" />
+        <MetricCard label="Awaiting Approval" value={awaiting} icon={Icons.clock} tone="orange" />
+        <MetricCard label="Overdue Phases" value={overdue} icon="!" tone="red" />
+        <MetricCard label="Completed" value={completed} icon={Icons.check} tone="green" />
+      </div>
+      <div className="grid-2">
+        <RecentProjects />
+        <div className="stack">
+          <Card>
+            <div className="card-title"><h2>{Icons.clock} Pending Requests</h2></div>
+            <div className="card-body stack">
+              {state.requests.filter((r) => r.status === "PENDING_REVIEW").slice(0, 3).map((request) => (
+                <Link key={request.id} href="/admin/project-requests" className="payment-card" style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12 }}>
+                  <div><strong>{request.projectName}</strong><p style={{ margin: 4, color: "var(--muted)" }}>{request.businessName}</p></div>
+                  <Badge className="badge-orange">new</Badge>
+                </Link>
+              ))}
+              {!state.requests.filter((r) => r.status === "PENDING_REVIEW").length && <p style={{ color: "var(--muted)" }}>No pending requests.</p>}
+            </div>
+          </Card>
+          <Card>
+            <div className="card-title"><h2>By Package</h2></div>
+            <div className="card-body stack">
+              {packageCounts.map((item) => (
+                <div key={item.pkg}>
+                  <div className="timeline-row"><Badge className={packageClass(item.pkg)}>{item.pkg}</Badge><strong>{item.count}</strong></div>
+                  <ProgressBar value={Math.max(8, item.count * 25)} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+      <Card style={{ marginTop: 24 }}>
+        <div className="card-title"><h2>Team Workload</h2><Link href="/admin/team" className="btn btn-ghost">Manage Team {Icons.arrow}</Link></div>
+        <div className="card-body grid-3">
+          {state.users.filter((u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN").map((user) => {
+            const phases = state.projects.flatMap((project) => project.phases).filter((phase) => phase.assignedStaffId === user.id).length;
+            return <div key={user.id} style={{ textAlign: "center" }}><div className="avatar" style={{ margin: "0 auto 10px" }}>{user.name[0]}</div><strong>{user.name}</strong><p style={{ color: "var(--muted)", margin: 4 }}>{user.specialty ?? user.role}</p><span style={{ color: phases > 5 ? "var(--danger)" : "var(--primary)" }}>{phases} phases</span></div>;
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export function AdminProjects() {
+  const { state, deleteProject } = useApp();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("All Status");
+  const [pkg, setPkg] = useState("All Packages");
+  const projects = state.projects.filter((project) => {
+    const matchesSearch = `${project.title} ${project.businessName}`.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = status === "All Status" || project.status === status;
+    const matchesPkg = pkg === "All Packages" || project.packageType === pkg;
+    return matchesSearch && matchesStatus && matchesPkg;
+  });
+  return (
+    <div className="content">
+      <PageHeader title="Projects" action={<Link href="/admin/projects/new"><Button><Plus size={18} /> Create Project</Button></Link>} />
+      <div className="form-grid" style={{ maxWidth: 980, marginBottom: 28 }}>
+        <Input placeholder="Search projects..." value={search} onChange={(event) => setSearch(event.target.value)} />
+        <Select value={status} onChange={(event) => setStatus(event.target.value)}><option>All Status</option><option>ACTIVE</option><option>APPROVED_AWAITING_DEPOSIT</option><option>PENDING_REVIEW</option><option>COMPLETED</option></Select>
+        <Select value={pkg} onChange={(event) => setPkg(event.target.value)}><option>All Packages</option><option>Launch</option><option>Impact</option><option>Growth</option><option>Partner</option><option>Custom</option></Select>
+      </div>
+      <div className="grid-3">
+        {projects.map((project) => (
+          <Card key={project.id} className="project-card" style={{ position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Badge className={packageClass(project.packageType)}>{project.packageType}</Badge>
+              <ActionMenu>
+                <Link href={`/admin/projects/${project.id}`}><Edit3 size={15} /> Open details</Link>
+                <button className="danger" onClick={() => deleteProject(project.id)}><Trash2 size={15} /> Delete project</button>
+              </ActionMenu>
+            </div>
+            <Link href={`/admin/projects/${project.id}`}>
+              <div><h3>{project.title}</h3><p>{project.businessName}</p></div>
+              <Badge className={statusClass(project.status)}>{statusLabel(project.status)}</Badge>
+              <div className="project-card-footer">
+                <div className="timeline-row"><span style={{ color: "var(--muted)" }}>Progress</span><strong>{project.phases.filter((p) => p.status === "APPROVED").length}/{project.phases.length} phases</strong></div>
+                <ProgressBar value={projectProgress(project)} />
+              </div>
+            </Link>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function AdminProjectDetail({ projectId }: { projectId: string }) {
+  const { state, assignPhase, addDeliverable, requestPhaseApproval } = useApp();
+  const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
+  const [adding, setAdding] = useState<ProjectPhase | null>(null);
+  const project = state.projects.find((p) => p.id === projectId);
+  if (!project) return <div className="content"><EmptyState title="Project not found" body="The selected project could not be found." /></div>;
+  const pm = state.users.find((user) => user.id === project.projectManagerId);
+  return (
+    <div className="content narrow">
+      <BackLink href="/admin/projects" label="Back to Projects" />
+      <Card className="project-hero">
+        <div className="project-hero-top">
+          <div><div style={{ display: "flex", gap: 10 }}><Badge className={packageClass(project.packageType)}>{project.packageType}</Badge><Badge className={statusClass(project.status)}>{statusLabel(project.status)}</Badge></div><h1>{project.title}</h1><p>{project.businessName} • {project.clientEmail}</p></div>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}><div style={{ width: 120 }}><ProgressBar value={projectProgress(project)} /></div><Button variant="secondary">Contact Client</Button></div>
+        </div>
+        <div className="project-hero-bottom"><div className="kv"><span>Phases</span><strong>{project.phases.filter((p) => p.status === "APPROVED").length} / {project.phases.length} complete</strong></div><div className="kv"><span>Target Date</span><strong>{project.targetDate ?? "Not set"}</strong></div><div className="kv"><span>Project Code</span><strong>{project.projectCode}</strong></div><div className="kv"><span>PM</span><strong>{pm?.name ?? "Unassigned"}</strong></div></div>
+      </Card>
+      <div className="tabs"><button className="active">Phases</button><button>Team</button><button>Notes</button></div>
+      <div className="stack">
+        {project.phases.map((phase) => (
+          <Card key={phase.id} className={`phase-card ${toneForPhase(phase.status)}`}>
+            <div className="phase-head">
+              <div className="phase-title"><div className="phase-number">{phase.status === "APPROVED" ? Icons.check : phase.phaseNumber}</div><div><h2 style={{ margin: 0 }}>{phase.title}</h2><Badge className={statusClass(phase.status)}>{statusLabel(phase.status)}</Badge></div></div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}><Button variant="ghost" onClick={() => setAssigning(phase)}><UserPlus size={16} /> Assign</Button><Button variant="ghost" onClick={() => setAdding(phase)}><Plus size={16} /> Add Deliverable</Button><Button variant="primary" onClick={() => requestPhaseApproval(phase.id)} disabled={phase.status === "APPROVED" || phase.status === "LOCKED"}>Request Approval</Button><Link href={`/admin/projects/${project.id}/phases/${phase.id}`} className="btn btn-ghost">View Details</Link></div>
+            </div>
+            {phase.deliverables.map((deliverable) => <div className="deliverable-row" key={deliverable.id}><div className="deliverable-main"><div className="deliverable-icon">{Icons.doc}</div><div><strong>{deliverable.name}</strong>{deliverable.link && <p style={{ margin: 4, color: "var(--primary)" }}>{deliverable.link}</p>}</div></div><Badge className={deliverableBadge(deliverable.status)}>{statusLabel(deliverable.status)}</Badge></div>)}
+          </Card>
+        ))}
+      </div>
+      {assigning && <AssignModal phase={assigning} onClose={() => setAssigning(null)} onAssign={(staffId) => { assignPhase(assigning.id, staffId); setAssigning(null); }} />}
+      {adding && <AddDeliverableModal phase={adding} onClose={() => setAdding(null)} onSubmit={(payload) => { addDeliverable(adding.id, payload); setAdding(null); }} />}
+    </div>
+  );
+}
+
+function AssignModal({ phase, onClose, onAssign }: { phase: ProjectPhase; onClose: () => void; onAssign: (staffId: string) => void }) {
+  const { state } = useApp();
+  const team = state.users.filter((u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN");
+  const [staffId, setStaffId] = useState(phase.assignedStaffId ?? team[0]?.id ?? "");
+  return <Modal title={`Assign ${phase.title}`} onClose={onClose}><div className="stack"><Field label="Team Member"><Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>{team.map((u) => <option key={u.id} value={u.id}>{u.name} — {u.specialty ?? u.role}</option>)}</Select></Field><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => onAssign(staffId)}>Assign Phase</Button></div></div></Modal>;
+}
+
+function AddDeliverableModal({ phase, onClose, onSubmit }: { phase: ProjectPhase; onClose: () => void; onSubmit: (payload: { name: string; link?: string; linkType?: any; description?: string }) => void }) {
+  const [form, setForm] = useState({ name: "", link: "", linkType: "Other", description: "" });
+  return <Modal title={`Add Deliverable to ${phase.title}`} onClose={onClose}><div className="stack"><Field label="Name *"><Input placeholder="e.g., Logo Concepts V1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field><Field label="Link"><Input placeholder="https://..." value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} /></Field><Field label="Link Type"><Select value={form.linkType} onChange={(e) => setForm({ ...form, linkType: e.target.value })}><option>Figma</option><option>Google Drive</option><option>Web Preview</option><option>Document</option><option>Other</option></Select></Field><Field label="Description"><Textarea placeholder="Optional description..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => form.name.trim() && onSubmit(form)}>Add Deliverable</Button></div></div></Modal>;
+}
+
+export function AdminPhaseDetail({ projectId, phaseId }: { projectId: string; phaseId: string }) {
+  const { state, sendPhaseMessage, requestPhaseApproval, addDeliverable } = useApp();
+  const project = state.projects.find((p) => p.id === projectId);
+  const phase = project?.phases.find((p) => p.id === phaseId);
+  const [msg, setMsg] = useState("");
+  const [adding, setAdding] = useState(false);
+  if (!project || !phase) return <div className="content"><EmptyState title="Phase not found" body="The selected phase could not be found." /></div>;
+  return <div className="content narrow"><BackLink href={`/admin/projects/${project.id}`} /><div className="page-header"><div><h1>{phase.title}</h1><p>{phase.description}</p><Badge className={statusClass(phase.status)}>{statusLabel(phase.status)}</Badge></div><div style={{ display: "flex", gap: 12 }}><Button variant="secondary" onClick={() => setAdding(true)}><Plus size={16} /> Add Deliverable</Button><Button onClick={() => requestPhaseApproval(phase.id)} disabled={phase.status === "APPROVED" || phase.status === "LOCKED"}>Request Approval</Button></div></div><div className="grid-2"><div className="stack"><Card><div className="card-title"><h2>Deliverables</h2></div><div className="card-body stack">{phase.deliverables.map((d) => <div key={d.id} className="deliverable-row"><div className="deliverable-main"><div className="deliverable-icon">{Icons.doc}</div><div><strong>{d.name}</strong>{d.description && <p style={{ color: "var(--muted)", margin: 4 }}>{d.description}</p>}{d.link && <a href={d.link} target="_blank" rel="noreferrer" style={{ color: "var(--primary)", display: "inline-flex", gap: 6, alignItems: "center" }}>{d.linkType ?? "Link"} <ExternalLink size={14} /></a>}</div></div><Badge className={deliverableBadge(d.status)}>{statusLabel(d.status)}</Badge></div>)}</div></Card><Card><div className="card-title"><h2>Approval History</h2></div><div className="card-body"><p style={{ color: "var(--muted)" }}>{phase.approvalRequestedAt ? `Requested ${new Date(phase.approvalRequestedAt).toLocaleString()}` : "No approval requested yet."}</p>{phase.approvedAt && <p>Approved {new Date(phase.approvedAt).toLocaleString()}</p>}</div></Card></div><Card className="thread"><div className="thread-header">Phase Thread</div><div className="thread-body">{phase.messages.length ? phase.messages.map((message) => <div key={message.id} className={`message ${message.senderRole === "SYSTEM" ? "system" : message.senderId === state.users.find(u => u.role === "SUPER_ADMIN")?.id ? "mine" : ""}`}><small>{message.senderName}</small>{message.message}</div>) : <EmptyState title="No messages yet" body="Client, staff, and project manager messages will appear here." />}</div><div className="thread-input"><Input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Type a message..." /><Button onClick={() => { sendPhaseMessage(phase.id, msg); setMsg(""); }}><Send size={16} /></Button></div></Card></div>{adding && <AddDeliverableModal phase={phase} onClose={() => setAdding(false)} onSubmit={(payload) => { addDeliverable(phase.id, payload); setAdding(false); }} />}</div>;
+}
+
+export function AdminCreateProject() {
+  const { state, createAdminProject } = useApp();
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [packageType, setPackageType] = useState<PackageType>("Launch");
+  const template = state.templates.find((t) => t.packageType === packageType) ?? state.templates[0];
+  const [form, setForm] = useState({ templateId: template.id, title: "", clientName: "", clientEmail: "", targetDate: "", totalAmount: 750000, depositAmount: 350000, balanceAmount: 400000, projectManagerId: state.users.find((u) => u.role === "PROJECT_MANAGER")?.id ?? "", internalNotes: "" });
+  const selectedTemplate = state.templates.find((t) => t.id === form.templateId) ?? template;
+  return <div className="content wizard"><BackLink href="/admin/projects" label={step === 1 ? "Cancel" : "Back"} /><h1>Create New Project</h1><p style={{ color: "var(--muted)" }}>Step {step} of 4</p><div className="wizard-progress"><span className={step >= 1 ? "active" : ""} /><span className={step >= 2 ? "active" : ""} /><span className={step >= 3 ? "active" : ""} /><span className={step >= 4 ? "active" : ""} /></div>{step === 1 && <><h2>Select Package Type</h2><div className="grid-2-even">{(["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map((pkg) => <Card key={pkg} onClick={() => { setPackageType(pkg); const tpl = state.templates.find((t) => t.packageType === pkg); if (tpl) setForm((prev) => ({ ...prev, templateId: tpl.id })); }} className={`package-card ${packageType === pkg ? "selected" : ""}`}><div className="package-icon">{pkg[0]}</div><div><h3>{pkg}</h3><p>{state.templates.find((t) => t.packageType === pkg)?.description}</p></div>{packageType === pkg && <span style={{ marginLeft: "auto", color: "var(--primary)" }}>✓</span>}</Card>)}</div><Card className="template-preview"><h3>Template Preview</h3><ol>{selectedTemplate.phases.map((p) => <li key={p.id}>{p.title}</li>)}</ol></Card></>}{step === 2 && <><h2>Project Details</h2><Card className="card-body"><div className="form-grid"><Field label="Project Name *"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g., Brand Redesign Q1" /></Field><Field label="Client Name *"><Input value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} placeholder="Company name" /></Field><Field label="Client Email *"><Input value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} placeholder="client@company.com" /></Field><Field label="Target Completion Date"><Input value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} placeholder="May 9, 2026" /></Field></div></Card></>}{step === 3 && <><h2>Payment & Team</h2><Card className="card-body"><div className="form-grid"><Field label="Total Amount"><Input type="number" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: Number(e.target.value) })} /></Field><Field label="Deposit Amount"><Input type="number" value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: Number(e.target.value), balanceAmount: form.totalAmount - Number(e.target.value) })} /></Field><Field label="Balance Amount"><Input type="number" value={form.balanceAmount} onChange={(e) => setForm({ ...form, balanceAmount: Number(e.target.value) })} /></Field><Field label="Project Manager"><Select value={form.projectManagerId} onChange={(e) => setForm({ ...form, projectManagerId: e.target.value })}>{state.users.filter((u) => u.role === "PROJECT_MANAGER").map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select></Field><Field label="Internal Notes"><Textarea value={form.internalNotes} onChange={(e) => setForm({ ...form, internalNotes: e.target.value })} /></Field></div></Card></>}{step === 4 && <><h2>Summary</h2><Card className="card-body stack"><div className="timeline-row"><span>Package</span><strong>{packageType}</strong></div><div className="timeline-row"><span>Project</span><strong>{form.title}</strong></div><div className="timeline-row"><span>Client</span><strong>{form.clientName}</strong></div><div className="timeline-row"><span>Phases</span><strong>{selectedTemplate.phases.length}</strong></div><div className="timeline-row"><span>Deposit</span><strong>{formatNaira(form.depositAmount)}</strong></div></Card></>}<div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}><Button variant="secondary" onClick={() => step === 1 ? router.push("/admin/projects") : setStep(step - 1)}>{step === 1 ? "Cancel" : "Back"}</Button>{step < 4 ? <Button onClick={() => setStep(step + 1)}>Continue {Icons.arrow}</Button> : <Button onClick={() => { const id = createAdminProject({ ...form, packageType, templateId: selectedTemplate.id }); router.push(`/admin/projects/${id}`); }}>Create Project ✓</Button>}</div></div>;
+}
+
+export function AdminRequests() {
+  const { state, approveProjectRequest } = useApp();
+  const [active, setActive] = useState<string | null>(null);
+  const request = state.requests.find((r) => r.id === active);
+  return <div className="content"><PageHeader title="Project Requests" subtitle="Review client-submitted project requests" />{state.requests.length ? <div className="stack">{state.requests.map((req) => <Card key={req.id} className="payment-card"><div><Badge className={packageClass(req.packageType)}>{req.packageType}</Badge><h2>{req.projectName}</h2><p style={{ color: "var(--muted)" }}>{req.businessName} • {req.projectGoal}</p><Badge className={statusClass(req.status as any)}>{statusLabel(req.status as any)}</Badge></div><Button onClick={() => setActive(req.id)}>{req.status === "PENDING_REVIEW" ? "Review" : "View"}</Button></Card>)}</div> : <EmptyState title="No requests yet" body="Client-created project requests will appear here." />}{request && <RequestReviewModal request={request} onClose={() => setActive(null)} onApprove={(payload) => { approveProjectRequest(request.id, payload); setActive(null); }} />}</div>;
+}
+
+function RequestReviewModal({ request, onClose, onApprove }: { request: any; onClose: () => void; onApprove: (payload: any) => void }) {
+  const { state } = useApp();
+  const phases = generatePhasesFromRequest(request.projectDescription);
+  const [form, setForm] = useState({ totalAmount: 750000, depositAmount: 350000, balanceAmount: 400000, projectManagerId: state.users.find((u) => u.role === "PROJECT_MANAGER")?.id ?? "", targetDate: "", internalNotes: "" });
+  return <Modal title={`Review ${request.projectName}`} onClose={onClose} width="760px"><div className="stack"><Card className="card-body" style={{ boxShadow: "none" }}><h3>Client Brief</h3><p><strong>Goal:</strong> {request.projectGoal}</p><p style={{ color: "var(--muted)" }}>{request.projectDescription}</p><h3>AI Suggested Phases</h3><ol>{phases.map((p: any) => <li key={p.id}>{p.title}</li>)}</ol></Card><div className="form-grid"><Field label="Total Amount"><Input type="number" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: Number(e.target.value) })} /></Field><Field label="Deposit Amount"><Input type="number" value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: Number(e.target.value) })} /></Field><Field label="Balance Amount"><Input type="number" value={form.balanceAmount} onChange={(e) => setForm({ ...form, balanceAmount: Number(e.target.value) })} /></Field><Field label="Project Manager"><Select value={form.projectManagerId} onChange={(e) => setForm({ ...form, projectManagerId: e.target.value })}>{state.users.filter((u) => u.role === "PROJECT_MANAGER").map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select></Field><Field label="Target Date"><Input value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} placeholder="May 9, 2026" /></Field><Field label="Internal Notes"><Textarea value={form.internalNotes} onChange={(e) => setForm({ ...form, internalNotes: e.target.value })} /></Field></div><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => onApprove(form)}>Approve & Request Deposit</Button></div></div></Modal>;
+}
+
+export function AdminClients() {
+  const { state } = useApp();
+  const [search, setSearch] = useState("");
+  const clients = state.users.filter((u) => u.role === "CLIENT" && `${u.name} ${u.email} ${u.company}`.toLowerCase().includes(search.toLowerCase()));
+  return <div className="content"><PageHeader title="Clients" /><Input placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 520, marginBottom: 28 }} /><div className="grid-3">{clients.map((client) => { const projects = state.projects.filter((p) => p.clientId === client.id); return <Card key={client.id} className="card-body"><div className="deliverable-main"><div className="package-icon">▥</div><div><h3 style={{ margin: 0 }}>{client.company ?? client.name}</h3><p style={{ color: "var(--muted)", margin: 4 }}>✉ {client.email}</p></div></div><div className="grid-3" style={{ margin: "22px 0" }}><div><span>Active</span><strong>{projects.filter((p) => p.status === "ACTIVE").length}</strong></div><div><span>Completed</span><strong>{projects.filter((p) => p.status === "COMPLETED").length}</strong></div><div><span>Total</span><strong>{projects.length}</strong></div></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{[...new Set(projects.map((p) => p.packageType))].map((p) => <Badge key={p} className={packageClass(p)}>{p}</Badge>)}</div></Card>; })}</div></div>;
+}
+
+export function AdminTemplates() {
+  const { state, createTemplate, updateTemplate, deleteTemplate } = useApp();
+  const [modal, setModal] = useState<ProjectTemplate | "new" | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(state.templates.slice(0, 1).map((t) => [t.id, true])));
+  return <div className="content"><PageHeader title="Templates" action={<Button onClick={() => setModal("new")}><Plus size={18} /> Create Template</Button>} /><div className="grid-2-even">{state.templates.map((template) => <Card key={template.id} className="card-body"><div className="deliverable-main"><div className="package-icon">{template.packageType[0]}</div><div><h2 style={{ margin: 0 }}>{template.name}</h2><Badge className={packageClass(template.packageType)}>{template.packageType}</Badge></div><ActionMenu><button onClick={() => setModal(template)}><Edit3 size={15} /> Edit template</button><button className="danger" onClick={() => deleteTemplate(template.id)}><Trash2 size={15} /> Delete template</button></ActionMenu></div><p style={{ color: "var(--muted)" }}>{template.description}</p><div className="template-phase-header"><strong>{template.phases.length} Phases</strong><Button variant="ghost" onClick={() => setOpen((prev) => ({ ...prev, [template.id]: !prev[template.id] }))}>{open[template.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />} {open[template.id] ? "Collapse" : "Expand"}</Button></div>{open[template.id] && <div className="stack" style={{ marginTop: 18 }}>{template.phases.map((p, i) => <div className="template-phase-row" key={p.id}><div className="deliverable-main"><span className="badge badge-slate">{i + 1}</span><strong>{p.title}</strong></div><span style={{ color: "var(--muted)" }}>{p.deliverables.length} deliverables</span></div>)}</div>}</Card>)}</div>{modal && <TemplateModal template={modal === "new" ? undefined : modal} onClose={() => setModal(null)} onSave={(payload) => { modal === "new" ? createTemplate(payload) : updateTemplate((modal as ProjectTemplate).id, payload); setModal(null); }} />}</div>;
+}
+
+function TemplateModal({ template, onClose, onSave }: { template?: ProjectTemplate; onClose: () => void; onSave: (payload: Omit<ProjectTemplate, "id">) => void }) {
+  const [form, setForm] = useState<Omit<ProjectTemplate, "id">>({ name: template?.name ?? "", packageType: template?.packageType ?? "Launch", description: template?.description ?? "", phases: template?.phases ?? [{ id: "", title: "", description: "", deliverables: ["Primary deliverable"] }] });
+  const setPhase = (index: number, patch: Partial<TemplatePhase>) => setForm((prev) => ({ ...prev, phases: prev.phases.map((phase, i) => i === index ? { ...phase, ...patch } : phase) }));
+  return <Modal title={template ? "Edit Template" : "Create Template"} onClose={onClose} width="720px"><div className="stack"><div className="form-grid"><Field label="Template Name *"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Standard Launch" /></Field><Field label="Suite Type *"><Select value={form.packageType} onChange={(e) => setForm({ ...form, packageType: e.target.value as PackageType })}><option>Launch</option><option>Impact</option><option>Growth</option><option>Partner</option><option>Custom</option></Select></Field><Field label="Description"><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief description of this template" /></Field></div><div className="timeline-row"><h3>Phases</h3><Button variant="secondary" onClick={() => setForm({ ...form, phases: [...form.phases, { id: "", title: "", description: "", deliverables: ["Primary deliverable"] }] })}><Plus size={16} /> Add Phase</Button></div><div className="stack">{form.phases.map((phase, index) => <Card key={index} className="card-body" style={{ boxShadow: "none" }}><div className="deliverable-main"><span className="badge badge-purple">{index + 1}</span><div style={{ flex: 1 }}><Input value={phase.title} onChange={(e) => setPhase(index, { title: e.target.value })} placeholder="Phase name" /><Input style={{ marginTop: 10 }} value={phase.description} onChange={(e) => setPhase(index, { description: e.target.value })} placeholder="Phase description (optional)" /></div><button className="icon-btn" onClick={() => setForm((prev) => ({ ...prev, phases: prev.phases.filter((_, i) => i !== index) }))}><Trash2 size={16} /></button></div></Card>)}</div><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => form.name.trim() && onSave(form)}>{template ? "Save Changes" : "Create Template"}</Button></div></div></Modal>;
+}
+
+export function AdminTeam() {
+  const { state, createTeamMember, updateTeamMember, deleteTeamMember } = useApp();
+  const [modal, setModal] = useState<User | "new" | null>(null);
+  const team = state.users.filter((u) => u.role !== "CLIENT");
+  return <div className="content narrow"><PageHeader title="Team" subtitle={`${team.length} team members`} action={<Button onClick={() => setModal("new")}><Plus size={18} /> Add Team Member</Button>} /><div className="grid-2-even">{team.map((member) => { const assigned = state.projects.flatMap((p) => p.phases).filter((phase) => phase.assignedStaffId === member.id).length; return <Card key={member.id} className="card-body"><div className="deliverable-main"><div className="avatar">{member.name[0]}</div><div><h3 style={{ margin: 0 }}>{member.name}</h3><p style={{ margin: 4, color: "var(--muted)" }}>✉ {member.email}</p></div><ActionMenu><button onClick={() => setModal(member)}><Edit3 size={15} /> Edit member</button><button className="danger" onClick={() => deleteTeamMember(member.id)}><Trash2 size={15} /> Delete member</button></ActionMenu></div><div className="timeline-row" style={{ marginTop: 24 }}><span>▣ {assigned} active phases</span>{assigned > 5 && <Badge className="badge-red">High load</Badge>}</div><Badge className="badge-purple">{member.specialty ?? statusLabel(member.role)}</Badge></Card>; })}</div>{modal && <TeamModal member={modal === "new" ? undefined : modal} onClose={() => setModal(null)} onSave={(payload) => { modal === "new" ? createTeamMember(payload) : updateTeamMember((modal as User).id, payload); setModal(null); }} />}</div>;
+}
+
+function TeamModal({ member, onClose, onSave }: { member?: User; onClose: () => void; onSave: (payload: { name: string; email: string; specialty: string; role: Role }) => void }) {
+  const [form, setForm] = useState({ name: member?.name ?? "", email: member?.email ?? "", specialty: member?.specialty ?? "Designer", role: member?.role ?? "STAFF" as Role });
+  return <Modal title={member ? "Edit Team Member" : "Add Team Member"} onClose={onClose}><div className="stack"><Field label="Name *"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" /></Field><Field label="Email *"><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@company.com" /></Field><Field label="Specialty *"><Select value={form.specialty} onChange={(e) => setForm({ ...form, specialty: e.target.value })}><option>Designer</option><option>Developer</option><option>Strategist</option><option>Copywriter</option><option>Project Manager</option></Select></Field><Field label="Access Role"><Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}><option value="STAFF">Staff</option><option value="PROJECT_MANAGER">Project Manager</option><option value="SUPER_ADMIN">Super Admin</option></Select></Field><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => form.name.trim() && form.email.trim() && onSave(form)}>{member ? "Save Changes" : "Add Member"}</Button></div></div></Modal>;
+}
+
+export function AdminPayments() {
+  const { state, confirmPayment, rejectPayment } = useApp();
+  const rows = state.projects.flatMap((project) => project.payments.map((payment) => ({ project, payment })));
+  return <div className="content"><PageHeader title="Payments" subtitle="Confirm manual deposits and balance payments" /><div className="stack">{rows.map(({ project, payment }) => <Card key={payment.id} className="payment-card"><div><Badge className={statusClass(payment.status)}>{statusLabel(payment.status)}</Badge><h3>{project.title} — {payment.type}</h3><p style={{ color: "var(--muted)" }}>{project.businessName} • {payment.reference}</p></div><div style={{ textAlign: "right" }}><strong style={{ fontSize: 22 }}>{formatNaira(payment.amount)}</strong><div style={{ display: "flex", gap: 10, marginTop: 10 }}>{payment.status === "PENDING_CONFIRMATION" && <><Button variant="success" onClick={() => confirmPayment(payment.id)}>Confirm</Button><Button variant="danger" onClick={() => rejectPayment(payment.id)}>Reject</Button></>} {payment.status === "UNPAID" && <Badge className="badge-slate">Waiting client</Badge>}</div></div></Card>)}</div></div>;
+}
+
+export function AdminAnalytics() {
+  const { state } = useApp();
+  const total = state.projects.length;
+  const active = state.projects.filter((p) => p.status === "ACTIVE").length;
+  const overdue = state.projects.flatMap((p) => p.phases).filter((p) => p.status === "CHANGES_REQUESTED").length;
+  const packageData = (["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map((name) => ({ name, value: state.projects.filter((p) => p.packageType === name).length }));
+  const phaseStatus = ["NOT_STARTED", "IN_PROGRESS", "AWAITING_APPROVAL", "APPROVED"].map((s) => ({ status: statusLabel(s as any), count: state.projects.flatMap((p) => p.phases).filter((p) => p.status === s).length }));
+  const COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"];
+  return <div className="content"><PageHeader title="Analytics" subtitle="Track your team's performance and project metrics" /><div className="metric-grid"><MetricCard label="Total Projects" value={total} icon={Icons.analytics} /><MetricCard label="Active Projects" value={active} icon="◎" tone="blue" /><MetricCard label="On-Time Rate" value="100%" icon={Icons.clock} tone="green" /><MetricCard label="Overdue Phases" value={overdue} icon="!" tone="red" /></div><div className="grid-2"><Card className="chart-card"><div className="card-title"><h2>Projects by Package</h2></div><div className="card-body" style={{ height: 310 }}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={packageData} dataKey="value" nameKey="name" innerRadius={64} outerRadius={100} paddingAngle={2}>{packageData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer></div></Card><Card className="chart-card"><div className="card-title"><h2>Phases by Status</h2></div><div className="card-body" style={{ height: 310 }}><ResponsiveContainer width="100%" height="100%"><BarChart data={phaseStatus} layout="vertical" margin={{ left: 30 }}><XAxis type="number" /><YAxis type="category" dataKey="status" /><Tooltip /><Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} /></BarChart></ResponsiveContainer></div></Card></div><Card style={{ marginTop: 24 }}><div className="card-title"><h2>AI Delivery Health</h2></div><div className="card-body stack">{state.projects.slice(0, 3).map((p) => <p key={p.id}>{generateProjectSummary(p)}</p>)}</div></Card></div>;
+}
+
+export function AdminReviews() {
+  const { state } = useApp();
+  return <div className="content narrow"><PageHeader title="Reviews" subtitle="Client reviews after completed projects" />{state.reviews.length ? <div className="stack">{state.reviews.map((r) => <Card key={r.id} className="card-body"><strong>{"★".repeat(r.rating)}</strong><p>{r.comment}</p></Card>)}</div> : <EmptyState title="No reviews yet" body="Client reviews will appear after completed projects." />}</div>;
+}
+
+export function AdminSettings() {
+  return <div className="content narrow"><PageHeader title="Settings" subtitle="Manage your account and preferences" /><div className="stack"><Card className="card-body"><h2>Profile</h2><div className="form-grid"><Field label="Name"><Input defaultValue="Octa Ive" /></Field><Field label="Email"><Input defaultValue="octalve0@gmail.com" /></Field><Field label="Role"><Input defaultValue="Administrator" /></Field></div></Card><Card className="card-body"><h2>Notifications</h2>{["Email notifications", "Approval requests", "Project updates", "Weekly digest"].map((item) => <div className="timeline-row" key={item} style={{ padding: "18px 0", borderBottom: "1px solid var(--line)" }}><div><strong>{item}</strong><p style={{ margin: 4, color: "var(--muted)" }}>Configure how you receive updates</p></div><input type="checkbox" defaultChecked /></div>)}</Card><Card className="card-body"><h2>Security</h2><Button variant="secondary">Change Password</Button><p style={{ color: "var(--muted)" }}>Last password change: Never</p></Card><Card className="card-body" style={{ borderColor: "#fecdd3" }}><h2 style={{ color: "#e11d48" }}>Danger Zone</h2><Button variant="danger">Delete Account</Button></Card></div></div>;
+}

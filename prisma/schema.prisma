@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  STAFF
+  PROJECT_MANAGER
+  SUPER_ADMIN
+}
+
+enum PackageType {
+  LAUNCH
+  IMPACT
+  GROWTH
+  PARTNER
+  CUSTOM
+}
+
+enum ProjectStatus {
+  PENDING_REVIEW
+  APPROVED_AWAITING_DEPOSIT
+  DEPOSIT_PENDING_CONFIRMATION
+  ACTIVE
+  AWAITING_BALANCE
+  BALANCE_PENDING_CONFIRMATION
+  COMPLETED
+  REJECTED
+}
+
+enum PhaseStatus {
+  LOCKED
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_APPROVAL
+  CHANGES_REQUESTED
+  APPROVED
+}
+
+enum DeliverableStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  NEEDS_CHANGES
+  APPROVED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_CONFIRMATION
+  CONFIRMED
+  REJECTED
+}
+
+enum PaymentType {
+  DEPOSIT
+  BALANCE
+}
+
+enum ProjectRequestStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  INFO_REQUESTED
+}
+
+// Better Auth core user table plus Octalve Suite profile fields.
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  role      Role    @default(CLIENT)
+  phone     String?
+  company   String?
+  specialty String?
+
+  sessions Session[]
+  accounts Account[]
+
+  clientProjects Project[] @relation("ProjectClient")
+  managedProjects Project[] @relation("ProjectManager")
+  assignedPhases ProjectPhase[] @relation("PhaseStaff")
+  projectRequests ProjectRequest[]
+  phaseMessages PhaseMessage[]
+  confirmedPayments ProjectPayment[] @relation("PaymentConfirmer")
+  reviews Review[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ProjectTemplate {
+  id          String          @id @default(cuid())
+  name        String
+  packageType PackageType
+  description String
+  isActive    Boolean         @default(true)
+  phases      TemplatePhase[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model TemplatePhase {
+  id          String            @id @default(cuid())
+  templateId  String
+  template    ProjectTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order       Int
+  title       String
+  description String?
+  deliverables TemplateDeliverable[]
+}
+
+model TemplateDeliverable {
+  id             String        @id @default(cuid())
+  templatePhaseId String
+  templatePhase  TemplatePhase @relation(fields: [templatePhaseId], references: [id], onDelete: Cascade)
+  name           String
+  order          Int
+}
+
+model ProjectRequest {
+  id                 String               @id @default(cuid())
+  clientId           String
+  client             User                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  packageType         PackageType
+  projectName         String
+  businessName        String
+  phone               String?
+  projectGoal         String
+  projectDescription  String
+  preferredTimeline   String?
+  additionalNotes     String?
+  status              ProjectRequestStatus @default(PENDING_REVIEW)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Project {
+  id                String          @id @default(cuid())
+  clientId          String
+  client            User            @relation("ProjectClient", fields: [clientId], references: [id], onDelete: Cascade)
+  title             String
+  businessName      String
+  clientEmail       String
+  packageType       PackageType
+  status            ProjectStatus   @default(APPROVED_AWAITING_DEPOSIT)
+  targetDate        DateTime?
+  projectCode       String          @unique
+  projectManagerId  String?
+  projectManager    User?           @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  totalAmount       Int             @default(0)
+  depositAmount     Int             @default(0)
+  balanceAmount     Int             @default(0)
+  internalNotes     String?
+  clientBrief       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  phases   ProjectPhase[]
+  payments ProjectPayment[]
+  reviews  Review[]
+}
+
+model ProjectPhase {
+  id              String      @id @default(cuid())
+  projectId       String
+  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phaseNumber     Int
+  title           String
+  description     String?
+  status          PhaseStatus @default(LOCKED)
+  assignedStaffId String?
+  assignedStaff   User?       @relation("PhaseStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  approvalRequestedAt DateTime?
+  approvedAt      DateTime?
+  changeRequest   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  deliverables Deliverable[]
+  messages     PhaseMessage[]
+}
+
+model Deliverable {
+  id              String            @id @default(cuid())
+  phaseId          String
+  phase            ProjectPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  link             String?
+  linkType         String?
+  status           DeliverableStatus @default(DRAFT)
+  visibleToClient  Boolean           @default(false)
+  submittedById    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model PhaseMessage {
+  id          String       @id @default(cuid())
+  phaseId     String
+  phase       ProjectPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  senderId    String?
+  sender      User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderName  String
+  senderRole  String
+  message     String
+  type        String       @default("MESSAGE")
+  createdAt   DateTime     @default(now())
+}
+
+model ProjectPayment {
+  id                 String        @id @default(cuid())
+  projectId           String
+  project             Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type                PaymentType
+  amount              Int
+  status              PaymentStatus @default(UNPAID)
+  reference           String        @unique
+  bankName            String
+  accountName         String
+  accountNumber       String
+  clientMarkedPaidAt  DateTime?
+  confirmedById       String?
+  confirmedBy         User?         @relation("PaymentConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  confirmedAt         DateTime?
+  note                String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+model Review {
+  id                  String   @id @default(cuid())
+  projectId            String
+  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId             String
+  client               User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rating               Int
+  comment              String
+  permissionToPublish  Boolean  @default(false)
+  createdAt            DateTime @default(now())
+}
