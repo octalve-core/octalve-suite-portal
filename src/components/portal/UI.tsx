@@ -2,7 +2,15 @@
 
 import type React from "react";
 import Link from "next/link";
-import { PackageType, PaymentStatus, PhaseStatus, Project, ProjectStatus } from "@/lib/types";
+import {
+  DeliverableStatus,
+  PackageType,
+  PaymentStatus,
+  PhaseStatus,
+  Project,
+  ProjectStatus,
+  Role,
+} from "@/lib/types";
 
 export const Icons = {
   dashboard: "⌘",
@@ -25,7 +33,7 @@ export const Icons = {
   doc: "▤",
   check: "✓",
   clock: "◷",
-  more: "⋮"
+  more: "⋮",
 };
 
 export function cx(...classes: Array<string | false | null | undefined>) {
@@ -38,11 +46,23 @@ export function formatNaira(value: number) {
 
 export function projectProgress(project: Project) {
   if (!project.phases.length) return 0;
-  return Math.round((project.phases.filter((phase) => phase.status === "APPROVED").length / project.phases.length) * 100);
+  return Math.round(
+    (project.phases.filter((phase) => phase.status === "APPROVED").length /
+      project.phases.length) *
+      100,
+  );
 }
 
 export function activePhase(project: Project) {
-  return project.phases.find((phase) => ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(phase.status)) ?? project.phases.find((phase) => phase.status !== "LOCKED") ?? project.phases[0];
+  return (
+    project.phases.find((phase) =>
+      ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(
+        phase.status,
+      ),
+    ) ??
+    project.phases.find((phase) => phase.status !== "LOCKED") ??
+    project.phases[0]
+  );
 }
 
 export function packageClass(type: PackageType) {
@@ -51,33 +71,91 @@ export function packageClass(type: PackageType) {
     Impact: "badge-orange",
     Growth: "badge-green",
     Partner: "badge-blue",
-    Custom: "badge-slate"
+    Custom: "badge-slate",
   };
   return map[type];
 }
 
-export function statusLabel(status: ProjectStatus | PhaseStatus | PaymentStatus) {
-  return status.split("_").map((word) => word[0] + word.slice(1).toLowerCase()).join(" ");
+export function statusLabel(
+  status:
+    | ProjectStatus
+    | PhaseStatus
+    | PaymentStatus
+    | DeliverableStatus
+    | Role,
+) {
+  return status
+    .split("_")
+    .map((word) => word[0] + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
-export function statusClass(status: ProjectStatus | PhaseStatus | PaymentStatus) {
-  if (["ACTIVE", "APPROVED", "CONFIRMED", "COMPLETED"].includes(status)) return "badge-green";
-  if (["IN_PROGRESS"].includes(status)) return "badge-blue";
-  if (["AWAITING_APPROVAL", "PENDING_CONFIRMATION", "PENDING_REVIEW", "APPROVED_AWAITING_DEPOSIT", "AWAITING_BALANCE", "BALANCE_PENDING_CONFIRMATION"].includes(status)) return "badge-orange";
-  if (["REJECTED", "CHANGES_REQUESTED"].includes(status)) return "badge-red";
-  if (["LOCKED", "NOT_STARTED", "UNPAID"].includes(status)) return "badge-slate";
+export function statusClass(
+  status:
+    | ProjectStatus
+    | PhaseStatus
+    | PaymentStatus
+    | DeliverableStatus
+    | Role,
+) {
+  if (["ACTIVE", "APPROVED", "CONFIRMED", "COMPLETED"].includes(status))
+    return "badge-green";
+  if (["IN_PROGRESS", "READY_FOR_REVIEW"].includes(status)) return "badge-blue";
+  if (
+    [
+      "AWAITING_APPROVAL",
+      "PENDING_CONFIRMATION",
+      "PENDING_REVIEW",
+      "APPROVED_AWAITING_DEPOSIT",
+      "AWAITING_BALANCE",
+      "BALANCE_PENDING_CONFIRMATION",
+    ].includes(status)
+  )
+    return "badge-orange";
+  if (["REJECTED", "CHANGES_REQUESTED", "NEEDS_CHANGES"].includes(status))
+    return "badge-red";
+  if (["LOCKED", "NOT_STARTED", "UNPAID", "DRAFT"].includes(status))
+    return "badge-slate";
   return "badge-purple";
 }
 
-export function Card({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode; className?: string }) {
-  return <div className={cx("card", className)} {...props}>{children}</div>;
+export function Card({
+  children,
+  className = "",
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("card", className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
-export function Button({ children, variant = "primary", className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "dark" | "danger" | "ghost" | "success" }) {
-  return <button className={cx("btn", `btn-${variant}`, className)} {...props}>{children}</button>;
+export function Button({
+  children,
+  variant = "primary",
+  className = "",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "dark" | "danger" | "ghost" | "success";
+}) {
+  return (
+    <button className={cx("btn", `btn-${variant}`, className)} {...props}>
+      {children}
+    </button>
+  );
 }
 
-export function Badge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function Badge({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <span className={cx("badge", className)}>{children}</span>;
 }
 
@@ -85,7 +163,9 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className="input" {...props} />;
 }
 
-export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function Textarea(
+  props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+) {
   return <textarea className="input textarea" {...props} />;
 }
 
@@ -93,13 +173,29 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return <select className="input select" {...props} />;
 }
 
-export function Modal({ title, children, onClose, width = "520px" }: { title: string; children: React.ReactNode; onClose: () => void; width?: string }) {
+export function Modal({
+  title,
+  children,
+  onClose,
+  width = "520px",
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  width?: string;
+}) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal-card" style={{ maxWidth: width }} onMouseDown={(event) => event.stopPropagation()}>
+      <div
+        className="modal-card"
+        style={{ maxWidth: width }}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <div className="modal-header">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn" onClick={onClose}>
+            ×
+          </button>
         </div>
         {children}
       </div>
@@ -107,7 +203,17 @@ export function Modal({ title, children, onClose, width = "520px" }: { title: st
   );
 }
 
-export function EmptyState({ icon = Icons.doc, title, body, action }: { icon?: React.ReactNode; title: string; body: string; action?: React.ReactNode }) {
+export function EmptyState({
+  icon = Icons.doc,
+  title,
+  body,
+  action,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}) {
   return (
     <Card className="empty-state">
       <div className="empty-icon">{icon}</div>
@@ -119,18 +225,38 @@ export function EmptyState({ icon = Icons.doc, title, body, action }: { icon?: R
 }
 
 export function ProgressBar({ value }: { value: number }) {
-  return <div className="progress"><span style={{ width: `${Math.max(0, Math.min(value, 100))}%` }} /></div>;
-}
-
-export function ProgressCircle({ value }: { value: number }) {
   return (
-    <div className="circle-progress" style={{ background: `conic-gradient(var(--primary) ${value * 3.6}deg, #eef2f7 0deg)` }}>
-      <div><strong>{value}%</strong><span>Complete</span></div>
+    <div className="progress">
+      <span style={{ width: `${Math.max(0, Math.min(value, 100))}%` }} />
     </div>
   );
 }
 
-export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
+export function ProgressCircle({ value }: { value: number }) {
+  return (
+    <div
+      className="circle-progress"
+      style={{
+        background: `conic-gradient(var(--primary) ${value * 3.6}deg, #eef2f7 0deg)`,
+      }}
+    >
+      <div>
+        <strong>{value}%</strong>
+        <span>Complete</span>
+      </div>
+    </div>
+  );
+}
+
+export function PageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="page-header">
       <div>
@@ -142,11 +268,31 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
   );
 }
 
-export function BackLink({ href, label = "Back" }: { href: string; label?: string }) {
-  return <Link className="back-link" href={href}>{Icons.back} {label}</Link>;
+export function BackLink({
+  href,
+  label = "Back",
+}: {
+  href: string;
+  label?: string;
+}) {
+  return (
+    <Link className="back-link" href={href}>
+      {Icons.back} {label}
+    </Link>
+  );
 }
 
-export function MetricCard({ label, value, icon, tone = "purple" }: { label: string; value: string | number; icon: React.ReactNode; tone?: "purple" | "blue" | "green" | "orange" | "red" }) {
+export function MetricCard({
+  label,
+  value,
+  icon,
+  tone = "purple",
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  tone?: "purple" | "blue" | "green" | "orange" | "red";
+}) {
   return (
     <Card className="metric-card">
       <div>
@@ -158,6 +304,17 @@ export function MetricCard({ label, value, icon, tone = "purple" }: { label: str
   );
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="field"><span>{label}</span>{children}</label>;
+export function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
 }
