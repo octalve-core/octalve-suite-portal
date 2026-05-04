@@ -208,7 +208,13 @@ export function PortalShell({
         ? "Create Project"
         : "My Phases";
 
-  return (
+  const handleLogout = async () => {
+    await logout();
+    // Force a hard reload to clear bfcache and ensure fresh state
+    window.location.reload();
+  };
+
+  return (  
     <div className="app-shell">
       <aside className="sidebar">
         <Link
@@ -274,7 +280,7 @@ export function PortalShell({
           </div>
           <button
             className="icon-btn logout-btn"
-            onClick={logout}
+            onClick={handleLogout}
             title="Logout"
           >
             <LogOut size={18} />

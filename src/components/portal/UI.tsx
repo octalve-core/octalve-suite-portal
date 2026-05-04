@@ -138,12 +138,34 @@ export function Button({
   children,
   variant = "primary",
   className = "",
+  loading = false,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "dark" | "danger" | "ghost" | "success";
+  loading?: boolean;
 }) {
   return (
-    <button className={cx("btn", `btn-${variant}`, className)} {...props}>
+    <button
+      className={cx("btn", `btn-${variant}`, className, loading && "loading")}
+      disabled={loading || props.disabled}
+      {...props}
+    >
+      {loading && (
+        <svg
+          className="spinner"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ animation: "spin 0.8s linear infinite" }}
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      )}
       {children}
     </button>
   );

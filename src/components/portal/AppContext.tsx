@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import { cloneInitialState } from "@/lib/seed";
+import { authClient } from "@/lib/auth-client";
 import {
   AppState,
   Deliverable,
@@ -28,26 +29,18 @@ import {
 } from "@/lib/types";
 
 const STORAGE_KEY = "octalve-suite-state-v1";
-const SESSION_KEY = "octalve-suite-session-v1";
 const SELECTED_PROJECT_KEY = "octalve-suite-selected-project-v1";
 
-type Session = { userId: string; role: Role } | null;
+// Session is now derived from Better Auth — no local session storage needed.
 
 type AppContextValue = {
   state: AppState;
-  session: Session;
   currentUser?: User;
+  sessionLoading: boolean;
   selectedProjectId?: string;
   selectedProject?: Project;
   clientProjects: Project[];
-  login: (role: Role, email?: string) => void;
-  signup: (payload: {
-    name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-  }) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setSelectedProjectId: (id: string) => void;
   resetDemo: () => void;
   createProjectRequest: (
@@ -164,17 +157,45 @@ function normaliseTemplatePhases(
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<AppState>(() => cloneInitialState());
-  const [session, setSession] = useState<Session>(null);
   const [selectedProjectId, setSelectedProjectIdState] = useState<
     string | undefined
   >(undefined);
+
+  // ------- Better Auth session -------
+  const { data: authSession, isPending: sessionLoading } =
+    authClient.useSession();
+
+  // Handle bfcache (back-forward cache) to prevent seeing protected pages after logout via back button
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache, force a reload to trigger middleware check
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  const currentUser: User | undefined = useMemo(() => {
+    if (!authSession?.user) return undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const u = authSession.user as any;
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: (u.role ?? "CLIENT") as Role,
+      phone: u.phone,
+      company: u.company,
+      specialty: u.specialty,
+    };
+  }, [authSession]);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) setState(JSON.parse(stored) as AppState);
-      const sessionStored = localStorage.getItem(SESSION_KEY);
-      if (sessionStored) setSession(JSON.parse(sessionStored) as Session);
       const selected = localStorage.getItem(SELECTED_PROJECT_KEY);
       if (selected) setSelectedProjectIdState(selected);
     } catch {
@@ -188,17 +209,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [state]);
 
-  useEffect(() => {
-    try {
-      if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      else localStorage.removeItem(SESSION_KEY);
-    } catch {}
-  }, [session]);
-
-  const currentUser = useMemo(
-    () => state.users.find((user) => user.id === session?.userId),
-    [state.users, session?.userId],
-  );
   const clientProjects = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === "CLIENT")
@@ -224,50 +234,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [selectedProject?.id, selectedProjectId]);
 
-  function login(role: Role, email?: string) {
-    const defaultByRole: Record<Role, string> = {
-      CLIENT: "client_hello",
-      STAFF: "staff_marcus",
-      PROJECT_MANAGER: "pm_adedotun",
-      SUPER_ADMIN: "admin_octa",
-    };
-    const found = email
-      ? state.users.find(
-          (user) => user.email.toLowerCase() === email.toLowerCase(),
-        )
-      : undefined;
-    const user =
-      found && found.role === role
-        ? found
-        : state.users.find((item) => item.id === defaultByRole[role]);
-    if (!user) return;
-    setSession({ userId: user.id, role: user.role });
-    const rolePath =
-      user.role === "CLIENT"
-        ? "/client"
-        : user.role === "STAFF"
-          ? "/staff"
-          : user.role === "PROJECT_MANAGER"
-            ? "/staff"
-            : "/admin";
-    router.push(rolePath);
-  }
+  async function logout() {
+    const pathname = window.location.pathname;
+    const isProtected =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/staff") ||
+      pathname.startsWith("/client");
 
-  function signup(payload: {
-    name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-  }) {
-    const user: User = { id: makeId("client"), role: "CLIENT", ...payload };
-    setState((prev) => ({ ...prev, users: [...prev.users, user] }));
-    setSession({ userId: user.id, role: "CLIENT" });
-    router.push("/client");
-  }
+    await authClient.signOut();
+    // Clear local storage and reset state to prevent stale data from appearing after logout
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SELECTED_PROJECT_KEY);
+    } catch {}
+    setState(cloneInitialState());
+    setSelectedProjectIdState(undefined);
 
-  function logout() {
-    setSession(null);
-    router.push("/login");
+    if (isProtected) {
+      router.replace(`/login?callbackURL=${encodeURIComponent(pathname)}`);
+    } else {
+      router.replace("/login");
+    }
   }
 
   function setSelectedProjectId(id: string) {
@@ -1017,13 +1004,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextValue = {
     state,
-    session,
     currentUser,
+    sessionLoading,
     selectedProjectId: selectedProject?.id,
     selectedProject,
     clientProjects,
-    login,
-    signup,
     logout,
     setSelectedProjectId,
     resetDemo,
