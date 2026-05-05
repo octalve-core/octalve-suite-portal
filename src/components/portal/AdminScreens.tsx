@@ -367,7 +367,7 @@ export function AdminProjects() {
                 </Link>
                 <button
                   className="danger"
-                  onClick={() => deleteProject(project.id)}
+                  onClick={async () => await deleteProject(project.id)}
                 >
                   <Trash2 size={15} /> Delete project
                 </button>
@@ -825,6 +825,7 @@ export function AdminCreateProject() {
   const { state, createAdminProject } = useApp();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
   const template =
     state.templates.find((t) => t.packageType === packageType) ??
@@ -1054,18 +1055,36 @@ export function AdminCreateProject() {
           {step === 1 ? "Cancel" : "Back"}
         </Button>
         {step < 4 ? (
-          <Button onClick={() => setStep(step + 1)}>
+          <Button
+            disabled={
+              (step === 2 &&
+                (!form.title.trim() ||
+                  !form.clientName.trim() ||
+                  !form.clientEmail.trim())) ||
+              (step === 3 &&
+                (form.totalAmount <= 0 || form.depositAmount <= 0))
+            }
+            onClick={() => setStep(step + 1)}
+          >
             Continue {Icons.arrow}
           </Button>
         ) : (
           <Button
-            onClick={() => {
-              const id = createAdminProject({
-                ...form,
-                packageType,
-                templateId: selectedTemplate.id,
-              });
-              router.push(`/admin/projects/${id}`);
+            loading={loading}
+            disabled={!form.title.trim() || loading}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const id = await createAdminProject({
+                  ...form,
+                  packageType,
+                  templateId: selectedTemplate.id,
+                });
+                router.push(`/admin/projects/${id}`);
+              } catch (err: any) {
+                alert(err.message || "Failed to create project");
+                setLoading(false);
+              }
             }}
           >
             Create Project ✓
@@ -1118,8 +1137,8 @@ export function AdminRequests() {
         <RequestReviewModal
           request={request}
           onClose={() => setActive(null)}
-          onApprove={(payload) => {
-            approveProjectRequest(request.id, payload);
+          onApprove={async (payload) => {
+            await approveProjectRequest(request.id, payload);
             setActive(null);
           }}
         />
@@ -1135,7 +1154,7 @@ function RequestReviewModal({
 }: {
   request: ProjectRequest;
   onClose: () => void;
-  onApprove: (payload: any) => void;
+  onApprove: (payload: any) => Promise<void>;
 }) {
   const { state } = useApp();
   const phases = generatePhasesFromRequest(request, state.templates);
@@ -1232,7 +1251,7 @@ function RequestReviewModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => onApprove(form)}>
+          <Button onClick={async () => await onApprove(form)}>
             Approve & Request Deposit
           </Button>
         </div>
@@ -1342,7 +1361,7 @@ export function AdminTemplates() {
                 </button>
                 <button
                   className="danger"
-                  onClick={() => deleteTemplate(template.id)}
+                  onClick={async () => await deleteTemplate(template.id)}
                 >
                   <Trash2 size={15} /> Delete template
                 </button>
@@ -1390,10 +1409,10 @@ export function AdminTemplates() {
         <TemplateModal
           template={modal === "new" ? undefined : modal}
           onClose={() => setModal(null)}
-          onSave={(payload) => {
+          onSave={async (payload) => {
             modal === "new"
-              ? createTemplate(payload)
-              : updateTemplate((modal as ProjectTemplate).id, payload);
+              ? await createTemplate(payload)
+              : await updateTemplate((modal as ProjectTemplate).id, payload);
             setModal(null);
           }}
         />
@@ -1409,7 +1428,7 @@ function TemplateModal({
 }: {
   template?: ProjectTemplate;
   onClose: () => void;
-  onSave: (payload: Omit<ProjectTemplate, "id">) => void;
+  onSave: (payload: Omit<ProjectTemplate, "id">) => Promise<void>;
 }) {
   const [form, setForm] = useState<Omit<ProjectTemplate, "id">>({
     name: template?.name ?? "",
@@ -1535,7 +1554,11 @@ function TemplateModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => form.name.trim() && onSave(form)}>
+          <Button
+            onClick={async () => {
+              if (form.name.trim()) await onSave(form);
+            }}
+          >
             {template ? "Save Changes" : "Create Template"}
           </Button>
         </div>
@@ -1581,7 +1604,7 @@ export function AdminTeam() {
                   </button>
                   <button
                     className="danger"
-                    onClick={() => deleteTeamMember(member.id)}
+                    onClick={async () => await deleteTeamMember(member.id)}
                   >
                     <Trash2 size={15} /> Delete member
                   </button>
@@ -1602,10 +1625,10 @@ export function AdminTeam() {
         <TeamModal
           member={modal === "new" ? undefined : modal}
           onClose={() => setModal(null)}
-          onSave={(payload) => {
+          onSave={async (payload) => {
             modal === "new"
-              ? createTeamMember(payload)
-              : updateTeamMember((modal as User).id, payload);
+              ? await createTeamMember(payload)
+              : await updateTeamMember((modal as User).id, payload);
             setModal(null);
           }}
         />
@@ -1626,7 +1649,7 @@ function TeamModal({
     email: string;
     specialty: string;
     role: Role;
-  }) => void;
+  }) => Promise<void>;
 }) {
   const [form, setForm] = useState({
     name: member?.name ?? "",
@@ -1681,8 +1704,8 @@ function TeamModal({
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              form.name.trim() && form.email.trim() && onSave(form)
+            onClick={async () =>
+              form.name.trim() && form.email.trim() && (await onSave(form))
             }
           >
             {member ? "Save Changes" : "Add Member"}
@@ -1727,13 +1750,13 @@ export function AdminPayments() {
                   <>
                     <Button
                       variant="success"
-                      onClick={() => confirmPayment(payment.id)}
+                      onClick={async () => await confirmPayment(payment.id)}
                     >
                       Confirm
                     </Button>
                     <Button
                       variant="danger"
-                      onClick={() => rejectPayment(payment.id)}
+                      onClick={async () => await rejectPayment(payment.id)}
                     >
                       Reject
                     </Button>

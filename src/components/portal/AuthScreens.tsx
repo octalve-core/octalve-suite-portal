@@ -239,7 +239,9 @@ export function SignupScreen() {
         name: form.name,
         email: form.email,
         password: form.password,
-      } as Parameters<typeof authClient.signUp.email>[0]);
+        phone: form.phone,
+        company: form.company,
+      } as any);
       if (result.error) {
         setError(result.error.message || "Could not create account.");
         setLoading(false);
