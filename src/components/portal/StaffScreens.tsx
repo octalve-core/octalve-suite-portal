@@ -405,10 +405,17 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
             <Input
               value={msg}
               onChange={(e) => setMsg(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && msg.trim()) {
+                  await sendPhaseMessage(phase.id, msg);
+                  setMsg("");
+                }
+              }}
               placeholder="Type a message..."
             />
             <Button
               onClick={async () => {
+                if (!msg.trim()) return;
                 await sendPhaseMessage(phase.id, msg);
                 setMsg("");
               }}

@@ -245,6 +245,7 @@ export function PortalShell({
             </Button>
           </Link>
         </div>
+
         <nav className="sidebar-nav">
           {nav.map((item) => {
             const active =
@@ -268,6 +269,7 @@ export function PortalShell({
             );
           })}
         </nav>
+
         <div className="sidebar-footer">
           <div className="avatar">
             {currentUser?.name?.[0]?.toLowerCase() ?? "o"}
@@ -293,6 +295,7 @@ export function PortalShell({
           </button>
         </div>
       </aside>
+
       <main className="main">
         <header className="topbar">
           <div className="search">

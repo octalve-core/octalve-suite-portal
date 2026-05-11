@@ -5,7 +5,27 @@ import { useMemo, useState } from "react";
 import { improveBrief, recommendPackage } from "@/lib/ai";
 import { PackageType, Project, ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
-import { BackLink, Badge, Button, Card, EmptyState, Field, formatNaira, Icons, Input, Modal, packageClass, PageHeader, ProgressBar, ProgressCircle, projectProgress, Select, statusClass, statusLabel, Textarea } from "./UI";
+import {
+  BackLink,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  formatNaira,
+  Icons,
+  Input,
+  Modal,
+  packageClass,
+  PageHeader,
+  ProgressBar,
+  ProgressCircle,
+  projectProgress,
+  Select,
+  statusClass,
+  statusLabel,
+  Textarea,
+} from "./UI";
 
 function ProjectSwitcher() {
   const { clientProjects, selectedProject, setSelectedProjectId } = useApp();
@@ -13,80 +33,900 @@ function ProjectSwitcher() {
   if (clientProjects.length <= 1 || !selectedProject) return null;
   return (
     <div className="project-switcher">
-      <button className="switcher-btn" onClick={() => setOpen(!open)}>▣ {selectedProject.title} <span>⌄</span></button>
-      {open && <div className="switcher-menu">
-        {clientProjects.map((project) => <button className={`switcher-item ${project.id === selectedProject.id ? "active" : ""}`} key={project.id} onClick={() => { setSelectedProjectId(project.id); setOpen(false); }}><div><strong>{project.title}</strong><span>{projectProgress(project)}% complete</span></div><Badge className={packageClass(project.packageType)}>{project.packageType}</Badge></button>)}
-      </div>}
+      <button className="switcher-btn" onClick={() => setOpen(!open)}>
+        ▣ {selectedProject.title} <span>⌄</span>
+      </button>
+      {open && (
+        <div className="switcher-menu">
+          {clientProjects.map((project) => (
+            <button
+              className={`switcher-item ${project.id === selectedProject.id ? "active" : ""}`}
+              key={project.id}
+              onClick={() => {
+                setSelectedProjectId(project.id);
+                setOpen(false);
+              }}
+            >
+              <div>
+                <strong>{project.title}</strong>
+                <span>{projectProgress(project)}% complete</span>
+              </div>
+              <Badge className={packageClass(project.packageType)}>
+                {project.packageType}
+              </Badge>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function paymentBlock(project: Project) {
-  const deposit = project.payments.find((payment) => payment.type === "DEPOSIT");
-  const balance = project.payments.find((payment) => payment.type === "BALANCE");
-  if (project.status === "APPROVED_AWAITING_DEPOSIT" && deposit) return { payment: deposit, title: "Deposit payment required", body: "Complete your first deposit to unlock project tracking." };
-  if (project.status === "DEPOSIT_PENDING_CONFIRMATION" && deposit) return { payment: deposit, title: "Deposit submitted", body: "We are confirming your transfer. Your project opens once confirmed." };
-  if (project.status === "AWAITING_BALANCE" && balance) return { payment: balance, title: "Balance payment required", body: "Complete your balance payment to unlock final delivery." };
-  if (project.status === "BALANCE_PENDING_CONFIRMATION" && balance) return { payment: balance, title: "Balance submitted", body: "We are confirming your transfer. The final phase opens once confirmed." };
+  const deposit = project.payments.find(
+    (payment) => payment.type === "DEPOSIT",
+  );
+  const balance = project.payments.find(
+    (payment) => payment.type === "BALANCE",
+  );
+  if (project.status === "APPROVED_AWAITING_DEPOSIT" && deposit)
+    return {
+      payment: deposit,
+      title: "Deposit payment required",
+      body: "Complete your first deposit to unlock project tracking.",
+    };
+  if (project.status === "DEPOSIT_PENDING_CONFIRMATION" && deposit)
+    return {
+      payment: deposit,
+      title: "Deposit submitted",
+      body: "We are confirming your transfer. Your project opens once confirmed.",
+    };
+  if (project.status === "AWAITING_BALANCE" && balance)
+    return {
+      payment: balance,
+      title: "Balance payment required",
+      body: "Complete your balance payment to unlock final delivery.",
+    };
+  if (project.status === "BALANCE_PENDING_CONFIRMATION" && balance)
+    return {
+      payment: balance,
+      title: "Balance submitted",
+      body: "We are confirming your transfer. The final phase opens once confirmed.",
+    };
   return null;
 }
 
-function ManualPaymentModal({ project, paymentId, onClose }: { project: Project; paymentId: string; onClose: () => void }) {
+function ManualPaymentModal({
+  project,
+  paymentId,
+  onClose,
+}: {
+  project: Project;
+  paymentId: string;
+  onClose: () => void;
+}) {
   const { markPaymentPaid } = useApp();
   const payment = project.payments.find((item) => item.id === paymentId);
   if (!payment) return null;
-  return <Modal title={`${payment.type === "DEPOSIT" ? "Deposit" : "Balance"} Payment`} onClose={onClose}><div className="stack"><p style={{ color: "var(--muted)", marginTop: 0 }}>Please make a bank transfer using the details below. After payment, click <strong>I have paid</strong>.</p><Card className="card-body" style={{ boxShadow: "none" }}><div className="stack"><div className="timeline-row"><span>Amount</span><strong>{formatNaira(payment.amount)}</strong></div><div className="timeline-row"><span>Bank Name</span><strong>{payment.bankName}</strong></div><div className="timeline-row"><span>Account Name</span><strong>{payment.accountName}</strong></div><div className="timeline-row"><span>Account Number</span><strong>{payment.accountNumber}</strong></div><div className="timeline-row"><span>Reference</span><strong>{payment.reference}</strong></div></div></Card><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button onClick={() => { markPaymentPaid(payment.id); onClose(); }}>I have paid</Button></div></div></Modal>;
+  return (
+    <Modal
+      title={`${payment.type === "DEPOSIT" ? "Deposit" : "Balance"} Payment`}
+      onClose={onClose}
+    >
+      <div className="stack">
+        <p style={{ color: "var(--muted)", marginTop: 0 }}>
+          Please make a bank transfer using the details below. After payment,
+          click <strong>I have paid</strong>.
+        </p>
+        <Card className="card-body" style={{ boxShadow: "none" }}>
+          <div className="stack">
+            <div className="timeline-row">
+              <span>Amount</span>
+              <strong>{formatNaira(payment.amount)}</strong>
+            </div>
+            <div className="timeline-row">
+              <span>Bank Name</span>
+              <strong>{payment.bankName}</strong>
+            </div>
+            <div className="timeline-row">
+              <span>Account Name</span>
+              <strong>{payment.accountName}</strong>
+            </div>
+            <div className="timeline-row">
+              <span>Account Number</span>
+              <strong>{payment.accountNumber}</strong>
+            </div>
+            <div className="timeline-row">
+              <span>Reference</span>
+              <strong>{payment.reference}</strong>
+            </div>
+          </div>
+        </Card>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              markPaymentPaid(payment.id);
+              onClose();
+            }}
+          >
+            I have paid
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
 }
 
 export function ClientDashboard() {
   const { currentUser, clientProjects, selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  if (!clientProjects.length) return <div className="content narrow"><PageHeader title="Welcome back" subtitle={currentUser?.company ?? currentUser?.name} /><EmptyState title="No Active Project Yet" body="Create a project request and our team will review it." action={<Link href="/client/projects/new"><Button>{Icons.plus} Create Project</Button></Link>} /></div>;
+  if (!clientProjects.length)
+    return (
+      <div className="content narrow">
+        <PageHeader
+          title="Welcome back"
+          subtitle={currentUser?.company ?? currentUser?.name}
+        />
+        <EmptyState
+          title="No Active Project Yet"
+          body="Create a project request and our team will review it."
+          action={
+            <Link href="/client/projects/new">
+              <Button>{Icons.plus} Create Project</Button>
+            </Link>
+          }
+        />
+      </div>
+    );
   const project = selectedProject ?? clientProjects[0];
   const block = paymentBlock(project);
-  const active = project.phases.find((phase) => ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(phase.status)) ?? project.phases.find((phase) => phase.status !== "LOCKED") ?? project.phases[0];
-  const pendingApprovals = project.phases.filter((phase) => phase.status === "AWAITING_APPROVAL").length;
-  const links = project.phases.flatMap((phase) => phase.deliverables.filter((d) => d.visibleToClient && d.link));
-  return <div className="content narrow"><PageHeader title="Welcome back" subtitle={project.title} action={<Link href="/client/projects/new"><Button>{Icons.plus} Create Project</Button></Link>} /><ProjectSwitcher />
-    {block ? <Card className="payment-card" style={{ marginBottom: 24 }}><div><Badge className={statusClass(block.payment.status)}>{statusLabel(block.payment.status)}</Badge><h2>{block.title}</h2><p style={{ color: "var(--muted)" }}>{block.body}</p></div>{block.payment.status === "UNPAID" ? <Button onClick={() => setPaymentId(block.payment.id)}>Make Payment</Button> : <Badge className="badge-orange">Awaiting confirmation</Badge>}</Card> : null}
-    <div className="client-dash-grid"><Card className="client-progress-card"><div className="client-progress-left"><ProgressCircle value={projectProgress(project)} /><div><span style={{ color: "var(--muted)", fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em" }}>Project Progress</span><h2>{active?.title ?? "No active phase"}</h2><Badge className={statusClass(active?.status ?? "NOT_STARTED")}>{statusLabel(active?.status ?? "NOT_STARTED")}</Badge><hr style={{ border: 0, borderTop: "1px solid var(--line)", margin: "28px 0" }} /><p style={{ color: "var(--muted)" }}>▣ Target: {project.targetDate ?? "Not set"}</p></div></div><div className="client-progress-right"><div><strong style={{ fontSize: 34, color: "var(--primary)" }}>{project.phases.filter((p) => p.status === "APPROVED").length}</strong><p>of {project.phases.length} phases approved</p></div><div><strong style={{ fontSize: 34, color: "var(--primary)" }}>{pendingApprovals}</strong><p>awaiting your action</p></div></div></Card><Card className="next-action"><span className="metric-icon tone-blue">{Icons.clock}</span><div><p>Next Action</p><h2>{block ? block.title : pendingApprovals ? `Review and approve ${project.phases.find((p) => p.status === "AWAITING_APPROVAL")?.title}` : "No actions needed right now"}</h2></div><Link href={block ? "/client/payments" : pendingApprovals ? "/client/approvals" : "/client/phases"} className="btn btn-secondary">{block ? "Open Payments" : pendingApprovals ? "Review Now" : "View Phases"} {Icons.arrow}</Link></Card></div>
-    <div className="grid-2" style={{ marginTop: 24 }}><Card><div className="card-title"><h2>Phase Timeline</h2><Link className="btn btn-ghost" href="/client/phases">View All {Icons.arrow}</Link></div><div className="card-body timeline-list">{project.phases.map((phase) => <div key={phase.id} className="timeline-row"><div className="timeline-left"><div className="phase-number" style={{ width: 36, height: 36 }}>{phase.status === "APPROVED" ? Icons.check : phase.phaseNumber}</div><strong style={{ color: phase.status === "LOCKED" ? "#94a3b8" : undefined }}>{phase.title}</strong></div><Badge className={statusClass(phase.status)}>{statusLabel(phase.status)}</Badge></div>)}</div></Card><Card><div className="card-title"><h2>Key Links</h2></div><div className="card-body">{links.length ? <div className="stack">{links.map((link) => <a key={link.id} className="deliverable-row" href={link.link} target="_blank"><div className="deliverable-main"><div className="deliverable-icon">{Icons.doc}</div><strong>{link.name}</strong></div><Badge className="badge-purple">{link.linkType}</Badge></a>)}</div> : <EmptyState title="" body="Links will appear here as deliverables are ready" icon={Icons.phases} />}</div></Card></div>
-    <Card style={{ marginTop: 24 }}><div className="card-title"><h2>Recent Activity</h2></div><div className="card-body stack">{project.phases.flatMap((p) => p.messages).slice(-4).map((message) => <div key={message.id} className="deliverable-row"><span style={{ color: "var(--primary)" }}>•</span><div><strong>{message.message}</strong><p style={{ margin: 4, color: "var(--muted)" }}>{new Date(message.createdAt).toLocaleString()}</p></div></div>)}</div></Card>
-    {paymentId && <ManualPaymentModal project={project} paymentId={paymentId} onClose={() => setPaymentId(null)} />}
-  </div>;
+  const active =
+    project.phases.find((phase) =>
+      ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(
+        phase.status,
+      ),
+    ) ??
+    project.phases.find((phase) => phase.status !== "LOCKED") ??
+    project.phases[0];
+  const pendingApprovals = project.phases.filter(
+    (phase) => phase.status === "AWAITING_APPROVAL",
+  ).length;
+  const links = project.phases.flatMap((phase) =>
+    phase.deliverables.filter((d) => d.visibleToClient && d.link),
+  );
+  return (
+    <div className="content narrow">
+      <PageHeader
+        title="Welcome back"
+        subtitle={project.title}
+        action={
+          <Link href="/client/projects/new">
+            <Button>{Icons.plus} Create Project</Button>
+          </Link>
+        }
+      />
+      <ProjectSwitcher />
+      {block ? (
+        <Card className="payment-card" style={{ marginBottom: 24 }}>
+          <div>
+            <Badge className={statusClass(block.payment.status)}>
+              {statusLabel(block.payment.status)}
+            </Badge>
+            <h2>{block.title}</h2>
+            <p style={{ color: "var(--muted)" }}>{block.body}</p>
+          </div>
+          {block.payment.status === "UNPAID" ? (
+            <Button onClick={() => setPaymentId(block.payment.id)}>
+              Make Payment
+            </Button>
+          ) : (
+            <Badge className="badge-orange">Awaiting confirmation</Badge>
+          )}
+        </Card>
+      ) : null}
+      <div className="client-dash-grid">
+        <Card className="client-progress-card">
+          <div className="client-progress-left">
+            <ProgressCircle value={projectProgress(project)} />
+            <div>
+              <span
+                style={{
+                  color: "var(--muted)",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: ".08em",
+                }}
+              >
+                Project Progress
+              </span>
+              <h2>{active?.title ?? "No active phase"}</h2>
+              <Badge className={statusClass(active?.status ?? "NOT_STARTED")}>
+                {statusLabel(active?.status ?? "NOT_STARTED")}
+              </Badge>
+              <hr
+                style={{
+                  border: 0,
+                  borderTop: "1px solid var(--line)",
+                  margin: "28px 0",
+                }}
+              />
+              <p style={{ color: "var(--muted)" }}>
+                ▣ Target: {project.targetDate ?? "Not set"}
+              </p>
+            </div>
+          </div>
+          <div className="client-progress-right">
+            <div>
+              <strong style={{ fontSize: 34, color: "var(--primary)" }}>
+                {project.phases.filter((p) => p.status === "APPROVED").length}
+              </strong>
+              <p>of {project.phases.length} phases approved</p>
+            </div>
+            <div>
+              <strong style={{ fontSize: 34, color: "var(--primary)" }}>
+                {pendingApprovals}
+              </strong>
+              <p>awaiting your action</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="next-action">
+          <span className="metric-icon tone-blue">{Icons.clock}</span>
+          <div>
+            <p>Next Action</p>
+            <h2>
+              {block
+                ? block.title
+                : pendingApprovals
+                  ? `Review and approve ${project.phases.find((p) => p.status === "AWAITING_APPROVAL")?.title}`
+                  : "No actions needed right now"}
+            </h2>
+          </div>
+          <Link
+            href={
+              block
+                ? "/client/payments"
+                : pendingApprovals
+                  ? "/client/approvals"
+                  : "/client/phases"
+            }
+            className="btn btn-secondary"
+          >
+            {block
+              ? "Open Payments"
+              : pendingApprovals
+                ? "Review Now"
+                : "View Phases"}{" "}
+            {Icons.arrow}
+          </Link>
+        </Card>
+      </div>
+      <div className="grid-2" style={{ marginTop: 24 }}>
+        <Card>
+          <div className="card-title">
+            <h2>Phase Timeline</h2>
+            <Link className="btn btn-ghost" href="/client/phases">
+              View All {Icons.arrow}
+            </Link>
+          </div>
+          <div className="card-body timeline-list">
+            {project.phases.map((phase) => (
+              <div key={phase.id} className="timeline-row">
+                <div className="timeline-left">
+                  <div
+                    className="phase-number"
+                    style={{ width: 36, height: 36 }}
+                  >
+                    {phase.status === "APPROVED"
+                      ? Icons.check
+                      : phase.phaseNumber}
+                  </div>
+                  <strong
+                    style={{
+                      color: phase.status === "LOCKED" ? "#94a3b8" : undefined,
+                    }}
+                  >
+                    {phase.title}
+                  </strong>
+                </div>
+                <Badge className={statusClass(phase.status)}>
+                  {statusLabel(phase.status)}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div className="card-title">
+            <h2>Key Links</h2>
+          </div>
+          <div className="card-body">
+            {links.length ? (
+              <div className="stack">
+                {links.map((link) => (
+                  <a
+                    key={link.id}
+                    className="deliverable-row"
+                    href={link.link}
+                    target="_blank"
+                  >
+                    <div className="deliverable-main">
+                      <div className="deliverable-icon">{Icons.doc}</div>
+                      <strong>{link.name}</strong>
+                    </div>
+                    <Badge className="badge-purple">{link.linkType}</Badge>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title=""
+                body="Links will appear here as deliverables are ready"
+                icon={Icons.phases}
+              />
+            )}
+          </div>
+        </Card>
+      </div>
+      <Card style={{ marginTop: 24 }}>
+        <div className="card-title">
+          <h2>Recent Activity</h2>
+        </div>
+        <div className="card-body stack">
+          {project.phases
+            .flatMap((p) => p.messages)
+            .slice(-4)
+            .map((message) => (
+              <div key={message.id} className="deliverable-row">
+                <span style={{ color: "var(--primary)" }}>•</span>
+                <div>
+                  <strong>{message.message}</strong>
+                  <p style={{ margin: 4, color: "var(--muted)" }}>
+                    {new Date(message.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Card>
+      {paymentId && (
+        <ManualPaymentModal
+          project={project}
+          paymentId={paymentId}
+          onClose={() => setPaymentId(null)}
+        />
+      )}
+    </div>
+  );
 }
 
 export function ClientProjects() {
   const { clientProjects } = useApp();
-  return <div className="content narrow"><PageHeader title="Projects" subtitle="Manage all your Octalve projects" action={<Link href="/client/projects/new"><Button>{Icons.plus} Create Project</Button></Link>} />{clientProjects.length ? <div className="stack">{clientProjects.map((project) => <Link href={`/client/projects/${project.id}`} key={project.id}><Card className="project-hero"><div className="project-hero-top" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}><div><Badge className={packageClass(project.packageType)}>{project.packageType}</Badge><h1>{project.title}</h1><p>{project.businessName}</p></div><ProgressCircle value={projectProgress(project)} /></div><div className="project-hero-bottom"><div className="kv"><span>Status</span><Badge className={statusClass(project.status)}>{statusLabel(project.status)}</Badge></div><div className="kv"><span>Phases Completed</span><strong>{project.phases.filter((p) => p.status === "APPROVED").length} / {project.phases.length}</strong></div><div className="kv"><span>Target Date</span><strong>{project.targetDate ?? "Not set"}</strong></div><div className="kv"><span>Deliverables</span><strong>{project.phases.flatMap((p) => p.deliverables).length} items</strong></div></div></Card></Link>)}</div> : <EmptyState title="No Active Project" body="Create your first project request to get started." action={<Link href="/client/projects/new"><Button>Create Project</Button></Link>} />}</div>;
+  return (
+    <div className="content narrow">
+      <PageHeader
+        title="Projects"
+        subtitle="Manage all your Octalve projects"
+        action={
+          <Link href="/client/projects/new">
+            <Button>{Icons.plus} Create Project</Button>
+          </Link>
+        }
+      />
+      {clientProjects.length ? (
+        <div className="stack">
+          {clientProjects.map((project) => (
+            <Link href={`/client/projects/${project.id}`} key={project.id}>
+              <Card className="project-hero">
+                <div
+                  className="project-hero-top"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                  }}
+                >
+                  <div>
+                    <Badge className={packageClass(project.packageType)}>
+                      {project.packageType}
+                    </Badge>
+                    <h1>{project.title}</h1>
+                    <p>{project.businessName}</p>
+                  </div>
+                  <ProgressCircle value={projectProgress(project)} />
+                </div>
+                <div className="project-hero-bottom">
+                  <div className="kv">
+                    <span>Status</span>
+                    <Badge className={statusClass(project.status)}>
+                      {statusLabel(project.status)}
+                    </Badge>
+                  </div>
+                  <div className="kv">
+                    <span>Phases Completed</span>
+                    <strong>
+                      {
+                        project.phases.filter((p) => p.status === "APPROVED")
+                          .length
+                      }{" "}
+                      / {project.phases.length}
+                    </strong>
+                  </div>
+                  <div className="kv">
+                    <span>Target Date</span>
+                    <strong>{project.targetDate ?? "Not set"}</strong>
+                  </div>
+                  <div className="kv">
+                    <span>Deliverables</span>
+                    <strong>
+                      {project.phases.flatMap((p) => p.deliverables).length}{" "}
+                      items
+                    </strong>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title="No Active Project"
+          body="Create your first project request to get started."
+          action={
+            <Link href="/client/projects/new">
+              <Button>Create Project</Button>
+            </Link>
+          }
+        />
+      )}
+    </div>
+  );
 }
 
 export function ClientProjectDetail({ projectId }: { projectId: string }) {
   const { state, setSelectedProjectId } = useApp();
   const project = state.projects.find((p) => p.id === projectId);
-  if (!project) return <div className="content"><EmptyState title="Project not found" body="This project could not be found." /></div>;
-  return <div className="content narrow"><BackLink href="/client/projects" /><Button variant="ghost" onClick={() => setSelectedProjectId(project.id)}>Set as active project</Button><Card className="project-hero"><div className="project-hero-top" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}><div><Badge className={packageClass(project.packageType)}>{project.packageType}</Badge><h1>{project.title}</h1><p>{project.businessName}</p></div><ProgressCircle value={projectProgress(project)} /></div><div className="project-hero-bottom"><div className="kv"><span>Status</span><Badge className={statusClass(project.status)}>{statusLabel(project.status)}</Badge></div><div className="kv"><span>Phases Completed</span><strong>{project.phases.filter((p) => p.status === "APPROVED").length} / {project.phases.length}</strong></div><div className="kv"><span>Target Date</span><strong>{project.targetDate ?? "Not set"}</strong></div><div className="kv"><span>Deliverables</span><strong>{project.phases.flatMap((p) => p.deliverables).length} items</strong></div></div></Card><div className="grid-3" style={{ marginTop: 24 }}><Link href="/client/phases"><Card className="payment-card"><div className="deliverable-main"><div className="package-icon">{Icons.phases}</div><div><h3>View Phases</h3><p style={{ color: "var(--muted)" }}>{project.phases.length} phases total</p></div></div>{Icons.arrow}</Card></Link><Link href="/client/approvals"><Card className="payment-card"><div className="deliverable-main"><div className="package-icon" style={{ background: "var(--success-soft)", color: "var(--success)" }}>{Icons.check}</div><div><h3>Approvals</h3><p style={{ color: "var(--muted)" }}>Review pending items</p></div></div>{Icons.arrow}</Card></Link><Link href="/client/payments"><Card className="payment-card"><div className="deliverable-main"><div className="package-icon" style={{ background: "var(--warning-soft)", color: "var(--warning)" }}>{Icons.payments}</div><div><h3>Payments</h3><p style={{ color: "var(--muted)" }}>Deposit and balance</p></div></div>{Icons.arrow}</Card></Link></div></div>;
+  if (!project)
+    return (
+      <div className="content">
+        <EmptyState
+          title="Project not found"
+          body="This project could not be found."
+        />
+      </div>
+    );
+  return (
+    <div className="content narrow">
+      <BackLink href="/client/projects" />
+      <Button variant="ghost" onClick={() => setSelectedProjectId(project.id)}>
+        Set as active project
+      </Button>
+      <Card className="project-hero">
+        <div
+          className="project-hero-top"
+          style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
+        >
+          <div>
+            <Badge className={packageClass(project.packageType)}>
+              {project.packageType}
+            </Badge>
+            <h1>{project.title}</h1>
+            <p>{project.businessName}</p>
+          </div>
+          <ProgressCircle value={projectProgress(project)} />
+        </div>
+        <div className="project-hero-bottom">
+          <div className="kv">
+            <span>Status</span>
+            <Badge className={statusClass(project.status)}>
+              {statusLabel(project.status)}
+            </Badge>
+          </div>
+          <div className="kv">
+            <span>Phases Completed</span>
+            <strong>
+              {project.phases.filter((p) => p.status === "APPROVED").length} /{" "}
+              {project.phases.length}
+            </strong>
+          </div>
+          <div className="kv">
+            <span>Target Date</span>
+            <strong>{project.targetDate ?? "Not set"}</strong>
+          </div>
+          <div className="kv">
+            <span>Deliverables</span>
+            <strong>
+              {project.phases.flatMap((p) => p.deliverables).length} items
+            </strong>
+          </div>
+        </div>
+      </Card>
+      <div className="grid-3" style={{ marginTop: 24 }}>
+        <Link href="/client/phases">
+          <Card className="payment-card">
+            <div className="deliverable-main">
+              <div className="package-icon">{Icons.phases}</div>
+              <div>
+                <h3>View Phases</h3>
+                <p style={{ color: "var(--muted)" }}>
+                  {project.phases.length} phases total
+                </p>
+              </div>
+            </div>
+            {Icons.arrow}
+          </Card>
+        </Link>
+        <Link href="/client/approvals">
+          <Card className="payment-card">
+            <div className="deliverable-main">
+              <div
+                className="package-icon"
+                style={{
+                  background: "var(--success-soft)",
+                  color: "var(--success)",
+                }}
+              >
+                {Icons.check}
+              </div>
+              <div>
+                <h3>Approvals</h3>
+                <p style={{ color: "var(--muted)" }}>Review pending items</p>
+              </div>
+            </div>
+            {Icons.arrow}
+          </Card>
+        </Link>
+        <Link href="/client/payments">
+          <Card className="payment-card">
+            <div className="deliverable-main">
+              <div
+                className="package-icon"
+                style={{
+                  background: "var(--warning-soft)",
+                  color: "var(--warning)",
+                }}
+              >
+                {Icons.payments}
+              </div>
+              <div>
+                <h3>Payments</h3>
+                <p style={{ color: "var(--muted)" }}>Deposit and balance</p>
+              </div>
+            </div>
+            {Icons.arrow}
+          </Card>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export function ClientCreateProject() {
   const { createProjectRequest, state, currentUser } = useApp();
   const [step, setStep] = useState(1);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
-  const [form, setForm] = useState({ projectName: "", businessName: currentUser?.company ?? "", phone: currentUser?.phone ?? "", projectGoal: "", projectDescription: "", preferredTimeline: "", additionalNotes: "" });
-  const template = state.templates.find((t) => t.packageType === packageType) ?? state.templates[0];
-  const aiPackage = useMemo(() => recommendPackage(`${form.projectGoal} ${form.projectDescription}`), [form.projectGoal, form.projectDescription]);
-  return <div className="content narrow"><div className="wizard"><BackLink href="/client/projects" label={step === 1 ? "Cancel" : "Back"} /><h1>Create New Project</h1><p style={{ color: "var(--muted)" }}>Step {step} of 3</p><div className="wizard-progress"><span className="active" /><span className={step > 1 ? "active" : ""} /><span className={step > 2 ? "active" : ""} /></div>
-    {step === 1 && <><h2>Select Suite</h2><div className="grid-2-even">{(["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map((pkg) => <Card key={pkg} className={`package-card ${packageType === pkg ? "selected" : ""}`} onClick={() => setPackageType(pkg)}><div className="package-icon">{pkg[0]}</div><div><h3>{pkg} Suite</h3><p>{state.templates.find((t) => t.packageType === pkg)?.description}</p></div>{packageType === pkg && <span style={{ marginLeft: "auto", color: "var(--primary)" }}>✓</span>}</Card>)}</div><Card className="template-preview"><h3>Template Preview</h3><ol>{template.phases.map((p) => <li key={p.id}>{p.title}</li>)}</ol></Card></>}
-    {step === 2 && <><h2>Project Brief</h2><Card className="card-body"><div className="form-grid"><Field label="Project Name *"><Input value={form.projectName} onChange={(e) => setForm({ ...form, projectName: e.target.value })} placeholder="e.g., Brand Website Launch" /></Field><Field label="Business / Brand Name *"><Input value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} /></Field><Field label="Phone Number"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field><Field label="Preferred Timeline"><Input value={form.preferredTimeline} onChange={(e) => setForm({ ...form, preferredTimeline: e.target.value })} placeholder="e.g., 4 weeks" /></Field><Field label="Project Goal"><Textarea value={form.projectGoal} onChange={(e) => setForm({ ...form, projectGoal: e.target.value })} placeholder="What do you want to achieve?" /></Field><Field label="What do you need Octalve to help with?"><Textarea value={form.projectDescription} onChange={(e) => setForm({ ...form, projectDescription: e.target.value })} placeholder="Describe the work you need..." /></Field><Field label="Additional Notes"><Textarea value={form.additionalNotes} onChange={(e) => setForm({ ...form, additionalNotes: e.target.value })} /></Field></div><div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}><Badge className={packageClass(aiPackage)}>AI recommends {aiPackage} Suite</Badge><Button variant="secondary" onClick={() => setForm({ ...form, additionalNotes: improveBrief(`${form.projectGoal}\n${form.projectDescription}`, form.businessName) })}>{Icons.ai} Structure with AI</Button></div></Card></>}
-    {step === 3 && <><h2>Review & Submit</h2><Card className="card-body stack"><div className="timeline-row"><span>Selected Suite</span><strong>{packageType}</strong></div><div className="timeline-row"><span>Project</span><strong>{form.projectName}</strong></div><div className="timeline-row"><span>Business</span><strong>{form.businessName}</strong></div><div className="timeline-row"><span>Timeline</span><strong>{form.preferredTimeline || "Not specified"}</strong></div><p style={{ whiteSpace: "pre-wrap", color: "var(--muted)" }}>{form.additionalNotes || form.projectDescription}</p></Card></>}
-    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}><Button variant="secondary" onClick={() => step === 1 ? history.back() : setStep(step - 1)}>{step === 1 ? "Cancel" : "Back"}</Button>{step < 3 ? <Button onClick={() => setStep(step + 1)}>Continue {Icons.arrow}</Button> : <Button onClick={async () => { await createProjectRequest({ ...form, packageType }); location.href = "/client/projects"; }}>Submit Project Request ✓</Button>}</div>
-  </div></div>;
+  const [form, setForm] = useState({
+    projectName: "",
+    businessName: currentUser?.company ?? "",
+    phone: currentUser?.phone ?? "",
+    projectGoal: "",
+    projectDescription: "",
+    preferredTimeline: "",
+    additionalNotes: "",
+  });
+  const template =
+    state.templates.find((t) => t.packageType === packageType) ??
+    state.templates[0];
+  const aiPackage = useMemo(
+    () => recommendPackage(`${form.projectGoal} ${form.projectDescription}`),
+    [form.projectGoal, form.projectDescription],
+  );
+  return (
+    <div className="content narrow">
+      <div className="wizard">
+        <BackLink
+          href="/client/projects"
+          label={step === 1 ? "Cancel" : "Back"}
+        />
+        <h1>Create New Project</h1>
+        <p style={{ color: "var(--muted)" }}>Step {step} of 3</p>
+        <div className="wizard-progress">
+          <span className="active" />
+          <span className={step > 1 ? "active" : ""} />
+          <span className={step > 2 ? "active" : ""} />
+        </div>
+        {step === 1 && (
+          <>
+            <h2>Select Suite</h2>
+            <div className="grid-2-even">
+              {(["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map(
+                (pkg) => (
+                  <Card
+                    key={pkg}
+                    className={`package-card ${packageType === pkg ? "selected" : ""}`}
+                    onClick={() => setPackageType(pkg)}
+                  >
+                    <div className="package-icon">{pkg[0]}</div>
+                    <div>
+                      <h3>{pkg} Suite</h3>
+                      <p>
+                        {
+                          state.templates.find((t) => t.packageType === pkg)
+                            ?.description
+                        }
+                      </p>
+                    </div>
+                    {packageType === pkg && (
+                      <span
+                        style={{ marginLeft: "auto", color: "var(--primary)" }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </Card>
+                ),
+              )}
+            </div>
+            <Card className="template-preview">
+              <h3>Template Preview</h3>
+              <ol>
+                {template.phases.map((p) => (
+                  <li key={p.id}>{p.title}</li>
+                ))}
+              </ol>
+            </Card>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <h2>Project Brief</h2>
+            <Card className="card-body">
+              <div className="form-grid">
+                <Field label="Project Name *">
+                  <Input
+                    value={form.projectName}
+                    onChange={(e) =>
+                      setForm({ ...form, projectName: e.target.value })
+                    }
+                    placeholder="e.g., Brand Website Launch"
+                  />
+                </Field>
+                <Field label="Business / Brand Name *">
+                  <Input
+                    value={form.businessName}
+                    onChange={(e) =>
+                      setForm({ ...form, businessName: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Phone Number">
+                  <Input
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm({ ...form, phone: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Preferred Timeline">
+                  <Input
+                    value={form.preferredTimeline}
+                    onChange={(e) =>
+                      setForm({ ...form, preferredTimeline: e.target.value })
+                    }
+                    placeholder="e.g., 4 weeks"
+                  />
+                </Field>
+                <Field label="Project Goal">
+                  <Textarea
+                    value={form.projectGoal}
+                    onChange={(e) =>
+                      setForm({ ...form, projectGoal: e.target.value })
+                    }
+                    placeholder="What do you want to achieve?"
+                  />
+                </Field>
+                <Field label="What do you need Octalve to help with?">
+                  <Textarea
+                    value={form.projectDescription}
+                    onChange={(e) =>
+                      setForm({ ...form, projectDescription: e.target.value })
+                    }
+                    placeholder="Describe the work you need..."
+                  />
+                </Field>
+                <Field label="Additional Notes">
+                  <Textarea
+                    value={form.additionalNotes}
+                    onChange={(e) =>
+                      setForm({ ...form, additionalNotes: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+              <div
+                style={{
+                  marginTop: 18,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <Badge className={packageClass(aiPackage)}>
+                  AI recommends {aiPackage} Suite
+                </Badge>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      additionalNotes: improveBrief(
+                        `${form.projectGoal}\n${form.projectDescription}`,
+                        form.businessName,
+                      ),
+                    })
+                  }
+                >
+                  {Icons.ai} Structure with AI
+                </Button>
+              </div>
+            </Card>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <h2>Review & Submit</h2>
+            <Card className="card-body stack">
+              <div className="timeline-row">
+                <span>Selected Suite</span>
+                <strong>{packageType}</strong>
+              </div>
+              <div className="timeline-row">
+                <span>Project</span>
+                <strong>{form.projectName}</strong>
+              </div>
+              <div className="timeline-row">
+                <span>Business</span>
+                <strong>{form.businessName}</strong>
+              </div>
+              <div className="timeline-row">
+                <span>Timeline</span>
+                <strong>{form.preferredTimeline || "Not specified"}</strong>
+              </div>
+              <p style={{ whiteSpace: "pre-wrap", color: "var(--muted)" }}>
+                {form.additionalNotes || form.projectDescription}
+              </p>
+            </Card>
+          </>
+        )}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 32,
+          }}
+        >
+          <Button
+            variant="secondary"
+            onClick={() => (step === 1 ? history.back() : setStep(step - 1))}
+          >
+            {step === 1 ? "Cancel" : "Back"}
+          </Button>
+          {step < 3 ? (
+            <Button onClick={() => setStep(step + 1)}>
+              Continue {Icons.arrow}
+            </Button>
+          ) : (
+            <Button
+              onClick={async () => {
+                await createProjectRequest({ ...form, packageType });
+                location.href = "/client/projects";
+              }}
+            >
+              Submit Project Request ✓
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ClientPhases() {
   const { selectedProject } = useApp();
-  if (!selectedProject) return <div className="content narrow"><PageHeader title="Project Phases" subtitle="Track your project progress through each phase" /><EmptyState title="No Phases Yet" body="Your project phases will appear here once set up by your PM." /></div>;
-  return <div className="content narrow"><PageHeader title="Project Phases" subtitle="Track your project progress through each phase" /><ProjectSwitcher />{selectedProject.status !== "ACTIVE" && selectedProject.status !== "AWAITING_BALANCE" && <Card className="payment-card" style={{ marginBottom: 24 }}><div><Badge className={statusClass(selectedProject.status)}>{statusLabel(selectedProject.status)}</Badge><h3>Project tracking is locked</h3><p style={{ color: "var(--muted)" }}>Complete the required approval/payment step to unlock phases.</p></div><Link className="btn btn-primary" href="/client/payments">Open Payments</Link></Card>}<div className="stack">{selectedProject.phases.map((phase) => <Link key={phase.id} href={`/client/phases/${phase.id}`}><Card className={`phase-card phase-${phase.status === "APPROVED" ? "approved" : phase.status === "AWAITING_APPROVAL" ? "awaiting" : phase.status === "IN_PROGRESS" ? "in-progress" : phase.status === "LOCKED" ? "locked" : ""}`}><div className="phase-head"><div className="phase-title"><div className="phase-number">{phase.status === "LOCKED" ? Icons.lock : phase.status === "APPROVED" ? Icons.check : Icons.clock}</div><div><h2 style={{ margin: 0 }}>{phase.title}</h2><p style={{ color: "var(--muted)", margin: "6px 0" }}>{phase.status === "LOCKED" ? `Complete previous phase first to unlock` : phase.description}</p><Badge className={statusClass(phase.status)}>{statusLabel(phase.status)}</Badge> <span style={{ color: "var(--muted)", marginLeft: 12 }}>{phase.deliverables.filter((d) => d.status === "APPROVED").length} / {phase.deliverables.length} deliverables</span></div></div><div style={{ minWidth: 160 }}><span>{projectProgress({ ...selectedProject, phases: [phase] })}%</span><ProgressBar value={(phase.deliverables.filter((d) => d.status === "APPROVED").length / Math.max(1, phase.deliverables.length)) * 100} /></div></div></Card></Link>)}</div></div>;
+  if (!selectedProject)
+    return (
+      <div className="content narrow">
+        <PageHeader
+          title="Project Phases"
+          subtitle="Track your project progress through each phase"
+        />
+        <EmptyState
+          title="No Phases Yet"
+          body="Your project phases will appear here once set up by your PM."
+        />
+      </div>
+    );
+  return (
+    <div className="content narrow">
+      <PageHeader
+        title="Project Phases"
+        subtitle="Track your project progress through each phase"
+      />
+      <ProjectSwitcher />
+      {selectedProject.status !== "ACTIVE" &&
+        selectedProject.status !== "AWAITING_BALANCE" && (
+          <Card className="payment-card" style={{ marginBottom: 24 }}>
+            <div>
+              <Badge className={statusClass(selectedProject.status)}>
+                {statusLabel(selectedProject.status)}
+              </Badge>
+              <h3>Project tracking is locked</h3>
+              <p style={{ color: "var(--muted)" }}>
+                Complete the required approval/payment step to unlock phases.
+              </p>
+            </div>
+            <Link className="btn btn-primary" href="/client/payments">
+              Open Payments
+            </Link>
+          </Card>
+        )}
+      <div className="stack">
+        {selectedProject.phases.map((phase) => (
+          <Link key={phase.id} href={`/client/phases/${phase.id}`}>
+            <Card
+              className={`phase-card phase-${phase.status === "APPROVED" ? "approved" : phase.status === "AWAITING_APPROVAL" ? "awaiting" : phase.status === "IN_PROGRESS" ? "in-progress" : phase.status === "LOCKED" ? "locked" : ""}`}
+            >
+              <div className="phase-head">
+                <div className="phase-title">
+                  <div className="phase-number">
+                    {phase.status === "LOCKED"
+                      ? Icons.lock
+                      : phase.status === "APPROVED"
+                        ? Icons.check
+                        : Icons.clock}
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0 }}>{phase.title}</h2>
+                    <p style={{ color: "var(--muted)", margin: "6px 0" }}>
+                      {phase.status === "LOCKED"
+                        ? `Complete previous phase first to unlock`
+                        : phase.description}
+                    </p>
+                    <Badge className={statusClass(phase.status)}>
+                      {statusLabel(phase.status)}
+                    </Badge>{" "}
+                    <span style={{ color: "var(--muted)", marginLeft: 12 }}>
+                      {
+                        phase.deliverables.filter(
+                          (d) => d.status === "APPROVED",
+                        ).length
+                      }{" "}
+                      / {phase.deliverables.length} deliverables
+                    </span>
+                  </div>
+                </div>
+                <div style={{ minWidth: 160 }}>
+                  <span>
+                    {projectProgress({ ...selectedProject, phases: [phase] })}%
+                  </span>
+                  <ProgressBar
+                    value={
+                      (phase.deliverables.filter((d) => d.status === "APPROVED")
+                        .length /
+                        Math.max(1, phase.deliverables.length)) *
+                      100
+                    }
+                  />
+                </div>
+              </div>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
@@ -94,31 +934,431 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
   const [approve, setApprove] = useState(false);
   const [change, setChange] = useState(false);
   const [msg, setMsg] = useState("");
-  const phase = state.projects.flatMap((p) => p.phases).find((p) => p.id === phaseId);
+  const phase = state.projects
+    .flatMap((p) => p.phases)
+    .find((p) => p.id === phaseId);
   const project = state.projects.find((p) => p.id === phase?.projectId);
-  if (!phase || !project) return <div className="content"><EmptyState title="Phase not found" body="This phase could not be found." /></div>;
-  const visible = phase.deliverables.filter((d) => d.visibleToClient || phase.status !== "LOCKED");
-  return <div className="content narrow"><BackLink href="/client/phases" /><div className="page-header"><div><h1>{phase.title}</h1><p>{phase.description}</p><Badge className={statusClass(phase.status)}>{statusLabel(phase.status)}</Badge></div>{phase.status === "AWAITING_APPROVAL" && <div style={{ display: "flex", gap: 12 }}><Button variant="secondary" onClick={() => setChange(true)}>Request Changes</Button><Button variant="success" onClick={() => setApprove(true)}>✓ Approve Phase</Button></div>}</div><div className="grid-2"><div className="stack"><Card><div className="card-title"><h2>Deliverables</h2></div><div className="card-body stack">{visible.map((d) => <a key={d.id} href={d.link ?? "#"} target="_blank" className="deliverable-row"><div className="deliverable-main"><div className="deliverable-icon">{Icons.doc}</div><div><strong>{d.name}</strong>{d.description && <p style={{ color: "var(--muted)", margin: 4 }}>{d.description}</p>}</div></div><Badge className={d.status === "DRAFT" ? "badge-slate" : d.status === "READY_FOR_REVIEW" ? "badge-purple" : d.status === "APPROVED" ? "badge-green" : "badge-red"}>{statusLabel(d.status as any)}</Badge></a>)}</div></Card><Card><div className="card-title"><h2>Approval History</h2></div><div className="card-body">{phase.status === "APPROVED" ? <div className="deliverable-row"><Badge className="badge-green">Approved</Badge><span>{phase.approvedAt ? new Date(phase.approvedAt).toLocaleDateString() : "Approved"}</span></div> : <div className="deliverable-row"><Badge className="badge-orange">Pending</Badge><span>{phase.approvalRequestedAt ? new Date(phase.approvalRequestedAt).toLocaleDateString() : "Not requested"}</span></div>}</div></Card></div><Card className="thread"><div className="thread-header">▱ Phase Thread</div><div className="thread-body">{phase.messages.length ? phase.messages.map((message) => <div key={message.id} className={`message ${message.senderRole === "SYSTEM" ? "system" : message.senderRole === "CLIENT" ? "mine" : ""}`}><small>{message.senderName}</small>{message.message}</div>) : <EmptyState title="No messages yet" body="Use the box below to message the team." icon="▱" />}</div><div className="thread-input"><Input placeholder="Type a message..." value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={async (e) => { if (e.key === "Enter") { await sendPhaseMessage(phase.id, msg); setMsg(""); } }} /><Button onClick={async () => { await sendPhaseMessage(phase.id, msg); setMsg(""); }}>➤</Button></div></Card></div>{approve && <Modal title="Approve Phase" onClose={() => setApprove(false)}><p style={{ color: "var(--muted)" }}>Are you sure you want to approve “{phase.title}”? This will unlock the next phase.</p><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={() => setApprove(false)}>Cancel</Button><Button variant="success" onClick={async () => { await approvePhase(phase.id); setApprove(false); }}>Confirm Approval</Button></div></Modal>}{change && <RequestChangeModal phase={phase} onClose={() => setChange(false)} onSubmit={async (text) => { await requestChanges(phase.id, text); setChange(false); }} />}</div>;
+  if (!phase || !project)
+    return (
+      <div className="content">
+        <EmptyState
+          title="Phase not found"
+          body="This phase could not be found."
+        />
+      </div>
+    );
+  const visible = phase.deliverables.filter(
+    (d) => d.visibleToClient || phase.status !== "LOCKED",
+  );
+  return (
+    <div className="content narrow">
+      <BackLink href="/client/phases" />
+      <div className="page-header">
+        <div>
+          <h1>{phase.title}</h1>
+          <p>{phase.description}</p>
+          <Badge className={statusClass(phase.status)}>
+            {statusLabel(phase.status)}
+          </Badge>
+        </div>
+        {phase.status === "AWAITING_APPROVAL" && (
+          <div style={{ display: "flex", gap: 12 }}>
+            <Button variant="secondary" onClick={() => setChange(true)}>
+              Request Changes
+            </Button>
+            <Button variant="success" onClick={() => setApprove(true)}>
+              ✓ Approve Phase
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="grid-2">
+        <div className="stack">
+          <Card>
+            <div className="card-title">
+              <h2>Deliverables</h2>
+            </div>
+            <div className="card-body stack">
+              {visible.map((d) => (
+                <a
+                  key={d.id}
+                  href={d.link ?? "#"}
+                  target="_blank"
+                  className="deliverable-row"
+                >
+                  <div className="deliverable-main">
+                    <div className="deliverable-icon">{Icons.doc}</div>
+                    <div>
+                      <strong>{d.name}</strong>
+                      {d.description && (
+                        <p style={{ color: "var(--muted)", margin: 4 }}>
+                          {d.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Badge
+                    className={
+                      d.status === "DRAFT"
+                        ? "badge-slate"
+                        : d.status === "READY_FOR_REVIEW"
+                          ? "badge-purple"
+                          : d.status === "APPROVED"
+                            ? "badge-green"
+                            : "badge-red"
+                    }
+                  >
+                    {statusLabel(d.status as any)}
+                  </Badge>
+                </a>
+              ))}
+            </div>
+          </Card>
+          <Card>
+            <div className="card-title">
+              <h2>Approval History</h2>
+            </div>
+            <div className="card-body">
+              {phase.status === "APPROVED" ? (
+                <div className="deliverable-row">
+                  <Badge className="badge-green">Approved</Badge>
+                  <span>
+                    {phase.approvedAt
+                      ? new Date(phase.approvedAt).toLocaleDateString()
+                      : "Approved"}
+                  </span>
+                </div>
+              ) : (
+                <div className="deliverable-row">
+                  <Badge className="badge-orange">Pending</Badge>
+                  <span>
+                    {phase.approvalRequestedAt
+                      ? new Date(phase.approvalRequestedAt).toLocaleDateString()
+                      : "Not requested"}
+                  </span>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+        <Card className="thread">
+          <div className="thread-header">▱ Phase Thread</div>
+          <div className="thread-body">
+            {phase.messages.length ? (
+              phase.messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`message ${message.senderRole === "SYSTEM" ? "system" : message.senderRole === "CLIENT" ? "mine" : ""}`}
+                >
+                  <small>{message.senderName}</small>
+                  {message.message}
+                </div>
+              ))
+            ) : (
+              <EmptyState
+                title="No messages yet"
+                body="Use the box below to message the team."
+                icon="▱"
+              />
+            )}
+          </div>
+          <div className="thread-input">
+            <Input
+              placeholder="Type a message..."
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && msg.trim()) {
+                  await sendPhaseMessage(phase.id, msg);
+                  setMsg("");
+                }
+              }}
+            />
+            <Button
+              onClick={async () => {
+                if (!msg.trim()) return;
+                await sendPhaseMessage(phase.id, msg);
+                setMsg("");
+              }}
+            >
+              ➤
+            </Button>
+          </div>
+        </Card>
+      </div>
+      {approve && (
+        <Modal title="Approve Phase" onClose={() => setApprove(false)}>
+          <p style={{ color: "var(--muted)" }}>
+            Are you sure you want to approve “{phase.title}”? This will unlock
+            the next phase.
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <Button variant="secondary" onClick={() => setApprove(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="success"
+              onClick={async () => {
+                await approvePhase(phase.id);
+                setApprove(false);
+              }}
+            >
+              Confirm Approval
+            </Button>
+          </div>
+        </Modal>
+      )}
+      {change && (
+        <RequestChangeModal
+          phase={phase}
+          onClose={() => setChange(false)}
+          onSubmit={async (text) => {
+            await requestChanges(phase.id, text);
+            setChange(false);
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
-function RequestChangeModal({ phase, onClose, onSubmit }: { phase: ProjectPhase; onClose: () => void; onSubmit: (text: string) => void }) {
+function RequestChangeModal({
+  phase,
+  onClose,
+  onSubmit,
+}: {
+  phase: ProjectPhase;
+  onClose: () => void;
+  onSubmit: (text: string) => void;
+}) {
   const [text, setText] = useState("");
-  return <Modal title={`Request Changes: ${phase.title}`} onClose={onClose}><div className="stack"><Field label="What should be changed?"><Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Explain what needs to be corrected before approval..." /></Field><div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}><Button variant="secondary" onClick={onClose}>Cancel</Button><Button variant="danger" onClick={() => onSubmit(text)}>Submit Request</Button></div></div></Modal>;
+  return (
+    <Modal title={`Request Changes: ${phase.title}`} onClose={onClose}>
+      <div className="stack">
+        <Field label="What should be changed?">
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Explain what needs to be corrected before approval..."
+          />
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => onSubmit(text)}>
+            Submit Request
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
 }
 
 export function ClientApprovals() {
   const { selectedProject } = useApp();
-  const pending = selectedProject?.phases.filter((phase) => phase.status === "AWAITING_APPROVAL") ?? [];
-  return <div className="content narrow"><PageHeader title="Approvals" subtitle="Review and approve project phases" /><ProjectSwitcher /><h2 style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ color: "var(--warning)" }}>{Icons.clock}</span> Pending ({pending.length})</h2>{pending.length ? <div className="stack">{pending.map((phase) => <Link key={phase.id} href={`/client/phases/${phase.id}`}><Card className="payment-card" style={{ borderLeft: "6px solid var(--warning)" }}><div><h3>{phase.title}</h3><Badge className="badge-orange">Awaiting Approval</Badge> <span style={{ color: "var(--muted)", marginLeft: 10 }}>Requested {phase.approvalRequestedAt ? new Date(phase.approvalRequestedAt).toLocaleDateString() : "recently"}</span></div><Button>Review & Approve {Icons.arrow}</Button></Card></Link>)}</div> : <><EmptyState title="All caught up!" body="No pending approvals at the moment." icon={Icons.check} /><EmptyState title="No Approvals Yet" body="Approval requests will appear here as phases are ready for review." /></>}</div>;
+  const pending =
+    selectedProject?.phases.filter(
+      (phase) => phase.status === "AWAITING_APPROVAL",
+    ) ?? [];
+  return (
+    <div className="content narrow">
+      <PageHeader
+        title="Approvals"
+        subtitle="Review and approve project phases"
+      />
+      <ProjectSwitcher />
+      <h2 style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <span style={{ color: "var(--warning)" }}>{Icons.clock}</span> Pending (
+        {pending.length})
+      </h2>
+      {pending.length ? (
+        <div className="stack">
+          {pending.map((phase) => (
+            <Link key={phase.id} href={`/client/phases/${phase.id}`}>
+              <Card
+                className="payment-card"
+                style={{ borderLeft: "6px solid var(--warning)" }}
+              >
+                <div>
+                  <h3>{phase.title}</h3>
+                  <Badge className="badge-orange">Awaiting Approval</Badge>{" "}
+                  <span style={{ color: "var(--muted)", marginLeft: 10 }}>
+                    Requested{" "}
+                    {phase.approvalRequestedAt
+                      ? new Date(phase.approvalRequestedAt).toLocaleDateString()
+                      : "recently"}
+                  </span>
+                </div>
+                <Button>Review & Approve {Icons.arrow}</Button>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <>
+          <EmptyState
+            title="All caught up!"
+            body="No pending approvals at the moment."
+            icon={Icons.check}
+          />
+          <EmptyState
+            title="No Approvals Yet"
+            body="Approval requests will appear here as phases are ready for review."
+          />
+        </>
+      )}
+    </div>
+  );
 }
 
 export function ClientPayments() {
   const { selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  if (!selectedProject) return <div className="content narrow"><PageHeader title="Payments" /><EmptyState title="No payments yet" body="Payment details will appear once your project is approved." /></div>;
-  return <div className="content narrow"><PageHeader title="Payments" subtitle="View deposit and balance status" /><ProjectSwitcher /><div className="stack">{selectedProject.payments.map((payment) => <Card key={payment.id} className="payment-card"><div><Badge className={statusClass(payment.status)}>{statusLabel(payment.status)}</Badge><h2>{payment.type === "DEPOSIT" ? "First Deposit" : "Balance Payment"}</h2><p style={{ color: "var(--muted)" }}>{payment.reference}</p></div><div style={{ textAlign: "right" }}><strong style={{ fontSize: 24 }}>{formatNaira(payment.amount)}</strong><div style={{ marginTop: 10 }}>{payment.status === "UNPAID" ? <Button onClick={() => setPaymentId(payment.id)}>Make Payment</Button> : payment.status === "PENDING_CONFIRMATION" ? <Badge className="badge-orange">Awaiting Confirmation</Badge> : <Badge className="badge-green">Confirmed</Badge>}</div></div></Card>)}</div>{paymentId && <ManualPaymentModal project={selectedProject} paymentId={paymentId} onClose={() => setPaymentId(null)} />}</div>;
+  if (!selectedProject)
+    return (
+      <div className="content narrow">
+        <PageHeader title="Payments" />
+        <EmptyState
+          title="No payments yet"
+          body="Payment details will appear once your project is approved."
+        />
+      </div>
+    );
+  return (
+    <div className="content narrow">
+      <PageHeader title="Payments" subtitle="View deposit and balance status" />
+      <ProjectSwitcher />
+      <div className="stack">
+        {selectedProject.payments.map((payment) => (
+          <Card key={payment.id} className="payment-card">
+            <div>
+              <Badge className={statusClass(payment.status)}>
+                {statusLabel(payment.status)}
+              </Badge>
+              <h2>
+                {payment.type === "DEPOSIT"
+                  ? "First Deposit"
+                  : "Balance Payment"}
+              </h2>
+              <p style={{ color: "var(--muted)" }}>{payment.reference}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <strong style={{ fontSize: 24 }}>
+                {formatNaira(payment.amount)}
+              </strong>
+              <div style={{ marginTop: 10 }}>
+                {payment.status === "UNPAID" ? (
+                  <Button onClick={() => setPaymentId(payment.id)}>
+                    Make Payment
+                  </Button>
+                ) : payment.status === "PENDING_CONFIRMATION" ? (
+                  <Badge className="badge-orange">Awaiting Confirmation</Badge>
+                ) : (
+                  <Badge className="badge-green">Confirmed</Badge>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      {paymentId && (
+        <ManualPaymentModal
+          project={selectedProject}
+          paymentId={paymentId}
+          onClose={() => setPaymentId(null)}
+        />
+      )}
+    </div>
+  );
 }
 
 export function ClientSupport() {
-  return <div className="content narrow"><PageHeader title="Help & Support" subtitle="Get answers and assistance" /><Card className="next-action" style={{ marginBottom: 24 }}><div><h2>Need help with your project?</h2><p style={{ textTransform: "none", letterSpacing: 0 }}>Your Project Manager is here to assist you.</p></div><div style={{ display: "flex", gap: 12 }}><Button variant="secondary">✉ Email PM</Button><Button variant="secondary">▱ Send Message</Button></div></Card><Card className="payment-card" style={{ marginBottom: 24 }}><div className="deliverable-main"><div className="metric-icon tone-green">{Icons.clock}</div><div><h3>Typical Response Time</h3><p style={{ color: "var(--muted)" }}>We aim to respond within 24 hours on business days</p></div></div></Card><Card><div className="card-title"><h2>Frequently Asked Questions</h2></div><div className="card-body stack">{["How do I approve a phase?", "Can I request changes after approving?", "How do I view my deliverables?", "What if I can't access a deliverable link?", "How long does each phase typically take?", "Can I communicate with the team directly?"].map((q) => <div className="timeline-row" key={q} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 14 }}><strong>{q}</strong><span>⌄</span></div>)}</div></Card><Card style={{ marginTop: 24 }}><div className="card-title"><h2>Helpful Resources</h2></div><div className="card-body grid-2-even"><Card className="payment-card" style={{ boxShadow: "none" }}><div className="deliverable-main"><div className="deliverable-icon">↗</div><div><strong>Getting Started Guide</strong><p style={{ color: "var(--muted)" }}>Learn how to navigate your project</p></div></div></Card><Card className="payment-card" style={{ boxShadow: "none" }}><div className="deliverable-main"><div className="deliverable-icon">↗</div><div><strong>Approval Best Practices</strong><p style={{ color: "var(--muted)" }}>Tips for reviewing deliverables</p></div></div></Card></div></Card></div>;
+  return (
+    <div className="content narrow">
+      <PageHeader
+        title="Help & Support"
+        subtitle="Get answers and assistance"
+      />
+      <Card className="next-action" style={{ marginBottom: 24 }}>
+        <div>
+          <h2>Need help with your project?</h2>
+          <p style={{ textTransform: "none", letterSpacing: 0 }}>
+            Your Project Manager is here to assist you.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <Button variant="secondary">✉ Email PM</Button>
+          <Button variant="secondary">▱ Send Message</Button>
+        </div>
+      </Card>
+      <Card className="payment-card" style={{ marginBottom: 24 }}>
+        <div className="deliverable-main">
+          <div className="metric-icon tone-green">{Icons.clock}</div>
+          <div>
+            <h3>Typical Response Time</h3>
+            <p style={{ color: "var(--muted)" }}>
+              We aim to respond within 24 hours on business days
+            </p>
+          </div>
+        </div>
+      </Card>
+      <Card>
+        <div className="card-title">
+          <h2>Frequently Asked Questions</h2>
+        </div>
+        <div className="card-body stack">
+          {[
+            "How do I approve a phase?",
+            "Can I request changes after approving?",
+            "How do I view my deliverables?",
+            "What if I can't access a deliverable link?",
+            "How long does each phase typically take?",
+            "Can I communicate with the team directly?",
+          ].map((q) => (
+            <div
+              className="timeline-row"
+              key={q}
+              style={{
+                borderBottom: "1px solid var(--line)",
+                paddingBottom: 14,
+              }}
+            >
+              <strong>{q}</strong>
+              <span>⌄</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card style={{ marginTop: 24 }}>
+        <div className="card-title">
+          <h2>Helpful Resources</h2>
+        </div>
+        <div className="card-body grid-2-even">
+          <Card className="payment-card" style={{ boxShadow: "none" }}>
+            <div className="deliverable-main">
+              <div className="deliverable-icon">↗</div>
+              <div>
+                <strong>Getting Started Guide</strong>
+                <p style={{ color: "var(--muted)" }}>
+                  Learn how to navigate your project
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card className="payment-card" style={{ boxShadow: "none" }}>
+            <div className="deliverable-main">
+              <div className="deliverable-icon">↗</div>
+              <div>
+                <strong>Approval Best Practices</strong>
+                <p style={{ color: "var(--muted)" }}>
+                  Tips for reviewing deliverables
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
 }
