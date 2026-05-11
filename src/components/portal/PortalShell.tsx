@@ -75,6 +75,11 @@ function navForRole(
         href: "/client/support",
         icon: <HelpCircle size={iconSize} />,
       },
+      {
+        label: "Settings",
+        href: "/client/settings",
+        icon: <Settings size={iconSize} />,
+      },
     ];
   }
   if (role === "STAFF" || role === "PROJECT_MANAGER") {
@@ -214,7 +219,7 @@ export function PortalShell({
     window.location.reload();
   };
 
-  return (  
+  return (
     <div className="app-shell">
       <aside className="sidebar">
         <Link
@@ -232,6 +237,7 @@ export function PortalShell({
           <img src="/octalve-logo.svg" alt="Octalve" className="brand-logo" />
           <span>Octalve</span>
         </Link>
+
         <div className="create-btn-wrap">
           <Link href={createHref}>
             <Button className="create-btn">
@@ -293,23 +299,36 @@ export function PortalShell({
             <Search size={18} /> <input placeholder="Search..." />
           </div>
           <div className="top-actions">
-            {counts.approvals > 0 && (
-              <Link
-                href={
-                  role === "CLIENT" ? "/client/approvals" : "/admin/projects"
-                }
-                className="notification-btn"
-              >
-                <CheckSquare size={16} /> {counts.approvals} Pending Approval
-                {counts.approvals > 1 ? "s" : ""}
-              </Link>
-            )}
+            {counts.approvals > 0 &&
+              (role === "CLIENT" || role === "SUPER_ADMIN") && (
+                <Link
+                  href={
+                    role === "CLIENT" ? "/client/approvals" : "/admin/projects"
+                  }
+                  className="notification-btn"
+                >
+                  <CheckSquare size={16} /> {counts.approvals} Pending Approval
+                  {counts.approvals > 1 ? "s" : ""}
+                </Link>
+              )}
             {counts.requests > 0 && role === "SUPER_ADMIN" && (
               <Link href="/admin/project-requests" className="notification-btn">
                 <Bell size={16} /> {counts.requests} Request
                 {counts.requests > 1 ? "s" : ""}
               </Link>
             )}
+            <Link
+              href={
+                role === "STAFF"
+                  ? "/staff/settings"
+                  : role === "SUPER_ADMIN"
+                    ? "/admin/settings"
+                    : "/client/settings"
+              }
+              className="notification-btn"
+            >
+              <Settings size={16} /> Settings
+            </Link>
           </div>
         </header>
         {children}

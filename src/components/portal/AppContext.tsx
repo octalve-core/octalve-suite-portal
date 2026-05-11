@@ -154,7 +154,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         api.projects.list(),
         api.templates.list(),
         currentUser.role === "SUPER_ADMIN" ? api.projectRequests.list() : Promise.resolve([]),
-        api.reviews.list(),
+        currentUser.role === "SUPER_ADMIN" ? api.reviews.list() : Promise.resolve([]),
         api.notifications.list(),
         (currentUser.role === "SUPER_ADMIN" || currentUser.role === "PROJECT_MANAGER") ? api.team.list() : Promise.resolve([]),
         currentUser.role === "SUPER_ADMIN" ? api.clients.list() : Promise.resolve([]),

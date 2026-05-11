@@ -77,13 +77,15 @@ export function packageClass(type: PackageType) {
 }
 
 export function statusLabel(
-  status:
+  status?:
     | ProjectStatus
     | PhaseStatus
     | PaymentStatus
     | DeliverableStatus
-    | Role,
+    | Role
+    | string,
 ) {
+  if (!status) return "";
   return status
     .split("_")
     .map((word) => word[0] + word.slice(1).toLowerCase())
