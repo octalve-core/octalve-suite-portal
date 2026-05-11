@@ -47,6 +47,13 @@ export async function POST(request: Request, { params }: Params) {
 
   if (!template) return errorResponse("No template found for this package type", 400);
 
+  const existingProject = await prisma.project.findUnique({
+    where: { requestId: id },
+  });
+  if (existingProject) {
+    return errorResponse("Request has already been processed", 400);
+  }
+
   const code = makeProjectCode();
   const bankName = process.env.OCTALVE_BANK_NAME ?? "Octalve Bank";
   const accountName = process.env.OCTALVE_ACCOUNT_NAME ?? "Octalve";

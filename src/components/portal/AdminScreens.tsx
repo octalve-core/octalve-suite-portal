@@ -1158,6 +1158,8 @@ function RequestReviewModal({
 }) {
   const { state } = useApp();
   const phases = generatePhasesFromRequest(request, state.templates);
+  const [loading, setLoading] = useState(false);
+  const isPending = request.status === "PENDING_REVIEW";
   const [form, setForm] = useState({
     totalAmount: 750000,
     depositAmount: 350000,
@@ -1192,6 +1194,7 @@ function RequestReviewModal({
             <Input
               type="number"
               value={form.totalAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, totalAmount: Number(e.target.value) })
               }
@@ -1201,6 +1204,7 @@ function RequestReviewModal({
             <Input
               type="number"
               value={form.depositAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, depositAmount: Number(e.target.value) })
               }
@@ -1210,6 +1214,7 @@ function RequestReviewModal({
             <Input
               type="number"
               value={form.balanceAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, balanceAmount: Number(e.target.value) })
               }
@@ -1218,6 +1223,7 @@ function RequestReviewModal({
           <Field label="Project Manager">
             <Select
               value={form.projectManagerId}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, projectManagerId: e.target.value })
               }
@@ -1234,6 +1240,7 @@ function RequestReviewModal({
           <Field label="Target Date">
             <Input
               value={form.targetDate}
+              disabled={!isPending}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
               placeholder="May 9, 2026"
             />
@@ -1241,6 +1248,7 @@ function RequestReviewModal({
           <Field label="Internal Notes">
             <Textarea
               value={form.internalNotes}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, internalNotes: e.target.value })
               }
@@ -1248,12 +1256,26 @@ function RequestReviewModal({
           </Field>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            {isPending ? "Cancel" : "Close"}
           </Button>
-          <Button onClick={async () => await onApprove(form)}>
-            Approve & Request Deposit
-          </Button>
+          {isPending && (
+            <Button
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await onApprove(form);
+                } catch (e) {
+                  // errors handled in useApp
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              {loading ? "Approving..." : "Approve & Request Deposit"}
+            </Button>
+          )}
         </div>
       </div>
     </Modal>
