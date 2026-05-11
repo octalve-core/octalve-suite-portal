@@ -1173,22 +1173,42 @@ function RequestReviewModal({
     <Modal
       title={`Review ${request.projectName}`}
       onClose={onClose}
-      width="760px"
+      width="820px"
     >
-      <div className="stack">
-        <Card className="card-body" style={{ boxShadow: "none" }}>
-          <h3>Client Brief</h3>
-          <p>
-            <strong>Goal:</strong> {request.projectGoal}
-          </p>
-          <p style={{ color: "var(--muted)" }}>{request.projectDescription}</p>
-          <h3>AI Suggested Phases</h3>
-          <ol>
-            {phases.map((p: any) => (
-              <li key={p.id}>{p.title}</li>
-            ))}
-          </ol>
-        </Card>
+      <div className="stack" style={{ gap: 32 }}>
+        <div className="grid-2" style={{ gap: 24, alignItems: "stretch" }}>
+          <Card className="card-body" style={{ background: "#f8fafc", borderColor: "#e2e8f0" }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--primary)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {Icons.doc}
+              </div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>Client Brief</h3>
+            </div>
+            <div style={{ fontSize: 14 }}>
+              <p style={{ marginTop: 0, marginBottom: 8 }}>
+                <strong>Goal:</strong> {request.projectGoal}
+              </p>
+              <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>{request.projectDescription}</p>
+            </div>
+          </Card>
+          
+          <Card className="card-body" style={{ background: "#f5f3ff", borderColor: "#ede9fe" }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--purple)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                ✨
+              </div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>AI Suggested Phases</h3>
+            </div>
+            <div className="stack" style={{ gap: 8 }}>
+              {phases.map((p: any, index: number) => (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", padding: "8px 8px", borderRadius: 8, border: "1px solid #ede9fe" }}>
+                  <span className="badge badge-purple" style={{ margin: 0, minWidth: 24, textAlign: "center", justifyContent: "center" }}>{index + 1}</span>
+                  <strong style={{ fontSize: 14 }}>{p.title}</strong>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
         <div className="form-grid">
           <Field label="Total Amount">
             <Input
