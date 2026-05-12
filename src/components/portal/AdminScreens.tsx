@@ -42,6 +42,7 @@ import {
   Badge,
   Button,
   Card,
+  DataList,
   EmptyState,
   Field,
   formatNaira,
@@ -1828,54 +1829,218 @@ export function AdminPayments() {
   const rows = state.projects.flatMap((project) =>
     project.payments.map((payment) => ({ project, payment })),
   );
+
+  const pending = rows.filter(
+    (r) => r.payment.status === "PENDING_CONFIRMATION",
+  );
+  const unpaid = rows.filter((r) => r.payment.status === "UNPAID");
+  const confirmed = rows.filter((r) => r.payment.status === "CONFIRMED");
+
+  const pendingAmount = pending.reduce((sum, r) => sum + r.payment.amount, 0);
+  const unpaidAmount = unpaid.reduce((sum, r) => sum + r.payment.amount, 0);
+  const confirmedAmount = confirmed.reduce(
+    (sum, r) => sum + r.payment.amount,
+    0,
+  );
+
+  // Sort: Pending first, then Unpaid, then Confirmed
+  const sortedRows = [...pending, ...unpaid, ...confirmed];
+
   return (
     <div className="content">
       <PageHeader
         title="Payments"
         subtitle="Confirm manual deposits and balance payments"
       />
-      <div className="stack">
-        {rows.map(({ project, payment }) => (
-          <Card key={payment.id} className="payment-card">
-            <div>
-              <Badge className={statusClass(payment.status)}>
-                {statusLabel(payment.status)}
-              </Badge>
-              <h3>
-                {project.title} — {payment.type}
-              </h3>
-              <p style={{ color: "var(--muted)" }}>
-                {project.businessName} • {payment.reference}
-              </p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <strong style={{ fontSize: 22 }}>
-                {formatNaira(payment.amount)}
-              </strong>
-              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                {payment.status === "PENDING_CONFIRMATION" && (
-                  <>
-                    <Button
-                      variant="success"
-                      onClick={async () => await confirmPayment(payment.id)}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Requires Confirmation"
+          value={formatNaira(pendingAmount)}
+          icon={Icons.clock}
+          tone="orange"
+        />
+        <MetricCard
+          label="Confirmed Revenue"
+          value={formatNaira(confirmedAmount)}
+          icon={Icons.payments}
+          tone="green"
+        />
+        <MetricCard
+          label="Awaiting Payment"
+          value={formatNaira(unpaidAmount)}
+          icon={Icons.phases}
+          tone="blue"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Transaction History</h2>}
+          defaultView="grid"
+          allowedViews={["list", "grid", "grid2", "grid3"]}
+          data={sortedRows}
+          filterFn={(row, query) => {
+            const text = `${row.project.title} ${row.project.businessName} ${row.payment.reference} ${row.payment.type} ${row.payment.status}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={10}
+          emptyState={
+            <EmptyState
+              title="No transactions"
+              body="No payments match your criteria."
+            />
+          }
+          renderItem={({ project, payment }, view) => {
+            if (view.startsWith("grid")) {
+              return (
+                <div
+                  key={payment.id}
+                  style={{
+                    border: "1px solid var(--line)",
+                    borderRadius: 12,
+                    padding: 16,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <Badge className={statusClass(payment.status)}>
+                        {statusLabel(payment.status)}
+                      </Badge>
+                      <h3 style={{ margin: "8px 0 4px", fontSize: 16 }}>
+                        {project.title} — {payment.type}
+                      </h3>
+                      <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                        {project.businessName} • Ref: {payment.reference}
+                      </p>
+                    </div>
+                    <div
+                      className={`metric-icon tone-${payment.status === "CONFIRMED" ? "green" : payment.status === "PENDING_CONFIRMATION" ? "orange" : "blue"}`}
+                      style={{ width: 36, height: 36, fontSize: 16 }}
                     >
-                      Confirm
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={async () => await rejectPayment(payment.id)}
+                      {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                    <strong style={{ fontSize: 20 }}>
+                      {formatNaira(payment.amount)}
+                    </strong>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {payment.status === "PENDING_CONFIRMATION" && (
+                        <Button
+                          variant="success"
+                          onClick={async () => await confirmPayment(payment.id)}
+                        >
+                          Confirm
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={payment.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16 }}>
+                  <div
+                    className={`metric-icon tone-${payment.status === "CONFIRMED" ? "green" : payment.status === "PENDING_CONFIRMATION" ? "orange" : "blue"}`}
+                  >
+                    {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                      {project.title} — {payment.type}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 0 }}>
+                      {project.businessName} • Ref: {payment.reference}
+                    </p>
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
                     >
-                      Reject
-                    </Button>
-                  </>
-                )}{" "}
-                {payment.status === "UNPAID" && (
-                  <Badge className="badge-slate">Waiting client</Badge>
-                )}
+                      <Badge className={statusClass(payment.status)}>
+                        {statusLabel(payment.status)}
+                      </Badge>
+                      {payment.status === "PENDING_CONFIRMATION" && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "var(--warning)",
+                            fontWeight: 500,
+                          }}
+                        >
+                          Action Required
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right" }}>
+                  <strong style={{ fontSize: 20, display: "block" }}>
+                    {formatNaira(payment.amount)}
+                  </strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      marginTop: 12,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {payment.status === "PENDING_CONFIRMATION" && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={async () => await rejectPayment(payment.id)}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="success"
+                          onClick={async () => await confirmPayment(payment.id)}
+                        >
+                          Confirm Payment
+                        </Button>
+                      </>
+                    )}
+                    {payment.status === "UNPAID" && (
+                      <span style={{ fontSize: 13, color: "var(--muted)" }}>
+                        Awaiting client action
+                      </span>
+                    )}
+                    {payment.status === "CONFIRMED" && (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "var(--success)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Payment Confirmed
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            );
+          }}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   DeliverableStatus,
@@ -340,5 +341,183 @@ export function Field({
       <span>{label}</span>
       {children}
     </label>
+  );
+}
+
+export type ViewMode = "list" | "grid" | "grid2" | "grid3";
+
+export interface DataListProps<T> {
+  data: T[];
+  filterFn?: (item: T, query: string) => boolean;
+  renderItem: (item: T, viewMode: ViewMode) => React.ReactNode;
+  itemsPerPage?: number;
+  emptyState?: React.ReactNode;
+  title?: React.ReactNode;
+  allowedViews?: ViewMode[];
+  defaultView?: ViewMode;
+  allowReverse?: boolean;
+}
+
+export function DataList<T>({
+  data,
+  filterFn,
+  renderItem,
+  itemsPerPage = 10,
+  emptyState,
+  title,
+  allowedViews = ["list", "grid"],
+  defaultView = "list",
+  allowReverse = true,
+}: DataListProps<T>) {
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<ViewMode>(defaultView);
+  const [isReversed, setIsReversed] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    let result = data;
+    if (query && filterFn) {
+      result = data.filter((item) => filterFn(item, query));
+    }
+    if (isReversed) {
+      result = [...result].reverse();
+    }
+    return result;
+  }, [data, query, filterFn, isReversed]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const currentData = filtered.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage,
+  );
+
+  // Reset page when query changes
+  useEffect(() => setPage(1), [query]);
+
+  const viewClassMap: Record<ViewMode, string> = {
+    list: "stack",
+    grid: "grid-2-even", // 2 items per row
+    grid2: "grid-3",     // 3 items per row
+    grid3: "grid-4",     // 4 items per row
+  };
+
+  return (
+    <Card>
+      <div
+        className="card-title"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 16,
+        }}
+      >
+        <div>{title}</div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          {filterFn && (
+            <Input
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ width: 200, padding: "6px 12px", height: 36 }}
+            />
+          )}
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              background: "var(--background)",
+              padding: 4,
+              borderRadius: 6,
+              border: "1px solid var(--line)",
+            }}
+          >
+            {allowReverse && (
+              <button
+                onClick={() => setIsReversed(!isReversed)}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 4,
+                  background: isReversed ? "var(--surface)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  marginRight: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="Reverse Order"
+              >
+                ⇅
+              </button>
+            )}
+
+            {allowedViews.map((v) => {
+              let icon = "☰";
+              if (v === "grid") icon = "⊞";
+              if (v === "grid2") icon = "⊟"; // using a different box for grid2
+              if (v === "grid3") icon = "▦";
+
+              return (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    background: view === v ? "var(--surface)" : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title={`${v} View`}
+                >
+                  {icon}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className={`card-body ${viewClassMap[view]}`}>
+        {currentData.length > 0 ? (
+          currentData.map((item, index) => renderItem(item, view))
+        ) : (
+          emptyState || <p>No results found.</p>
+        )}
+      </div>
+      {totalPages > 1 && (
+        <div
+          style={{
+            padding: 16,
+            borderTop: "1px solid var(--line)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            variant="secondary"
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            variant="secondary"
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </Card>
   );
 }
