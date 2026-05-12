@@ -1691,6 +1691,7 @@ export function AdminTeam() {
           </Button>
         }
       />
+
       <div className="grid-2-even">
         {team.map((member) => {
           const assigned = state.projects
@@ -1729,6 +1730,7 @@ export function AdminTeam() {
           );
         })}
       </div>
+
       {modal && (
         <TeamModal
           member={modal === "new" ? undefined : modal}
@@ -1765,6 +1767,7 @@ function TeamModal({
     specialty: member?.specialty ?? "Designer",
     role: member?.role ?? ("STAFF" as Role),
   });
+
   return (
     <Modal
       title={member ? "Edit Team Member" : "Add Team Member"}
@@ -1778,6 +1781,7 @@ function TeamModal({
             placeholder="Full name"
           />
         </Field>
+
         <Field label="Email *">
           <Input
             value={form.email}
@@ -1785,6 +1789,7 @@ function TeamModal({
             placeholder="email@company.com"
           />
         </Field>
+
         <Field label="Specialty *">
           <Select
             value={form.specialty}
@@ -1797,6 +1802,7 @@ function TeamModal({
             <option>Project Manager</option>
           </Select>
         </Field>
+
         <Field label="Access Role">
           <Select
             value={form.role}
@@ -1807,6 +1813,7 @@ function TeamModal({
             <option value="SUPER_ADMIN">Super Admin</option>
           </Select>
         </Field>
+
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
           <Button variant="secondary" onClick={onClose}>
             Cancel
@@ -1881,7 +1888,8 @@ export function AdminPayments() {
           allowedViews={["list", "grid", "grid2", "grid3"]}
           data={sortedRows}
           filterFn={(row, query) => {
-            const text = `${row.project.title} ${row.project.businessName} ${row.payment.reference} ${row.payment.type} ${row.payment.status}`.toLowerCase();
+            const text =
+              `${row.project.title} ${row.project.businessName} ${row.payment.reference} ${row.payment.type} ${row.payment.status}`.toLowerCase();
             return text.includes(query.toLowerCase());
           }}
           itemsPerPage={10}
@@ -1905,7 +1913,13 @@ export function AdminPayments() {
                     gap: 16,
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                    }}
+                  >
                     <div>
                       <Badge className={statusClass(payment.status)}>
                         {statusLabel(payment.status)}
@@ -1913,7 +1927,13 @@ export function AdminPayments() {
                       <h3 style={{ margin: "8px 0 4px", fontSize: 16 }}>
                         {project.title} — {payment.type}
                       </h3>
-                      <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                      <p
+                        style={{
+                          color: "var(--muted)",
+                          margin: 0,
+                          fontSize: 13,
+                        }}
+                      >
                         {project.businessName} • Ref: {payment.reference}
                       </p>
                     </div>
@@ -1924,7 +1944,13 @@ export function AdminPayments() {
                       {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
                     </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                    }}
+                  >
                     <strong style={{ fontSize: 20 }}>
                       {formatNaira(payment.amount)}
                     </strong>
