@@ -106,6 +106,7 @@ function ManualPaymentModal({
   onClose: () => void;
 }) {
   const { markPaymentPaid } = useApp();
+  const [loading, setLoading] = useState(false);
   const payment = project.payments.find((item) => item.id === paymentId);
   if (!payment) return null;
   return (
@@ -143,13 +144,19 @@ function ManualPaymentModal({
           </div>
         </Card>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button
-            onClick={() => {
-              markPaymentPaid(payment.id);
-              onClose();
+            loading={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await markPaymentPaid(payment.id);
+                onClose();
+              } finally {
+                setLoading(false);
+              }
             }}
           >
             I have paid
@@ -605,6 +612,7 @@ export function ClientProjectDetail({ projectId }: { projectId: string }) {
 export function ClientCreateProject() {
   const { createProjectRequest, state, currentUser } = useApp();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
   const [form, setForm] = useState({
     projectName: "",
@@ -819,9 +827,15 @@ export function ClientCreateProject() {
             </Button>
           ) : (
             <Button
+              loading={loading}
               onClick={async () => {
-                await createProjectRequest({ ...form, packageType });
-                location.href = "/client/projects";
+                setLoading(true);
+                try {
+                  await createProjectRequest({ ...form, packageType });
+                  location.href = "/client/projects";
+                } finally {
+                  setLoading(false);
+                }
               }}
             >
               Submit Project Request ✓
@@ -932,6 +946,7 @@ export function ClientPhases() {
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
   const { state, approvePhase, requestChanges, sendPhaseMessage } = useApp();
   const [approve, setApprove] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
   const [change, setChange] = useState(false);
   const [msg, setMsg] = useState("");
   const phase = state.projects
@@ -1093,14 +1108,20 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
             the next phase.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button variant="secondary" onClick={() => setApprove(false)}>
+            <Button variant="secondary" onClick={() => setApprove(false)} disabled={approveLoading}>
               Cancel
             </Button>
             <Button
               variant="success"
+              loading={approveLoading}
               onClick={async () => {
-                await approvePhase(phase.id);
-                setApprove(false);
+                setApproveLoading(true);
+                try {
+                  await approvePhase(phase.id);
+                  setApprove(false);
+                } finally {
+                  setApproveLoading(false);
+                }
               }}
             >
               Confirm Approval
@@ -1129,9 +1150,11 @@ function RequestChangeModal({
 }: {
   phase: ProjectPhase;
   onClose: () => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string) => Promise<void>;
 }) {
   const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+
   return (
     <Modal title={`Request Changes: ${phase.title}`} onClose={onClose}>
       <div className="stack">
@@ -1140,13 +1163,27 @@ function RequestChangeModal({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Explain what needs to be corrected before approval..."
+            disabled={loading}
           />
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={() => onSubmit(text)}>
+          <Button
+            variant="danger"
+            loading={loading}
+            onClick={async () => {
+              if (text.trim()) {
+                setLoading(true);
+                try {
+                  await onSubmit(text);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+          >
             Submit Request
           </Button>
         </div>

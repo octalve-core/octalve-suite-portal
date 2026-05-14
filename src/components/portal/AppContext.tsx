@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -29,6 +30,7 @@ type AppContextValue = {
   state: AppState;
   currentUser?: User;
   sessionLoading: boolean;
+  dataLoading: boolean;
   selectedProjectId?: string;
   selectedProject?: Project;
   clientProjects: Project[];
@@ -98,6 +100,7 @@ type AppContextValue = {
     comment: string,
     permissionToPublish: boolean,
   ) => Promise<void>;
+  refresh: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -114,6 +117,9 @@ const emptyState: AppState = {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<AppState>(emptyState);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [isRefreshingState, setIsRefreshingState] = useState(false);
+  const syncInProgressRef = useRef(false);
   const [selectedProjectId, setSelectedProjectIdState] = useState<
     string | undefined
   >(undefined);
@@ -137,8 +143,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [authSession]);
 
   // ------- Data Fetching -------
-  const refresh = useCallback(async () => {
-    if (!currentUser) return;
+  const syncPortalData = useCallback(async () => {
+    if (!currentUser || syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
+    setIsRefreshingState(true);
+    setDataLoading(true);
 
     try {
       // Parallel fetch for speed
@@ -170,14 +179,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error) {
       console.error("Failed to fetch app state:", error);
+    } finally {
+      setDataLoading(false);
+      setIsRefreshingState(false);
+      syncInProgressRef.current = false;
     }
   }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {
-      refresh();
+      syncPortalData();
     }
-  }, [currentUser, refresh]);
+  }, [currentUser, syncPortalData]);
 
   // Load selected project ID from storage
   useEffect(() => {
@@ -236,10 +249,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  function resetDemo() {
+  async function resetDemo() {
     // No-op or call a destructive "clear my data" endpoint if needed.
     // For now, we'll just refresh.
-    refresh();
+    await syncPortalData();
   }
 
   // ------- Mutations -------
@@ -248,7 +261,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">,
   ) {
     const res = await api.projectRequests.create(payload);
-    await refresh();
+    await syncPortalData();
     return res.id;
   }
 
@@ -264,7 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
   ) {
     const res = await api.projectRequests.approve(requestId, payload);
-    await refresh();
+    await syncPortalData();
     return res.id;
   }
 
@@ -282,13 +295,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     internalNotes?: string;
   }) {
     const res = await api.projects.create(payload);
-    await refresh();
+    await syncPortalData();
     return res.id;
   }
 
   async function createTemplate(payload: Omit<ProjectTemplate, "id">) {
     const res = await api.templates.create(payload);
-    await refresh();
+    await syncPortalData();
     return res.id;
   }
 
@@ -297,12 +310,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     payload: Partial<Omit<ProjectTemplate, "id">>,
   ) {
     await api.templates.update(templateId, payload);
-    await refresh();
+    await syncPortalData();
   }
 
   async function deleteTemplate(templateId: string) {
     await api.templates.delete(templateId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function createTeamMember(payload: {
@@ -312,7 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     role: Role;
   }) {
     const res = await api.team.create(payload);
-    await refresh();
+    await syncPortalData();
     return res.id;
   }
 
@@ -321,37 +334,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
   ) {
     await api.team.update(userId, payload);
-    await refresh();
+    await syncPortalData();
   }
 
   async function deleteTeamMember(userId: string) {
     await api.team.delete(userId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function deleteProject(projectId: string) {
     await api.projects.delete(projectId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function markPaymentPaid(paymentId: string) {
     await api.payments.markPaid(paymentId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function confirmPayment(paymentId: string) {
     await api.payments.confirm(paymentId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function rejectPayment(paymentId: string, note?: string) {
     await api.payments.reject(paymentId, note);
-    await refresh();
+    await syncPortalData();
   }
 
   async function assignPhase(phaseId: string, staffId: string) {
     await api.phases.assign(phaseId, staffId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function addDeliverable(
@@ -359,27 +372,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     payload: Pick<Deliverable, "name" | "description" | "link" | "linkType">,
   ) {
     await api.phases.addDeliverable(phaseId, payload);
-    await refresh();
+    await syncPortalData();
   }
 
   async function requestPhaseApproval(phaseId: string) {
     await api.phases.requestApproval(phaseId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function approvePhase(phaseId: string) {
     await api.phases.approve(phaseId);
-    await refresh();
+    await syncPortalData();
   }
 
   async function requestChanges(phaseId: string, message: string) {
     await api.phases.requestChanges(phaseId, message);
-    await refresh();
+    await syncPortalData();
   }
 
   async function sendPhaseMessage(phaseId: string, message: string) {
     await api.messages.send(phaseId, message);
-    await refresh();
+    await syncPortalData();
   }
 
   async function addReview(
@@ -389,13 +402,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     permissionToPublish: boolean,
   ) {
     await api.reviews.create({ projectId, rating, comment, permissionToPublish });
-    await refresh();
+    await syncPortalData();
   }
 
   const value: AppContextValue = {
     state,
     currentUser,
     sessionLoading,
+    dataLoading: dataLoading || isRefreshingState,
     selectedProjectId: selectedProject?.id,
     selectedProject,
     clientProjects,
@@ -422,6 +436,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     requestChanges,
     sendPhaseMessage,
     addReview,
+    refresh: syncPortalData,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

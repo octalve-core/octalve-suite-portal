@@ -18,16 +18,25 @@ import type {
 
 // ─── Fetch Helpers ────────────────────────────────────────────────────────────
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(body.error ?? `API error ${res.status}`);
+async function fetchJson<T>(url: string, init?: RequestInit, retries = 2): Promise<T> {
+  try {
+    const res = await fetch(url, {
+      headers: { "Content-Type": "application/json", ...init?.headers },
+      ...init,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(body.error ?? `API error ${res.status}`);
+    }
+    return res.json();
+  } catch (error) {
+    if (retries > 0 && error instanceof TypeError && error.message === "Failed to fetch") {
+      // Small delay before retry
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return fetchJson<T>(url, init, retries - 1);
+    }
+    throw error;
   }
-  return res.json();
 }
 
 function post<T>(url: string, data?: unknown): Promise<T> {

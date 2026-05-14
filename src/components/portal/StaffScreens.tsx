@@ -242,6 +242,7 @@ function AddDeliverableModal({
   onClose: () => void;
 }) {
   const { addDeliverable } = useApp();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", link: "", description: "" });
   return (
     <Modal title={`Add Deliverable to ${phase.title}`} onClose={onClose}>
@@ -250,6 +251,7 @@ function AddDeliverableModal({
           <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <Field label="Link">
@@ -257,27 +259,36 @@ function AddDeliverableModal({
             value={form.link}
             onChange={(e) => setForm({ ...form, link: e.target.value })}
             placeholder="https://..."
+            disabled={loading}
           />
         </Field>
         <Field label="Description">
           <Textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button
+            loading={loading}
             onClick={async () => {
-              await addDeliverable(phase.id, {
-                name: form.name,
-                link: form.link,
-                linkType: "Other",
-                description: form.description,
-              });
-              onClose();
+              if (!form.name.trim()) return;
+              setLoading(true);
+              try {
+                await addDeliverable(phase.id, {
+                  name: form.name,
+                  link: form.link,
+                  linkType: "Other",
+                  description: form.description,
+                });
+                onClose();
+              } finally {
+                setLoading(false);
+              }
             }}
           >
             Add Deliverable
@@ -293,6 +304,7 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
     useApp();
   const [add, setAdd] = useState(false);
   const [msg, setMsg] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const phase = state.projects
     .flatMap((p) => p.phases)
     .find((p) => p.id === phaseId);
@@ -327,11 +339,34 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
             Add Deliverable
           </Button>
           {isPM ? (
-            <Button onClick={async () => await requestPhaseApproval(phase.id)}>
+            <Button
+              loading={pendingAction === "approve"}
+              onClick={async () => {
+                setPendingAction("approve");
+                try {
+                  await requestPhaseApproval(phase.id);
+                } finally {
+                  setPendingAction(null);
+                }
+              }}
+            >
               Request Client Approval
             </Button>
           ) : (
-            <Button>Submit to PM</Button>
+            <Button
+              loading={pendingAction === "submit"}
+              onClick={async () => {
+                setPendingAction("submit");
+                try {
+                  // Simulate submission logic if any, or just approval request
+                  await requestPhaseApproval(phase.id);
+                } finally {
+                  setPendingAction(null);
+                }
+              }}
+            >
+              Submit to PM
+            </Button>
           )}
         </div>
       </div>
@@ -406,18 +441,30 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
               value={msg}
               onChange={(e) => setMsg(e.target.value)}
               onKeyDown={async (e) => {
-                if (e.key === "Enter" && msg.trim()) {
-                  await sendPhaseMessage(phase.id, msg);
-                  setMsg("");
+                if (e.key === "Enter" && msg.trim() && !pendingAction) {
+                  setPendingAction("message");
+                  try {
+                    await sendPhaseMessage(phase.id, msg);
+                    setMsg("");
+                  } finally {
+                    setPendingAction(null);
+                  }
                 }
               }}
               placeholder="Type a message..."
+              disabled={pendingAction === "message"}
             />
             <Button
+              loading={pendingAction === "message"}
               onClick={async () => {
-                if (!msg.trim()) return;
-                await sendPhaseMessage(phase.id, msg);
-                setMsg("");
+                if (!msg.trim() || pendingAction) return;
+                setPendingAction("message");
+                try {
+                  await sendPhaseMessage(phase.id, msg);
+                  setMsg("");
+                } finally {
+                  setPendingAction(null);
+                }
               }}
             >
               ➤

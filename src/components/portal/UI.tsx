@@ -521,3 +521,96 @@ export function DataList<T>({
     </Card>
   );
 }
+
+export function Spinner({
+  size = 24,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      className={cx("spinner", className)}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+export function Skeleton({
+  className = "",
+  width,
+  height,
+  circle = false,
+}: {
+  className?: string;
+  width?: string | number;
+  height?: string | number;
+  circle?: boolean;
+}) {
+  return (
+    <div
+      className={cx("skeleton", className)}
+      style={{
+        width,
+        height,
+        borderRadius: circle ? "50%" : undefined,
+      }}
+    />
+  );
+}
+
+export function PageLoading() {
+  return (
+    <div className="page-loading-wrapper">
+      <div className="page-loading-logo">
+        <div
+          className="logo-mark"
+          style={{ width: 64, height: 64, fontSize: 32 }}
+        >
+          O
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Spinner size={20} />
+        <span
+          style={{
+            fontWeight: 700,
+            color: "var(--muted)",
+            letterSpacing: "0.05em",
+          }}
+        >
+          LOADING PORTAL...
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function LoadingCard() {
+  return (
+    <Card style={{ padding: 24 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+        <Skeleton circle width={48} height={48} />
+        <div style={{ flex: 1, display: "grid", gap: 8 }}>
+          <Skeleton width="40%" height={20} />
+          <Skeleton width="60%" height={14} />
+        </div>
+      </div>
+      <div style={{ display: "grid", gap: 12 }}>
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="80%" height={16} />
+      </div>
+    </Card>
+  );
+}

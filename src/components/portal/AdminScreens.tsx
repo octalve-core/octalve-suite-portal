@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -55,6 +55,7 @@ import {
   ProgressBar,
   projectProgress,
   Select,
+  Skeleton,
   statusClass,
   statusLabel,
   Textarea,
@@ -300,6 +301,7 @@ export function AdminProjects() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All Status");
   const [pkg, setPkg] = useState("All Packages");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const projects = state.projects.filter((project) => {
     const matchesSearch = `${project.title} ${project.businessName}`
       .toLowerCase()
@@ -366,12 +368,24 @@ export function AdminProjects() {
                 <Link href={`/admin/projects/${project.id}`}>
                   <Edit3 size={15} /> Open details
                 </Link>
-                <button
+                <Button
+                  variant="ghost"
                   className="danger"
-                  onClick={async () => await deleteProject(project.id)}
+                  style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
+                  loading={pendingAction === `delete-${project.id}`}
+                  onClick={async () => {
+                    if (confirm(`Are you sure you want to delete ${project.title}?`)) {
+                      setPendingAction(`delete-${project.id}`);
+                      try {
+                        await deleteProject(project.id);
+                      } finally {
+                        setPendingAction(null);
+                      }
+                    }
+                  }}
                 >
                   <Trash2 size={15} /> Delete project
-                </button>
+                </Button>
               </ActionMenu>
             </div>
             <Link href={`/admin/projects/${project.id}`}>
@@ -407,6 +421,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
   const { state, assignPhase, addDeliverable, requestPhaseApproval } = useApp();
   const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
   const [adding, setAdding] = useState<ProjectPhase | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const project = state.projects.find((p) => p.id === projectId);
   if (!project)
     return (
@@ -500,7 +515,15 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => requestPhaseApproval(phase.id)}
+                  loading={pendingAction === `approve-${phase.id}`}
+                  onClick={async () => {
+                    setPendingAction(`approve-${phase.id}`);
+                    try {
+                      await requestPhaseApproval(phase.id);
+                    } finally {
+                      setPendingAction(null);
+                    }
+                  }}
                   disabled={
                     phase.status === "APPROVED" || phase.status === "LOCKED"
                   }
@@ -570,6 +593,7 @@ function AssignModal({
   onAssign: (staffId: string) => void;
 }) {
   const { state } = useApp();
+  const [loading, setLoading] = useState(false);
   const team = state.users.filter(
     (u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN",
   );
@@ -589,10 +613,22 @@ function AssignModal({
           </Select>
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => onAssign(staffId)}>Assign Phase</Button>
+          <Button
+            loading={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await onAssign(staffId);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            Assign Phase
+          </Button>
         </div>
       </div>
     </Modal>
@@ -613,6 +649,7 @@ function AddDeliverableModal({
     description?: string;
   }) => void;
 }) {
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     link: "",
@@ -627,6 +664,7 @@ function AddDeliverableModal({
             placeholder="e.g., Logo Concepts V1"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <Field label="Link">
@@ -634,12 +672,14 @@ function AddDeliverableModal({
             placeholder="https://..."
             value={form.link}
             onChange={(e) => setForm({ ...form, link: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <Field label="Link Type">
           <Select
             value={form.linkType}
             onChange={(e) => setForm({ ...form, linkType: e.target.value })}
+            disabled={loading}
           >
             <option>Figma</option>
             <option>Google Drive</option>
@@ -653,13 +693,26 @@ function AddDeliverableModal({
             placeholder="Optional description..."
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => form.name.trim() && onSubmit(form)}>
+          <Button
+            loading={loading}
+            onClick={async () => {
+              if (form.name.trim()) {
+                setLoading(true);
+                try {
+                  await onSubmit(form);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+          >
             Add Deliverable
           </Button>
         </div>
@@ -1347,6 +1400,7 @@ function RequestReviewModal({
           </Button>
           {isPending && (
             <Button
+              loading={loading}
               disabled={loading}
               onClick={async () => {
                 setLoading(true);
@@ -1359,7 +1413,7 @@ function RequestReviewModal({
                 }
               }}
             >
-              {loading ? "Approving..." : "Approve & Request Deposit"}
+              Approve & Request Deposit ✓
             </Button>
           )}
         </div>
@@ -1442,6 +1496,8 @@ export function AdminTemplates() {
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(state.templates.slice(0, 1).map((t) => [t.id, true])),
   );
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
   return (
     <div className="content">
       <PageHeader
@@ -1467,12 +1523,24 @@ export function AdminTemplates() {
                 <button onClick={() => setModal(template)}>
                   <Edit3 size={15} /> Edit template
                 </button>
-                <button
+                <Button
+                  variant="ghost"
                   className="danger"
-                  onClick={async () => await deleteTemplate(template.id)}
+                  style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
+                  loading={pendingAction === `delete-${template.id}`}
+                  onClick={async () => {
+                    if (confirm(`Are you sure you want to delete ${template.packageType} template?`)) {
+                      setPendingAction(`delete-${template.id}`);
+                      try {
+                        await deleteTemplate(template.id);
+                      } finally {
+                        setPendingAction(null);
+                      }
+                    }
+                  }}
                 >
                   <Trash2 size={15} /> Delete template
-                </button>
+                </Button>
               </ActionMenu>
             </div>
             <p style={{ color: "var(--muted)" }}>{template.description}</p>
@@ -1679,6 +1747,7 @@ export function AdminTeam() {
   const { state, createTeamMember, updateTeamMember, deleteTeamMember } =
     useApp();
   const [modal, setModal] = useState<User | "new" | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const team = state.users.filter((u) => u.role !== "CLIENT");
   return (
     <div className="content narrow">
@@ -1711,12 +1780,24 @@ export function AdminTeam() {
                   <button onClick={() => setModal(member)}>
                     <Edit3 size={15} /> Edit member
                   </button>
-                  <button
+                  <Button
+                    variant="ghost"
                     className="danger"
-                    onClick={async () => await deleteTeamMember(member.id)}
+                    style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
+                    loading={pendingAction === `delete-${member.id}`}
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete ${member.name}?`)) {
+                        setPendingAction(`delete-${member.id}`);
+                        try {
+                          await deleteTeamMember(member.id);
+                        } finally {
+                          setPendingAction(null);
+                        }
+                      }
+                    }}
                   >
                     <Trash2 size={15} /> Delete member
-                  </button>
+                  </Button>
                 </ActionMenu>
               </div>
               <div className="timeline-row" style={{ marginTop: 24 }}>
@@ -1833,6 +1914,7 @@ function TeamModal({
 
 export function AdminPayments() {
   const { state, confirmPayment, rejectPayment } = useApp();
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const rows = state.projects.flatMap((project) =>
     project.payments.map((payment) => ({ project, payment })),
   );
@@ -1958,7 +2040,15 @@ export function AdminPayments() {
                       {payment.status === "PENDING_CONFIRMATION" && (
                         <Button
                           variant="success"
-                          onClick={async () => await confirmPayment(payment.id)}
+                          loading={pendingAction === `confirm-${payment.id}`}
+                          onClick={async () => {
+                            setPendingAction(`confirm-${payment.id}`);
+                            try {
+                              await confirmPayment(payment.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }}
                         >
                           Confirm
                         </Button>
@@ -2033,13 +2123,29 @@ export function AdminPayments() {
                       <>
                         <Button
                           variant="secondary"
-                          onClick={async () => await rejectPayment(payment.id)}
+                          loading={pendingAction === `reject-${payment.id}`}
+                          onClick={async () => {
+                            setPendingAction(`reject-${payment.id}`);
+                            try {
+                              await rejectPayment(payment.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }}
                         >
                           Reject
                         </Button>
                         <Button
                           variant="success"
-                          onClick={async () => await confirmPayment(payment.id)}
+                          loading={pendingAction === `confirm-${payment.id}`}
+                          onClick={async () => {
+                            setPendingAction(`confirm-${payment.id}`);
+                            try {
+                              await confirmPayment(payment.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }}
                         >
                           Confirm Payment
                         </Button>
@@ -2073,17 +2179,24 @@ export function AdminPayments() {
 }
 
 export function AdminAnalytics() {
-  const { state } = useApp();
-  const total = state.projects.length;
-  const active = state.projects.filter((p) => p.status === "ACTIVE").length;
-  const overdue = state.projects
-    .flatMap((p) => p.phases)
-    .filter((p) => p.status === "CHANGES_REQUESTED").length;
+  const { state, dataLoading } = useApp();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const projectsLoaded = state.projects?.length > 0;
+  const total = state.projects?.length;
+  const active = state.projects?.filter((p) => p.status === "ACTIVE").length;
+  const overdue = state?.projects
+    ?.flatMap((p) => p.phases)
+    ?.filter((p) => p.status === "CHANGES_REQUESTED")?.length || 0;
   const packageData = (
     ["Launch", "Impact", "Growth", "Partner"] as PackageType[]
   ).map((name) => ({
     name,
-    value: state.projects.filter((p) => p.packageType === name).length,
+    value: state?.projects?.filter((p) => p.packageType === name).length,
   }));
   const phaseStatus = [
     "NOT_STARTED",
@@ -2092,8 +2205,8 @@ export function AdminAnalytics() {
     "APPROVED",
   ].map((s) => ({
     status: statusLabel(s as any),
-    count: state.projects.flatMap((p) => p.phases).filter((p) => p.status === s)
-      .length,
+    count: state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
+      ?.length || 0,
   }));
   const COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"];
   return (
@@ -2103,72 +2216,91 @@ export function AdminAnalytics() {
         subtitle="Track your team's performance and project metrics"
       />
       <div className="metric-grid">
-        <MetricCard
-          label="Total Projects"
-          value={total}
-          icon={Icons.analytics}
-        />
-        <MetricCard
-          label="Active Projects"
-          value={active}
-          icon="◎"
-          tone="blue"
-        />
-        <MetricCard
-          label="On-Time Rate"
-          value="100%"
-          icon={Icons.clock}
-          tone="green"
-        />
-        <MetricCard
-          label="Overdue Phases"
-          value={overdue}
-          icon="!"
-          tone="red"
-        />
+        {(!projectsLoaded && dataLoading) || !isMounted ? (
+          <>
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              label="Total Projects"
+              value={total}
+              icon={Icons.analytics}
+            />
+            <MetricCard
+              label="Active Projects"
+              value={active}
+              icon="◎"
+              tone="blue"
+            />
+            <MetricCard
+              label="On-Time Rate"
+              value="100%"
+              icon={Icons.clock}
+              tone="green"
+            />
+            <MetricCard
+              label="Overdue Phases"
+              value={overdue}
+              icon="!"
+              tone="red"
+            />
+          </>
+        )}
       </div>
       <div className="grid-2">
         <Card className="chart-card">
           <div className="card-title">
             <h2>Projects by Package</h2>
           </div>
-          <div className="card-body" style={{ height: 310 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={packageData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={64}
-                  outerRadius={100}
-                  paddingAngle={2}
-                >
-                  {packageData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
+            {(!projectsLoaded && dataLoading) || !isMounted ? (
+              <Skeleton height="100%" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={packageData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={64}
+                    outerRadius={100}
+                    paddingAngle={2}
+                  >
+                    {packageData.map((_, index) => (
+                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
         <Card className="chart-card">
           <div className="card-title">
             <h2>Phases by Status</h2>
           </div>
-          <div className="card-body" style={{ height: 310 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={phaseStatus}
-                layout="vertical"
-                margin={{ left: 30 }}
-              >
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="status" />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
+            {(!projectsLoaded && dataLoading) || !isMounted ? (
+              <Skeleton height="100%" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={phaseStatus}
+                  layout="vertical"
+                  margin={{ left: 30 }}
+                >
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="status" />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
       </div>

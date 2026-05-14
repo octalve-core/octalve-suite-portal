@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useApp } from "./AppContext";
 import { AIAssistant } from "./AIAssistant";
-import { Button } from "./UI";
+import { Button, PageLoading } from "./UI";
 import { Role } from "@/lib/types";
 
 type NavItem = {
@@ -180,7 +180,7 @@ export function PortalShell({
   role: Role;
 }) {
   const pathname = usePathname();
-  const { currentUser, logout, state, clientProjects } = useApp();
+  const { currentUser, logout, state, clientProjects, sessionLoading, dataLoading } = useApp();
 
   const counts = useMemo(() => {
     const projects = role === "CLIENT" ? clientProjects : state.projects;
@@ -218,6 +218,10 @@ export function PortalShell({
     // Force a hard reload to clear bfcache and ensure fresh state
     window.location.reload();
   };
+
+  if (sessionLoading || (dataLoading && state.projects.length === 0)) {
+    return <PageLoading />;
+  }
 
   return (
     <div className="app-shell">
