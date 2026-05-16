@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   DeliverableStatus,
@@ -77,13 +78,15 @@ export function packageClass(type: PackageType) {
 }
 
 export function statusLabel(
-  status:
+  status?:
     | ProjectStatus
     | PhaseStatus
     | PaymentStatus
     | DeliverableStatus
-    | Role,
+    | Role
+    | string,
 ) {
+  if (!status) return "";
   return status
     .split("_")
     .map((word) => word[0] + word.slice(1).toLowerCase())
@@ -138,12 +141,34 @@ export function Button({
   children,
   variant = "primary",
   className = "",
+  loading = false,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "dark" | "danger" | "ghost" | "success";
+  loading?: boolean;
 }) {
   return (
-    <button className={cx("btn", `btn-${variant}`, className)} {...props}>
+    <button
+      className={cx("btn", `btn-${variant}`, className, loading && "loading")}
+      disabled={loading || props.disabled}
+      {...props}
+    >
+      {loading && (
+        <svg
+          className="spinner"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ animation: "spin 0.8s linear infinite" }}
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      )}
       {children}
     </button>
   );
@@ -152,11 +177,17 @@ export function Button({
 export function Badge({
   children,
   className = "",
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
-  return <span className={cx("badge", className)}>{children}</span>;
+  return (
+    <span className={cx("badge", className)} style={style}>
+      {children}
+    </span>
+  );
 }
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -224,9 +255,17 @@ export function EmptyState({
   );
 }
 
-export function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({
+  value,
+  className = "",
+  style,
+}: {
+  value: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <div className="progress">
+    <div className={cx("progress", className)} style={style}>
       <span style={{ width: `${Math.max(0, Math.min(value, 100))}%` }} />
     </div>
   );
@@ -316,5 +355,332 @@ export function Field({
       <span>{label}</span>
       {children}
     </label>
+  );
+}
+
+export type ViewMode = "list" | "grid" | "grid2" | "grid3";
+
+export interface DataListProps<T> {
+  data: T[];
+  filterFn?: (item: T, query: string) => boolean;
+  renderItem: (item: T, viewMode: ViewMode) => React.ReactNode;
+  itemsPerPage?: number;
+  emptyState?: React.ReactNode;
+  title?: React.ReactNode;
+  allowedViews?: ViewMode[];
+  defaultView?: ViewMode;
+  allowReverse?: boolean;
+  actions?: React.ReactNode;
+}
+
+export function DataList<T>({
+  data,
+  filterFn,
+  renderItem,
+  itemsPerPage: initialItemsPerPage = 10,
+  emptyState,
+  title,
+  allowedViews = ["list", "grid"],
+  defaultView = "list",
+  allowReverse = true,
+  actions,
+}: DataListProps<T>) {
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState<ViewMode>(defaultView);
+  const [isReversed, setIsReversed] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialItemsPerPage);
+
+  const filtered = useMemo(() => {
+    let result = data;
+    if (query && filterFn) {
+      result = data.filter((item) => filterFn(item, query));
+    }
+    if (isReversed) {
+      result = [...result].reverse();
+    }
+    return result;
+  }, [data, query, filterFn, isReversed]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentData = filtered.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
+
+  // Reset page when query or pageSize changes
+  useEffect(() => setPage(1), [query, pageSize]);
+
+  const viewClassMap: Record<ViewMode, string> = {
+    list: "stack",
+    grid: "grid-2-even", // 2 items per row
+    grid2: "grid-3", // 3 items per row
+    grid3: "grid-4", // 4 items per row
+  };
+
+  return (
+    <Card className="datalist-card">
+      <div
+        className="card-title datalist-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div className="datalist-title">{title}</div>
+        <div
+          className="datalist-controls"
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+            flex: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          {actions && (
+            <div
+              className="datalist-actions"
+              style={{ display: "flex", gap: 8, alignItems: "center" }}
+            >
+              {actions}
+            </div>
+          )}
+          {filterFn && (
+            <div
+              className="datalist-search"
+              style={{ position: "relative", minWidth: 160 }}
+            >
+              <Input
+                placeholder="Search..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 12px 6px 12px",
+                  height: 36,
+                  fontSize: 13,
+                }}
+              />
+            </div>
+          )}
+
+          <div
+            className="datalist-pagesize"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Show:</span>
+            <Select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              style={{
+                height: 36,
+                padding: "0 24px 0 10px",
+                fontSize: 13,
+                minWidth: 70,
+                background: "var(--surface-soft)",
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </Select>
+          </div>
+          <div
+            className="datalist-views"
+            style={{
+              display: "flex",
+              gap: 4,
+              background: "var(--surface-soft)",
+              padding: 4,
+              borderRadius: 8,
+              border: "1px solid var(--line)",
+            }}
+          >
+            {allowReverse && (
+              <button
+                onClick={() => setIsReversed(!isReversed)}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  background: isReversed ? "var(--surface)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                title="Reverse Order"
+              >
+                ⇅
+              </button>
+            )}
+
+            {allowedViews.map((v) => {
+              let icon = "☰";
+              if (v === "grid") icon = "⊞";
+              if (v === "grid2") icon = "⊟"; // using a different box for grid2
+              if (v === "grid3") icon = "▦";
+
+              return (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    background: view === v ? "var(--surface)" : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title={`${v} View`}
+                >
+                  {icon}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className={`card-body ${viewClassMap[view]}`}>
+        {currentData.length > 0
+          ? currentData.map((item, index) => renderItem(item, view))
+          : emptyState || <p>No results found.</p>}
+      </div>
+
+      {totalPages > 1 && (
+        <div
+          style={{
+            padding: 16,
+            borderTop: "1px solid var(--line)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            variant="secondary"
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+
+          <span style={{ fontSize: 14, color: "var(--muted)" }}>
+            Page {page} of {totalPages}
+          </span>
+
+          <Button
+            variant="secondary"
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+export function Spinner({
+  size = 24,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      className={cx("spinner", className)}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+export function Skeleton({
+  className = "",
+  width,
+  height,
+  circle = false,
+}: {
+  className?: string;
+  width?: string | number;
+  height?: string | number;
+  circle?: boolean;
+}) {
+  return (
+    <div
+      className={cx("skeleton", className)}
+      style={{
+        width,
+        height,
+        borderRadius: circle ? "50%" : undefined,
+      }}
+    />
+  );
+}
+
+export function PageLoading() {
+  return (
+    <div className="page-loading-wrapper">
+      <div className="page-loading-logo">
+        <div
+          className="logo-mark"
+          style={{ width: 64, height: 64, fontSize: 32 }}
+        >
+          O
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Spinner size={20} />
+        <span
+          style={{
+            fontWeight: 700,
+            color: "var(--muted)",
+            letterSpacing: "0.05em",
+          }}
+        >
+          LOADING PORTAL...
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function LoadingCard() {
+  return (
+    <Card style={{ padding: 24 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+        <Skeleton circle width={48} height={48} />
+        <div style={{ flex: 1, display: "grid", gap: 8 }}>
+          <Skeleton width="40%" height={20} />
+          <Skeleton width="60%" height={14} />
+        </div>
+      </div>
+      <div style={{ display: "grid", gap: 12 }}>
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="80%" height={16} />
+      </div>
+    </Card>
   );
 }

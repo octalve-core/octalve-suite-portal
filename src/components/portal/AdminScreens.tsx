@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -42,6 +42,7 @@ import {
   Badge,
   Button,
   Card,
+  DataList,
   EmptyState,
   Field,
   formatNaira,
@@ -51,9 +52,11 @@ import {
   Modal,
   packageClass,
   PageHeader,
+  PageLoading,
   ProgressBar,
   projectProgress,
   Select,
+  Skeleton,
   statusClass,
   statusLabel,
   Textarea,
@@ -77,8 +80,21 @@ function deliverableBadge(status: string) {
 
 function ActionMenu({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
   return (
-    <div className="actions-wrap">
+    <div className="actions-wrap" ref={ref}>
       <button
         className="icon-btn"
         onClick={(event) => {
@@ -90,10 +106,7 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
         <MoreVertical size={18} />
       </button>
       {open && (
-        <div
-          className="action-menu"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="action-menu" onClick={() => setOpen(false)}>
           {children}
         </div>
       )}
@@ -103,36 +116,62 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
 
 function RecentProjects() {
   const { state } = useApp();
+  const projects = state.projects.slice(0, 6);
+
   return (
     <Card>
       <div className="card-title">
         <h2>Recent Projects</h2>
-        <Link className="btn btn-ghost" href="/admin/projects">
-          View All {Icons.arrow}
+        <Link href="/admin/projects" className="btn btn-ghost" style={{ fontSize: 13 }}>
+          View all {Icons.arrow}
         </Link>
       </div>
-      <div className="card-body stack">
-        {state.projects.slice(0, 6).map((project) => (
+      <div className="card-body stack" style={{ gap: 10 }}>
+        {projects.map((project) => (
           <Link
             href={`/admin/projects/${project.id}`}
             className="timeline-row"
             key={project.id}
+            style={{ 
+              padding: '12px 14px', 
+              borderRadius: 12, 
+              background: '#f8fafc',
+              border: '1px solid transparent',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#fff';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.04)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = 'transparent';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            <div>
-              <strong>{project.title}</strong>
-              <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <strong style={{ display: 'block', fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {project.title}
+              </strong>
+              <p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 12 }}>
                 {project.businessName}
               </p>
             </div>
-            <Badge className={packageClass(project.packageType)}>
-              {project.packageType}
-            </Badge>
-            <strong>
-              {project.phases.filter((p) => p.status === "APPROVED").length}/
-              {project.phases.length}
-            </strong>
-            <div style={{ width: 120 }}>
-              <ProgressBar value={projectProgress(project)} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <Badge className={packageClass(project.packageType)} style={{ minWidth: 70, textAlign: 'center' }}>
+                {project.packageType}
+              </Badge>
+              <div style={{ textAlign: 'right', minWidth: 40 }}>
+                <strong style={{ fontSize: 13 }}>
+                  {project.phases.filter((p) => p.status === "APPROVED").length}/
+                  {project.phases.length}
+                </strong>
+                <p style={{ margin: 0, fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>Phases</p>
+              </div>
+              <div style={{ width: 100 }}>
+                <ProgressBar value={projectProgress(project)} style={{ height: 6 }} />
+              </div>
             </div>
           </Link>
         ))}
@@ -174,6 +213,7 @@ export function AdminOverview() {
           </Link>
         }
       />
+
       <div className="metric-grid">
         <MetricCard
           label="Active Projects"
@@ -200,8 +240,10 @@ export function AdminOverview() {
           tone="green"
         />
       </div>
+
       <div className="grid-2">
         <RecentProjects />
+
         <div className="stack">
           <Card>
             <div className="card-title">
@@ -237,24 +279,39 @@ export function AdminOverview() {
               )}
             </div>
           </Card>
+
           <Card>
             <div className="card-title">
               <h2>By Package</h2>
             </div>
-            <div className="card-body stack">
+            <div className="card-body stack" style={{ gap: 20 }}>
               {packageCounts.map((item) => (
                 <div key={item.pkg}>
-                  <div className="timeline-row">
-                    <Badge className={packageClass(item.pkg)}>{item.pkg}</Badge>
-                    <strong>{item.count}</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Badge className={packageClass(item.pkg)} style={{ fontWeight: 700 }}>{item.pkg}</Badge>
+                    <div style={{ textAlign: "right" }}>
+                      <strong style={{ fontSize: 16 }}>{item.count}</strong>
+                      <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 4 }}>projects</span>
+                    </div>
                   </div>
-                  <ProgressBar value={Math.max(8, item.count * 25)} />
+                  <ProgressBar
+                    value={Math.max(5, (item.count / Math.max(1, state.projects.length)) * 100)}
+                    style={{ height: 6, background: '#f1f5f9' }}
+                  />
                 </div>
               ))}
             </div>
           </Card>
         </div>
       </div>
+
       <Card style={{ marginTop: 24 }}>
         <div className="card-title">
           <h2>Team Workload</h2>
@@ -262,29 +319,59 @@ export function AdminOverview() {
             Manage Team {Icons.arrow}
           </Link>
         </div>
-        <div className="card-body grid-3">
+        <div className="card-body workload-grid">
           {state.users
             .filter((u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN")
             .map((user) => {
               const phases = state.projects
                 .flatMap((project) => project.phases)
                 .filter((phase) => phase.assignedStaffId === user.id).length;
+              const loadPercent = Math.min(100, (phases / 10) * 100);
+              const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
+
               return (
-                <div key={user.id} style={{ textAlign: "center" }}>
-                  <div className="avatar" style={{ margin: "0 auto 10px" }}>
-                    {user.name[0]}
-                  </div>
-                  <strong>{user.name}</strong>
-                  <p style={{ color: "var(--muted)", margin: 4 }}>
-                    {user.specialty ?? user.role}
-                  </p>
-                  <span
+                <div key={user.id} className="workload-card">
+                  <div
+                    className="avatar"
                     style={{
-                      color: phases > 5 ? "var(--danger)" : "var(--primary)",
+                      width: 52,
+                      height: 52,
+                      fontSize: 18,
+                      background: `var(--${loadTone}-soft)`,
+                      color: `var(--${loadTone})`,
                     }}
                   >
-                    {phases} phases
-                  </span>
+                    {user.name[0]}
+                  </div>
+                  <div className="workload-info">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <strong>{user.name}</strong>
+                      <Badge className={`badge-${loadTone}`} style={{ fontSize: 10 }}>
+                        {phases > 7 ? "High" : "Optimal"}
+                      </Badge>
+                    </div>
+                    <p>{user.specialty ?? user.role}</p>
+                    <div className="workload-stat">
+                      <span style={{ color: `var(--${loadTone})` }}>
+                        {phases} active phases
+                      </span>
+                      <span>{Math.round(loadPercent)}%</span>
+                    </div>
+                    <ProgressBar
+                      value={loadPercent}
+                      style={{
+                        height: 6,
+                        background: "#e2e8f0",
+                        "--progress-fill": `var(--${loadTone})`,
+                      } as any}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -296,21 +383,31 @@ export function AdminOverview() {
 
 export function AdminProjects() {
   const { state, deleteProject } = useApp();
-  const [search, setSearch] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [status, setStatus] = useState("All Status");
   const [pkg, setPkg] = useState("All Packages");
-  const projects = state.projects.filter((project) => {
-    const matchesSearch = `${project.title} ${project.businessName}`
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchesStatus = status === "All Status" || project.status === status;
-    const matchesPkg = pkg === "All Packages" || project.packageType === pkg;
-    return matchesSearch && matchesStatus && matchesPkg;
+
+  const activeCount = state.projects.filter((p) =>
+    ["ACTIVE", "AWAITING_BALANCE"].includes(p.status),
+  ).length;
+  const awaitingDeposit = state.projects.filter(
+    (p) => p.status === "APPROVED_AWAITING_DEPOSIT",
+  ).length;
+  const completedCount = state.projects.filter(
+    (p) => p.status === "COMPLETED",
+  ).length;
+
+  const filteredProjects = state.projects.filter((p) => {
+    const matchesStatus = status === "All Status" || p.status === status;
+    const matchesPkg = pkg === "All Packages" || p.packageType === pkg;
+    return matchesStatus && matchesPkg;
   });
+
   return (
     <div className="content">
       <PageHeader
         title="Projects"
+        subtitle={`${state.projects.length} total projects`}
         action={
           <Link href="/admin/projects/new">
             <Button>
@@ -319,84 +416,229 @@ export function AdminProjects() {
           </Link>
         }
       />
-      <div className="form-grid" style={{ maxWidth: 980, marginBottom: 28 }}>
-        <Input
-          placeholder="Search projects..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Active Projects"
+          value={activeCount}
+          icon={Icons.projects}
+          tone="blue"
         />
-        <Select
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <option>All Status</option>
-          <option>ACTIVE</option>
-          <option>APPROVED_AWAITING_DEPOSIT</option>
-          <option>PENDING_REVIEW</option>
-          <option>COMPLETED</option>
-        </Select>
-        <Select value={pkg} onChange={(event) => setPkg(event.target.value)}>
-          <option>All Packages</option>
-          <option>Launch</option>
-          <option>Impact</option>
-          <option>Growth</option>
-          <option>Partner</option>
-          <option>Custom</option>
-        </Select>
+        <MetricCard
+          label="Awaiting Deposit"
+          value={awaitingDeposit}
+          icon={Icons.clock}
+          tone="orange"
+        />
+        <MetricCard
+          label="Completed"
+          value={completedCount}
+          icon={Icons.check}
+          tone="green"
+        />
       </div>
-      <div className="grid-3">
-        {projects.map((project) => (
-          <Card
-            key={project.id}
-            className="project-card"
-            style={{ position: "relative" }}
-          >
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Project Portfolio</h2>}
+          defaultView="grid"
+          allowedViews={["grid", "grid2", "grid3", "list"]}
+          data={filteredProjects}
+          actions={
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+              className="datalist-filters"
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
             >
-              <Badge className={packageClass(project.packageType)}>
-                {project.packageType}
-              </Badge>
-              <ActionMenu>
-                <Link href={`/admin/projects/${project.id}`}>
-                  <Edit3 size={15} /> Open details
-                </Link>
-                <button
-                  className="danger"
-                  onClick={() => deleteProject(project.id)}
-                >
-                  <Trash2 size={15} /> Delete project
-                </button>
-              </ActionMenu>
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
+              >
+                <option>All Status</option>
+                <option>ACTIVE</option>
+                <option>APPROVED_AWAITING_DEPOSIT</option>
+                <option>PENDING_REVIEW</option>
+                <option>COMPLETED</option>
+              </Select>
+              <Select
+                value={pkg}
+                onChange={(e) => setPkg(e.target.value)}
+                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
+              >
+                <option>All Packages</option>
+                <option>Launch</option>
+                <option>Impact</option>
+                <option>Growth</option>
+                <option>Partner</option>
+                <option>Custom</option>
+              </Select>
             </div>
-            <Link href={`/admin/projects/${project.id}`}>
-              <div>
-                <h3>{project.title}</h3>
-                <p>{project.businessName}</p>
-              </div>
-              <Badge className={statusClass(project.status)}>
-                {statusLabel(project.status)}
-              </Badge>
-              <div className="project-card-footer">
-                <div className="timeline-row">
-                  <span style={{ color: "var(--muted)" }}>Progress</span>
-                  <strong>
-                    {
-                      project.phases.filter((p) => p.status === "APPROVED")
-                        .length
-                    }
-                    /{project.phases.length} phases
-                  </strong>
+          }
+          filterFn={(project, query) => {
+            const text =
+              `${project.title} ${project.businessName} ${project.status} ${project.packageType} ${project.projectCode}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={9}
+          emptyState={
+            <EmptyState
+              title="No projects found"
+              body="No projects match your search criteria."
+            />
+          }
+          renderItem={(project, view) => {
+            if (view.startsWith("grid")) {
+              return (
+                <Card
+                  key={project.id}
+                  className="project-card"
+                  style={{ position: "relative" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Badge className={packageClass(project.packageType)}>
+                      {project.packageType}
+                    </Badge>
+                    <ActionMenu>
+                      <Link href={`/admin/projects/${project.id}`}>
+                        <Edit3 size={15} /> Open details
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        className="danger"
+                        style={{
+                          color: "var(--danger)",
+                          width: "100%",
+                          justifyContent: "flex-start",
+                          height: 32,
+                          padding: "0 8px",
+                        }}
+                        loading={pendingAction === `delete-${project.id}`}
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Are you sure you want to delete ${project.title}?`,
+                            )
+                          ) {
+                            setPendingAction(`delete-${project.id}`);
+                            try {
+                              await deleteProject(project.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} /> Delete project
+                      </Button>
+                    </ActionMenu>
+                  </div>
+                  <Link href={`/admin/projects/${project.id}`}>
+                    <div>
+                      <h3>{project.title}</h3>
+                      <p>{project.businessName}</p>
+                    </div>
+                    <Badge className={statusClass(project.status)}>
+                      {statusLabel(project.status)}
+                    </Badge>
+                    <div className="project-card-footer">
+                      <div className="timeline-row">
+                        <span style={{ color: "var(--muted)" }}>Progress</span>
+                        <strong>
+                          {
+                            project.phases.filter(
+                              (p) => p.status === "APPROVED",
+                            ).length
+                          }
+                          /{project.phases.length} phases
+                        </strong>
+                      </div>
+                      <ProgressBar value={projectProgress(project)} />
+                    </div>
+                  </Link>
+                </Card>
+              );
+            }
+
+            return (
+              <div
+                key={project.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16 }}>
+                  <div
+                    className={`metric-icon tone-${project.status === "COMPLETED" ? "green" : ["ACTIVE", "AWAITING_BALANCE"].includes(project.status) ? "blue" : "orange"}`}
+                    style={{ width: 40, height: 40, fontSize: 16 }}
+                  >
+                    {Icons.projects}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                      {project.title}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 0 }}>
+                      {project.businessName} • {project.packageType}
+                    </p>
+                    <div style={{ marginTop: 8 }}>
+                      <Badge className={statusClass(project.status)}>
+                        {statusLabel(project.status)}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-                <ProgressBar value={projectProgress(project)} />
+
+                <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+                  <div style={{ width: 160 }}>
+                    <div
+                      className="timeline-row"
+                      style={{ marginBottom: 8, fontSize: 13 }}
+                    >
+                      <span style={{ color: "var(--muted)" }}>Progress</span>
+                      <strong>{projectProgress(project)}%</strong>
+                    </div>
+                    <ProgressBar value={projectProgress(project)} />
+                  </div>
+                  <ActionMenu>
+                    <Link href={`/admin/projects/${project.id}`}>
+                      View Details
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${project.title}?`,
+                          )
+                        ) {
+                          await deleteProject(project.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </ActionMenu>
+                </div>
               </div>
-            </Link>
-          </Card>
-        ))}
+            );
+          }}
+        />
       </div>
     </div>
   );
@@ -406,6 +648,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
   const { state, assignPhase, addDeliverable, requestPhaseApproval } = useApp();
   const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
   const [adding, setAdding] = useState<ProjectPhase | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const project = state.projects.find((p) => p.id === projectId);
   if (!project)
     return (
@@ -499,7 +742,15 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => requestPhaseApproval(phase.id)}
+                  loading={pendingAction === `approve-${phase.id}`}
+                  onClick={async () => {
+                    setPendingAction(`approve-${phase.id}`);
+                    try {
+                      await requestPhaseApproval(phase.id);
+                    } finally {
+                      setPendingAction(null);
+                    }
+                  }}
                   disabled={
                     phase.status === "APPROVED" || phase.status === "LOCKED"
                   }
@@ -569,6 +820,7 @@ function AssignModal({
   onAssign: (staffId: string) => void;
 }) {
   const { state } = useApp();
+  const [loading, setLoading] = useState(false);
   const team = state.users.filter(
     (u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN",
   );
@@ -588,10 +840,22 @@ function AssignModal({
           </Select>
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => onAssign(staffId)}>Assign Phase</Button>
+          <Button
+            loading={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await onAssign(staffId);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            Assign Phase
+          </Button>
         </div>
       </div>
     </Modal>
@@ -612,6 +876,7 @@ function AddDeliverableModal({
     description?: string;
   }) => void;
 }) {
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     link: "",
@@ -626,6 +891,7 @@ function AddDeliverableModal({
             placeholder="e.g., Logo Concepts V1"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <Field label="Link">
@@ -633,12 +899,14 @@ function AddDeliverableModal({
             placeholder="https://..."
             value={form.link}
             onChange={(e) => setForm({ ...form, link: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <Field label="Link Type">
           <Select
             value={form.linkType}
             onChange={(e) => setForm({ ...form, linkType: e.target.value })}
+            disabled={loading}
           >
             <option>Figma</option>
             <option>Google Drive</option>
@@ -652,13 +920,26 @@ function AddDeliverableModal({
             placeholder="Optional description..."
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
+            disabled={loading}
           />
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => form.name.trim() && onSubmit(form)}>
+          <Button
+            loading={loading}
+            onClick={async () => {
+              if (form.name.trim()) {
+                setLoading(true);
+                try {
+                  await onSubmit(form);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+          >
             Add Deliverable
           </Button>
         </div>
@@ -822,15 +1103,33 @@ export function AdminPhaseDetail({
 }
 
 export function AdminCreateProject() {
-  const { state, createAdminProject } = useApp();
+  const { state, createAdminProject, dataLoading } = useApp();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
+
+  if (state.templates.length === 0) {
+    if (dataLoading) return <PageLoading />;
+
+    return (
+      <div className="content">
+        <BackLink href="/admin/projects" />
+        <EmptyState
+          title="No Templates Found"
+          body="You need to create at least one project template before you can create a new project."
+        />
+      </div>
+    );
+  }
+
   const template =
     state.templates.find((t) => t.packageType === packageType) ??
     state.templates[0];
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [form, setForm] = useState({
-    templateId: template.id,
+    templateId: template?.id ?? "",
     title: "",
     clientName: "",
     clientEmail: "",
@@ -897,7 +1196,7 @@ export function AdminCreateProject() {
           <Card className="template-preview">
             <h3>Template Preview</h3>
             <ol>
-              {selectedTemplate.phases.map((p) => (
+              {selectedTemplate?.phases?.map((p) => (
                 <li key={p.id}>{p.title}</li>
               ))}
             </ol>
@@ -1029,7 +1328,7 @@ export function AdminCreateProject() {
             </div>
             <div className="timeline-row">
               <span>Phases</span>
-              <strong>{selectedTemplate.phases.length}</strong>
+              <strong>{selectedTemplate?.phases?.length ?? 0}</strong>
             </div>
             <div className="timeline-row">
               <span>Deposit</span>
@@ -1054,18 +1353,35 @@ export function AdminCreateProject() {
           {step === 1 ? "Cancel" : "Back"}
         </Button>
         {step < 4 ? (
-          <Button onClick={() => setStep(step + 1)}>
+          <Button
+            disabled={
+              (step === 2 &&
+                (!form.title.trim() ||
+                  !form.clientName.trim() ||
+                  !form.clientEmail.trim())) ||
+              (step === 3 && (form.totalAmount <= 0 || form.depositAmount <= 0))
+            }
+            onClick={() => setStep(step + 1)}
+          >
             Continue {Icons.arrow}
           </Button>
         ) : (
           <Button
-            onClick={() => {
-              const id = createAdminProject({
-                ...form,
-                packageType,
-                templateId: selectedTemplate.id,
-              });
-              router.push(`/admin/projects/${id}`);
+            loading={loading}
+            disabled={!form.title.trim() || loading}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const id = await createAdminProject({
+                  ...form,
+                  packageType,
+                  templateId: selectedTemplate?.id ?? "",
+                });
+                router.push(`/admin/projects/${id}`);
+              } catch (err: any) {
+                alert(err.message || "Failed to create project");
+                setLoading(false);
+              }
             }}
           >
             Create Project ✓
@@ -1118,8 +1434,8 @@ export function AdminRequests() {
         <RequestReviewModal
           request={request}
           onClose={() => setActive(null)}
-          onApprove={(payload) => {
-            approveProjectRequest(request.id, payload);
+          onApprove={async (payload) => {
+            await approveProjectRequest(request.id, payload);
             setActive(null);
           }}
         />
@@ -1135,10 +1451,12 @@ function RequestReviewModal({
 }: {
   request: ProjectRequest;
   onClose: () => void;
-  onApprove: (payload: any) => void;
+  onApprove: (payload: any) => Promise<void>;
 }) {
   const { state } = useApp();
   const phases = generatePhasesFromRequest(request, state.templates);
+  const [loading, setLoading] = useState(false);
+  const isPending = request.status === "PENDING_REVIEW";
   const [form, setForm] = useState({
     totalAmount: 750000,
     depositAmount: 350000,
@@ -1152,27 +1470,114 @@ function RequestReviewModal({
     <Modal
       title={`Review ${request.projectName}`}
       onClose={onClose}
-      width="760px"
+      width="820px"
     >
-      <div className="stack">
-        <Card className="card-body" style={{ boxShadow: "none" }}>
-          <h3>Client Brief</h3>
-          <p>
-            <strong>Goal:</strong> {request.projectGoal}
-          </p>
-          <p style={{ color: "var(--muted)" }}>{request.projectDescription}</p>
-          <h3>AI Suggested Phases</h3>
-          <ol>
-            {phases.map((p: any) => (
-              <li key={p.id}>{p.title}</li>
-            ))}
-          </ol>
-        </Card>
+      <div className="stack" style={{ gap: 32 }}>
+        <div className="grid-2" style={{ gap: 24, alignItems: "stretch" }}>
+          <Card
+            className="card-body"
+            style={{ background: "#f8fafc", borderColor: "#e2e8f0" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "var(--primary)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {Icons.doc}
+              </div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>Client Brief</h3>
+            </div>
+            <div style={{ fontSize: 14 }}>
+              <p style={{ marginTop: 0, marginBottom: 8 }}>
+                <strong>Goal:</strong> {request.projectGoal}
+              </p>
+              <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+                {request.projectDescription}
+              </p>
+            </div>
+          </Card>
+
+          <Card
+            className="card-body"
+            style={{ background: "#f5f3ff", borderColor: "#ede9fe" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "var(--purple)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
+                }}
+              >
+                ✨
+              </div>
+              <h3 style={{ margin: 0, fontSize: 16 }}>AI Suggested Phases</h3>
+            </div>
+            <div className="stack" style={{ gap: 8 }}>
+              {phases.map((p: any, index: number) => (
+                <div
+                  key={p.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#fff",
+                    padding: "8px 8px",
+                    borderRadius: 8,
+                    border: "1px solid #ede9fe",
+                  }}
+                >
+                  <span
+                    className="badge badge-purple"
+                    style={{
+                      margin: 0,
+                      minWidth: 24,
+                      textAlign: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <strong style={{ fontSize: 14 }}>{p.title}</strong>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
         <div className="form-grid">
           <Field label="Total Amount">
             <Input
               type="number"
               value={form.totalAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, totalAmount: Number(e.target.value) })
               }
@@ -1182,6 +1587,7 @@ function RequestReviewModal({
             <Input
               type="number"
               value={form.depositAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, depositAmount: Number(e.target.value) })
               }
@@ -1191,6 +1597,7 @@ function RequestReviewModal({
             <Input
               type="number"
               value={form.balanceAmount}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, balanceAmount: Number(e.target.value) })
               }
@@ -1199,6 +1606,7 @@ function RequestReviewModal({
           <Field label="Project Manager">
             <Select
               value={form.projectManagerId}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, projectManagerId: e.target.value })
               }
@@ -1215,6 +1623,7 @@ function RequestReviewModal({
           <Field label="Target Date">
             <Input
               value={form.targetDate}
+              disabled={!isPending}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
               placeholder="May 9, 2026"
             />
@@ -1222,6 +1631,7 @@ function RequestReviewModal({
           <Field label="Internal Notes">
             <Textarea
               value={form.internalNotes}
+              disabled={!isPending}
               onChange={(e) =>
                 setForm({ ...form, internalNotes: e.target.value })
               }
@@ -1229,12 +1639,27 @@ function RequestReviewModal({
           </Field>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            {isPending ? "Cancel" : "Close"}
           </Button>
-          <Button onClick={() => onApprove(form)}>
-            Approve & Request Deposit
-          </Button>
+          {isPending && (
+            <Button
+              loading={loading}
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await onApprove(form);
+                } catch (e) {
+                  // errors handled in useApp
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              Approve & Request Deposit ✓
+            </Button>
+          )}
         </div>
       </div>
     </Modal>
@@ -1243,67 +1668,163 @@ function RequestReviewModal({
 
 export function AdminClients() {
   const { state } = useApp();
-  const [search, setSearch] = useState("");
-  const clients = state.users.filter(
+
+  const totalClients = state.users.filter((u) => u.role === "CLIENT").length;
+  const highValue = state.users.filter(
     (u) =>
       u.role === "CLIENT" &&
-      `${u.name} ${u.email} ${u.company}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+      state.projects.filter((p) => p.clientId === u.id).length >= 2,
+  ).length;
+  const activeProjects = state.projects.filter(
+    (p) => p.status === "ACTIVE",
+  ).length;
+
   return (
     <div className="content">
-      <PageHeader title="Clients" />
-      <Input
-        placeholder="Search clients..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ maxWidth: 520, marginBottom: 28 }}
+      <PageHeader
+        title="Clients"
+        subtitle={`${totalClients} registered clients`}
       />
-      <div className="grid-3">
-        {clients.map((client) => {
-          const projects = state.projects.filter(
-            (p) => p.clientId === client.id,
-          );
-          return (
-            <Card key={client.id} className="card-body">
-              <div className="deliverable-main">
-                <div className="package-icon">▥</div>
-                <div>
-                  <h3 style={{ margin: 0 }}>{client.company ?? client.name}</h3>
-                  <p style={{ color: "var(--muted)", margin: 4 }}>
-                    ✉ {client.email}
-                  </p>
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Clients"
+          value={totalClients}
+          icon={Icons.clients}
+          tone="blue"
+        />
+        <MetricCard
+          label="High Value"
+          value={highValue}
+          icon="★"
+          tone="orange"
+        />
+        <MetricCard
+          label="Active Projects"
+          value={activeProjects}
+          icon={Icons.projects}
+          tone="purple"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Client Directory</h2>}
+          data={state.users.filter((u) => u.role === "CLIENT")}
+          defaultView="grid2"
+          allowedViews={["grid2", "list"]}
+          filterFn={(u, q) =>
+            `${u.name} ${u.email} ${u.company}`
+              .toLowerCase()
+              .includes(q.toLowerCase())
+          }
+          renderItem={(client, view) => {
+            const projects = state.projects.filter(
+              (p) => p.clientId === client.id,
+            );
+
+            if (view === "list") {
+              return (
+                <div
+                  key={client.id}
+                  className="deliverable-row"
+                  style={{
+                    padding: "16px 0",
+                    borderBottom: "1px solid var(--line)",
+                  }}
+                >
+                  <div className="deliverable-main">
+                    <div className="avatar">{client.name[0]}</div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16 }}>
+                        {client.company ?? client.name}
+                      </h3>
+                      <p style={{ color: "var(--muted)", margin: 0 }}>
+                        {client.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    style={{ display: "flex", gap: 32, alignItems: "center" }}
+                  >
+                    <div style={{ textAlign: "right" }}>
+                      <strong>{projects.length}</strong>
+                      <p
+                        style={{
+                          color: "var(--muted)",
+                          margin: 0,
+                          fontSize: 12,
+                        }}
+                      >
+                        Projects
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {[...new Set(projects.map((p) => p.packageType))].map(
+                        (p) => (
+                          <Badge key={p} className={packageClass(p)}>
+                            {p[0]}
+                          </Badge>
+                        ),
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="grid-3" style={{ margin: "22px 0" }}>
-                <div>
-                  <span>Active</span>
-                  <strong>
-                    {projects.filter((p) => p.status === "ACTIVE").length}
-                  </strong>
+              );
+            }
+
+            return (
+              <Card key={client.id} className="card-body">
+                <div className="deliverable-main" style={{ marginBottom: 20 }}>
+                  <div className="avatar" style={{ width: 48, height: 48 }}>
+                    {client.name[0]}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0 }}>
+                      {client.company ?? client.name}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 4 }}>
+                      {client.email}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <span>Completed</span>
-                  <strong>
-                    {projects.filter((p) => p.status === "COMPLETED").length}
-                  </strong>
+                <div className="grid-3" style={{ margin: "22px 0" }}>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Active
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.filter((p) => p.status === "ACTIVE").length}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Done
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.filter((p) => p.status === "COMPLETED").length}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Total
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.length}
+                    </strong>
+                  </div>
                 </div>
-                <div>
-                  <span>Total</span>
-                  <strong>{projects.length}</strong>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[...new Set(projects.map((p) => p.packageType))].map((p) => (
+                    <Badge key={p} className={packageClass(p)}>
+                      {p}
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {[...new Set(projects.map((p) => p.packageType))].map((p) => (
-                  <Badge key={p} className={packageClass(p)}>
-                    {p}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          }}
+        />
       </div>
     </div>
   );
@@ -1312,88 +1833,281 @@ export function AdminClients() {
 export function AdminTemplates() {
   const { state, createTemplate, updateTemplate, deleteTemplate } = useApp();
   const [modal, setModal] = useState<ProjectTemplate | "new" | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(state.templates.slice(0, 1).map((t) => [t.id, true])),
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  const avgPhases = Math.round(
+    state.templates.reduce((acc, t) => acc + t.phases.length, 0) /
+      state.templates.length || 0,
   );
+
   return (
     <div className="content">
       <PageHeader
         title="Templates"
+        subtitle="Manage standardized project structures"
         action={
           <Button onClick={() => setModal("new")}>
             <Plus size={18} /> Create Template
           </Button>
         }
       />
-      <div className="grid-2-even">
-        {state.templates.map((template) => (
-          <Card key={template.id} className="card-body">
-            <div className="deliverable-main">
-              <div className="package-icon">{template.packageType[0]}</div>
-              <div>
-                <h2 style={{ margin: 0 }}>{template.name}</h2>
-                <Badge className={packageClass(template.packageType)}>
-                  {template.packageType}
-                </Badge>
-              </div>
-              <ActionMenu>
-                <button onClick={() => setModal(template)}>
-                  <Edit3 size={15} /> Edit template
-                </button>
-                <button
-                  className="danger"
-                  onClick={() => deleteTemplate(template.id)}
-                >
-                  <Trash2 size={15} /> Delete template
-                </button>
-              </ActionMenu>
-            </div>
-            <p style={{ color: "var(--muted)" }}>{template.description}</p>
-            <div className="template-phase-header">
-              <strong>{template.phases.length} Phases</strong>
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setOpen((prev) => ({
-                    ...prev,
-                    [template.id]: !prev[template.id],
-                  }))
-                }
-              >
-                {open[template.id] ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}{" "}
-                {open[template.id] ? "Collapse" : "Expand"}
-              </Button>
-            </div>
-            {open[template.id] && (
-              <div className="stack" style={{ marginTop: 18 }}>
-                {template.phases.map((p, i) => (
-                  <div className="template-phase-row" key={p.id}>
-                    <div className="deliverable-main">
-                      <span className="badge badge-slate">{i + 1}</span>
-                      <strong>{p.title}</strong>
-                    </div>
-                    <span style={{ color: "var(--muted)" }}>
-                      {p.deliverables.length} deliverables
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        ))}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Templates"
+          value={state.templates.length}
+          icon={Icons.templates}
+          tone="purple"
+        />
+        <MetricCard
+          label="Avg. Phases"
+          value={avgPhases}
+          icon={Icons.phases}
+          tone="blue"
+        />
+        <MetricCard
+          label="Ready Packages"
+          value={new Set(state.templates.map((t) => t.packageType)).size}
+          icon={Icons.check}
+          tone="green"
+        />
       </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Standard Packages</h2>}
+          data={state.templates}
+          defaultView="grid"
+          allowedViews={["grid", "list"]}
+          filterFn={(t, q) =>
+            `${t.name} ${t.packageType} ${t.description}`
+              .toLowerCase()
+              .includes(q.toLowerCase())
+          }
+          renderItem={(template, view) => {
+            if (view === "list") {
+              const isOpen = open[template.id];
+
+              return (
+                <div key={template.id} className="template-list-item">
+                  <div
+                    className="deliverable-row"
+                    style={{ padding: "16px 0" }}
+                  >
+                    <div className="deliverable-main">
+                      <div
+                        className="package-icon"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          fontSize: 18,
+                          borderRadius: 14,
+                        }}
+                      >
+                        {template.packageType[0]}
+                      </div>
+
+                      <div>
+                        <h3
+                          style={{ margin: 0, fontSize: 16, fontWeight: 800 }}
+                        >
+                          {template.name}
+                        </h3>
+                        <p
+                          style={{
+                            color: "var(--muted)",
+                            margin: "2px 0 0",
+                            fontSize: 13,
+                          }}
+                        >
+                          {template.phases.length} Phases •{" "}
+                          <span style={{ color: "var(--primary)" }}>
+                            {template.packageType}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{ display: "flex", gap: 12, alignItems: "center" }}
+                    >
+                      <Button
+                        variant="secondary"
+                        onClick={() => setModal(template)}
+                        style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+                      >
+                        Edit
+                      </Button>
+                      <button
+                        className="icon-btn"
+                        style={{
+                          background: isOpen ? "var(--primary-soft)" : "",
+                          color: isOpen ? "var(--primary)" : "",
+                        }}
+                        onClick={() =>
+                          setOpen((prev) => ({
+                            ...prev,
+                            [template.id]: !prev[template.id],
+                          }))
+                        }
+                      >
+                        {isOpen ? (
+                          <ChevronUp size={18} />
+                        ) : (
+                          <ChevronDown size={18} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <div className="phase-list-nested">
+                      {template.phases.map((p, i) => (
+                        <div key={p.id} className="phase-row-compact">
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              alignItems: "center",
+                            }}
+                          >
+                            <span className="badge badge-slate">{i + 1}</span>
+                            <strong style={{ fontWeight: 600 }}>
+                              {p.title}
+                            </strong>
+                          </div>
+                          <span
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: 12,
+                              background: "#f1f5f9",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                            }}
+                          >
+                            {p.deliverables.length} deliverables
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <Card key={template.id} className="card-body">
+                <div className="deliverable-main">
+                  <div className="package-icon">{template.packageType[0]}</div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ margin: 0, fontSize: 18 }}>{template.name}</h2>
+                    <Badge className={packageClass(template.packageType)}>
+                      {template.packageType}
+                    </Badge>
+                  </div>
+
+                  <ActionMenu>
+                    <button onClick={() => setModal(template)}>
+                      <Edit3 size={15} /> Edit template
+                    </button>
+
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      loading={pendingAction === `delete-${template.id}`}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${template.packageType} template?`,
+                          )
+                        ) {
+                          setPendingAction(`delete-${template.id}`);
+                          try {
+                            await deleteTemplate(template.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} /> Delete template
+                    </Button>
+                  </ActionMenu>
+                </div>
+
+                <p
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 14,
+                    margin: "12px 0 20px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {template.description}
+                </p>
+
+                <div className="template-phase-header">
+                  <strong>{template.phases.length} Phases</strong>
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setOpen((prev) => ({
+                        ...prev,
+                        [template.id]: !prev[template.id],
+                      }))
+                    }
+                    style={{ fontSize: 13 }}
+                  >
+                    {open[template.id] ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}{" "}
+                    {open[template.id] ? "Collapse" : "Expand"}
+                  </Button>
+                </div>
+
+                {open[template.id] && (
+                  <div className="stack" style={{ marginTop: 18 }}>
+                    {template.phases.map((p, i) => (
+                      <div className="template-phase-row" key={p.id}>
+                        <div className="deliverable-main">
+                          <span
+                            className="badge badge-slate"
+                            style={{ minWidth: 24, justifyContent: "center" }}
+                          >
+                            {i + 1}
+                          </span>
+                          <strong style={{ fontSize: 14 }}>{p.title}</strong>
+                        </div>
+                        <span style={{ color: "var(--muted)", fontSize: 12 }}>
+                          {p.deliverables.length} deliverables
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          }}
+        />
+      </div>
+
       {modal && (
         <TemplateModal
           template={modal === "new" ? undefined : modal}
           onClose={() => setModal(null)}
-          onSave={(payload) => {
+          onSave={async (payload) => {
             modal === "new"
-              ? createTemplate(payload)
-              : updateTemplate((modal as ProjectTemplate).id, payload);
+              ? await createTemplate(payload)
+              : await updateTemplate((modal as ProjectTemplate).id, payload);
             setModal(null);
           }}
         />
@@ -1409,7 +2123,7 @@ function TemplateModal({
 }: {
   template?: ProjectTemplate;
   onClose: () => void;
-  onSave: (payload: Omit<ProjectTemplate, "id">) => void;
+  onSave: (payload: Omit<ProjectTemplate, "id">) => Promise<void>;
 }) {
   const [form, setForm] = useState<Omit<ProjectTemplate, "id">>({
     name: template?.name ?? "",
@@ -1497,7 +2211,7 @@ function TemplateModal({
             <Card
               key={index}
               className="card-body"
-              style={{ boxShadow: "none" }}
+              style={{ boxShadow: "none", background: "var(--surface-soft)" }}
             >
               <div className="deliverable-main">
                 <span className="badge badge-purple">{index + 1}</span>
@@ -1535,7 +2249,11 @@ function TemplateModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => form.name.trim() && onSave(form)}>
+          <Button
+            onClick={async () => {
+              if (form.name.trim()) await onSave(form);
+            }}
+          >
             {template ? "Save Changes" : "Create Template"}
           </Button>
         </div>
@@ -1548,64 +2266,237 @@ export function AdminTeam() {
   const { state, createTeamMember, updateTeamMember, deleteTeamMember } =
     useApp();
   const [modal, setModal] = useState<User | "new" | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const team = state.users.filter((u) => u.role !== "CLIENT");
+
+  // Pre-calculate assignments for metrics and sorting
+  const teamWithStats = team.map((member) => {
+    const assigned = state.projects
+      .flatMap((p) => p.phases)
+      .filter((phase) => phase.assignedStaffId === member.id).length;
+    return { ...member, assigned };
+  });
+
+  const totalPhases = teamWithStats.reduce((sum, m) => sum + m.assigned, 0);
+  const highLoad = teamWithStats.filter((m) => m.assigned > 5).length;
+
   return (
-    <div className="content narrow">
+    <div className="content">
       <PageHeader
         title="Team"
-        subtitle={`${team.length} team members`}
+        subtitle="Manage your agency staff and workload"
         action={
           <Button onClick={() => setModal("new")}>
             <Plus size={18} /> Add Team Member
           </Button>
         }
       />
-      <div className="grid-2-even">
-        {team.map((member) => {
-          const assigned = state.projects
-            .flatMap((p) => p.phases)
-            .filter((phase) => phase.assignedStaffId === member.id).length;
-          return (
-            <Card key={member.id} className="card-body">
-              <div className="deliverable-main">
-                <div className="avatar">{member.name[0]}</div>
-                <div>
-                  <h3 style={{ margin: 0 }}>{member.name}</h3>
-                  <p style={{ margin: 4, color: "var(--muted)" }}>
-                    ✉ {member.email}
-                  </p>
-                </div>
-                <ActionMenu>
-                  <button onClick={() => setModal(member)}>
-                    <Edit3 size={15} /> Edit member
-                  </button>
-                  <button
-                    className="danger"
-                    onClick={() => deleteTeamMember(member.id)}
-                  >
-                    <Trash2 size={15} /> Delete member
-                  </button>
-                </ActionMenu>
-              </div>
-              <div className="timeline-row" style={{ marginTop: 24 }}>
-                <span>▣ {assigned} active phases</span>
-                {assigned > 5 && <Badge className="badge-red">High load</Badge>}
-              </div>
-              <Badge className="badge-purple">
-                {member.specialty ?? statusLabel(member.role)}
-              </Badge>
-            </Card>
-          );
-        })}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Members"
+          value={team.length}
+          icon={Icons.team}
+          tone="blue"
+        />
+        <MetricCard
+          label="Active Phases"
+          value={totalPhases}
+          icon={Icons.phases}
+          tone="purple"
+        />
+        <MetricCard
+          label="High Load Staff"
+          value={highLoad}
+          icon="!"
+          tone="red"
+        />
       </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Team Directory</h2>}
+          defaultView="grid"
+          allowedViews={["list", "grid", "grid2"]}
+          data={teamWithStats}
+          filterFn={(member, query) => {
+            const text =
+              `${member.name} ${member.email} ${member.specialty} ${member.role}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={8}
+          emptyState={
+            <EmptyState
+              title="No team members"
+              body="No staff match your criteria."
+            />
+          }
+          renderItem={(member, view) => {
+            if (view.startsWith("grid")) {
+              return (
+                <Card key={member.id} className="card-body">
+                  <div className="deliverable-main">
+                    <div className="avatar">{member.name[0]}</div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: 0 }}>{member.name}</h3>
+                      <p
+                        style={{
+                          margin: "4px 0",
+                          color: "var(--muted)",
+                          fontSize: 13,
+                        }}
+                      >
+                        ✉ {member.email}
+                      </p>
+                    </div>
+                    <ActionMenu>
+                      <button onClick={() => setModal(member)}>
+                        <Edit3 size={15} /> Edit member
+                      </button>
+
+                      <Button
+                        variant="ghost"
+                        className="danger"
+                        style={{
+                          color: "var(--danger)",
+                          width: "100%",
+                          justifyContent: "flex-start",
+                          height: 32,
+                          padding: "0 8px",
+                        }}
+                        loading={pendingAction === `delete-${member.id}`}
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Are you sure you want to delete ${member.name}?`,
+                            )
+                          ) {
+                            setPendingAction(`delete-${member.id}`);
+                            try {
+                              await deleteTeamMember(member.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} /> Delete member
+                      </Button>
+                    </ActionMenu>
+                  </div>
+
+                  <div
+                    className="timeline-row"
+                    style={{ marginTop: 20, marginBottom: 12 }}
+                  >
+                    <span style={{ fontSize: 14 }}>
+                      ▣ {member.assigned} active phases
+                    </span>
+                    {member.assigned > 5 && (
+                      <Badge className="badge-red">High load</Badge>
+                    )}
+                  </div>
+
+                  <Badge className="badge-purple">
+                    {member.specialty ?? statusLabel(member.role)}
+                  </Badge>
+                </Card>
+              );
+            }
+
+            return (
+              <div
+                key={member.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16 }}>
+                  <div className="avatar" style={{ width: 40, height: 40 }}>
+                    {member.name[0]}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                      {member.name}
+                    </h3>
+                    <p
+                      style={{ color: "var(--muted)", margin: 0, fontSize: 14 }}
+                    >
+                      {member.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <Badge className="badge-purple">
+                      {member.specialty ?? statusLabel(member.role)}
+                    </Badge>
+                  </div>
+                  <div style={{ width: 140, textAlign: "right" }}>
+                    <strong>{member.assigned} phases</strong>
+                    {member.assigned > 5 && (
+                      <p
+                        style={{
+                          color: "var(--danger)",
+                          fontSize: 12,
+                          margin: 0,
+                        }}
+                      >
+                        High Load
+                      </p>
+                    )}
+                  </div>
+                  <ActionMenu>
+                    <button onClick={() => setModal(member)}>
+                      <Edit3 size={14} /> Edit
+                    </button>
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      loading={pendingAction === `delete-${member.id}`}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${member.name}?`,
+                          )
+                        ) {
+                          setPendingAction(`delete-${member.id}`);
+                          try {
+                            await deleteTeamMember(member.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </Button>
+                  </ActionMenu>
+                </div>
+              </div>
+            );
+          }}
+        />
+      </div>
+
       {modal && (
         <TeamModal
           member={modal === "new" ? undefined : modal}
           onClose={() => setModal(null)}
-          onSave={(payload) => {
+          onSave={async (payload) => {
             modal === "new"
-              ? createTeamMember(payload)
-              : updateTeamMember((modal as User).id, payload);
+              ? await createTeamMember(payload)
+              : await updateTeamMember((modal as User).id, payload);
             setModal(null);
           }}
         />
@@ -1626,7 +2517,7 @@ function TeamModal({
     email: string;
     specialty: string;
     role: Role;
-  }) => void;
+  }) => Promise<void>;
 }) {
   const [form, setForm] = useState({
     name: member?.name ?? "",
@@ -1634,6 +2525,7 @@ function TeamModal({
     specialty: member?.specialty ?? "Designer",
     role: member?.role ?? ("STAFF" as Role),
   });
+
   return (
     <Modal
       title={member ? "Edit Team Member" : "Add Team Member"}
@@ -1647,6 +2539,7 @@ function TeamModal({
             placeholder="Full name"
           />
         </Field>
+
         <Field label="Email *">
           <Input
             value={form.email}
@@ -1654,6 +2547,7 @@ function TeamModal({
             placeholder="email@company.com"
           />
         </Field>
+
         <Field label="Specialty *">
           <Select
             value={form.specialty}
@@ -1666,6 +2560,7 @@ function TeamModal({
             <option>Project Manager</option>
           </Select>
         </Field>
+
         <Field label="Access Role">
           <Select
             value={form.role}
@@ -1676,13 +2571,14 @@ function TeamModal({
             <option value="SUPER_ADMIN">Super Admin</option>
           </Select>
         </Field>
+
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            onClick={() =>
-              form.name.trim() && form.email.trim() && onSave(form)
+            onClick={async () =>
+              form.name.trim() && form.email.trim() && (await onSave(form))
             }
           >
             {member ? "Save Changes" : "Add Member"}
@@ -1695,74 +2591,286 @@ function TeamModal({
 
 export function AdminPayments() {
   const { state, confirmPayment, rejectPayment } = useApp();
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const rows = state.projects.flatMap((project) =>
     project.payments.map((payment) => ({ project, payment })),
   );
+
+  const pending = rows.filter(
+    (r) => r.payment.status === "PENDING_CONFIRMATION",
+  );
+  const unpaid = rows.filter((r) => r.payment.status === "UNPAID");
+  const confirmed = rows.filter((r) => r.payment.status === "CONFIRMED");
+
+  const pendingAmount = pending.reduce((sum, r) => sum + r.payment.amount, 0);
+  const unpaidAmount = unpaid.reduce((sum, r) => sum + r.payment.amount, 0);
+  const confirmedAmount = confirmed.reduce(
+    (sum, r) => sum + r.payment.amount,
+    0,
+  );
+
+  // Sort: Pending first, then Unpaid, then Confirmed
+  const sortedRows = [...pending, ...unpaid, ...confirmed];
+
   return (
     <div className="content">
       <PageHeader
         title="Payments"
         subtitle="Confirm manual deposits and balance payments"
       />
-      <div className="stack">
-        {rows.map(({ project, payment }) => (
-          <Card key={payment.id} className="payment-card">
-            <div>
-              <Badge className={statusClass(payment.status)}>
-                {statusLabel(payment.status)}
-              </Badge>
-              <h3>
-                {project.title} — {payment.type}
-              </h3>
-              <p style={{ color: "var(--muted)" }}>
-                {project.businessName} • {payment.reference}
-              </p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <strong style={{ fontSize: 22 }}>
-                {formatNaira(payment.amount)}
-              </strong>
-              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                {payment.status === "PENDING_CONFIRMATION" && (
-                  <>
-                    <Button
-                      variant="success"
-                      onClick={() => confirmPayment(payment.id)}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Requires Confirmation"
+          value={formatNaira(pendingAmount)}
+          icon={Icons.clock}
+          tone="orange"
+        />
+        <MetricCard
+          label="Confirmed Revenue"
+          value={formatNaira(confirmedAmount)}
+          icon={Icons.payments}
+          tone="green"
+        />
+        <MetricCard
+          label="Awaiting Payment"
+          value={formatNaira(unpaidAmount)}
+          icon={Icons.phases}
+          tone="blue"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Transaction History</h2>}
+          defaultView="grid"
+          allowedViews={["list", "grid", "grid2", "grid3"]}
+          data={sortedRows}
+          filterFn={(row, query) => {
+            const text =
+              `${row.project.title} ${row.project.businessName} ${row.payment.reference} ${row.payment.type} ${row.payment.status}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={10}
+          emptyState={
+            <EmptyState
+              title="No transactions"
+              body="No payments match your criteria."
+            />
+          }
+          renderItem={({ project, payment }, view) => {
+            const statusTone =
+              payment.status === "CONFIRMED"
+                ? "success"
+                : payment.status === "PENDING_CONFIRMATION"
+                  ? "warning"
+                  : payment.status === "UNPAID"
+                    ? "blue"
+                    : "danger";
+
+            if (view.startsWith("grid")) {
+              return (
+                <div
+                  key={payment.id}
+                  style={{
+                    background: `var(--${statusTone}-soft)`,
+                    border: `1px solid transparent`,
+                    borderRadius: 16,
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = `var(--${statusTone})`;
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 24px rgba(0,0,0,0.05)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = "transparent";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div>
+                      <Badge className={statusClass(payment.status)}>
+                        {statusLabel(payment.status)}
+                      </Badge>
+                      <h3 style={{ margin: "12px 0 4px", fontSize: 16 }}>
+                        {project.title}
+                      </h3>
+                      <p
+                        style={{
+                          color: "var(--muted)",
+                          margin: 0,
+                          fontSize: 13,
+                        }}
+                      >
+                        {payment.type} • {project.businessName}
+                      </p>
+                    </div>
+                    <div
+                      className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
+                      style={{ width: 40, height: 40, fontSize: 18 }}
                     >
-                      Confirm
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => rejectPayment(payment.id)}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}{" "}
-                {payment.status === "UNPAID" && (
-                  <Badge className="badge-slate">Waiting client</Badge>
-                )}
+                      {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <div>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "var(--muted)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Amount
+                      </span>
+                      <strong style={{ fontSize: 20, display: "block" }}>
+                        {formatNaira(payment.amount)}
+                      </strong>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {payment.status === "PENDING_CONFIRMATION" && (
+                        <Button
+                          variant="success"
+                          style={{ height: 32, fontSize: 13, padding: "0 12px" }}
+                          loading={pendingAction === `confirm-${payment.id}`}
+                          onClick={async () => {
+                            setPendingAction(`confirm-${payment.id}`);
+                            try {
+                              await confirmPayment(payment.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }}
+                        >
+                          Confirm ✓
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={payment.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px",
+                  borderRadius: 16,
+                  background: `var(--${statusTone}-soft)`,
+                  marginBottom: 12,
+                  alignItems: "center",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16, flex: 1 }}>
+                  <div
+                    className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
+                    style={{ width: 44, height: 44, fontSize: 18 }}
+                  >
+                    {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 2px", fontSize: 16 }}>
+                      {project.title} — {payment.type}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
+                      {project.businessName} • Ref: {payment.reference}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right", marginRight: 24 }}>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {formatNaira(payment.amount)}
+                    </strong>
+                    <Badge className={statusClass(payment.status)} style={{ fontSize: 11 }}>
+                      {statusLabel(payment.status)}
+                    </Badge>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {payment.status === "PENDING_CONFIRMATION" && (
+                    <>
+                      <Button
+                        variant="secondary"
+                        style={{ height: 36, fontSize: 13 }}
+                        onClick={async () => {
+                          if (confirm("Reject this payment?")) {
+                            setPendingAction(`reject-${payment.id}`);
+                            try {
+                              await rejectPayment(payment.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }
+                        }}
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        variant="success"
+                        style={{ height: 36, fontSize: 13 }}
+                        loading={pendingAction === `confirm-${payment.id}`}
+                        onClick={async () => {
+                          setPendingAction(`confirm-${payment.id}`);
+                          try {
+                            await confirmPayment(payment.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }}
+                      >
+                        Confirm ✓
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            );
+          }}
+        />
       </div>
     </div>
   );
 }
 
 export function AdminAnalytics() {
-  const { state } = useApp();
-  const total = state.projects.length;
-  const active = state.projects.filter((p) => p.status === "ACTIVE").length;
-  const overdue = state.projects
-    .flatMap((p) => p.phases)
-    .filter((p) => p.status === "CHANGES_REQUESTED").length;
+  const { state, dataLoading } = useApp();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const projectsLoaded = state.projects?.length > 0;
+  const total = state.projects?.length;
+  const active = state.projects?.filter((p) => p.status === "ACTIVE").length;
+  const overdue =
+    state?.projects
+      ?.flatMap((p) => p.phases)
+      ?.filter((p) => p.status === "CHANGES_REQUESTED")?.length || 0;
   const packageData = (
     ["Launch", "Impact", "Growth", "Partner"] as PackageType[]
   ).map((name) => ({
     name,
-    value: state.projects.filter((p) => p.packageType === name).length,
+    value: state?.projects?.filter((p) => p.packageType === name).length,
   }));
   const phaseStatus = [
     "NOT_STARTED",
@@ -1771,8 +2879,9 @@ export function AdminAnalytics() {
     "APPROVED",
   ].map((s) => ({
     status: statusLabel(s as any),
-    count: state.projects.flatMap((p) => p.phases).filter((p) => p.status === s)
-      .length,
+    count:
+      state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
+        ?.length || 0,
   }));
   const COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"];
   return (
@@ -1782,72 +2891,91 @@ export function AdminAnalytics() {
         subtitle="Track your team's performance and project metrics"
       />
       <div className="metric-grid">
-        <MetricCard
-          label="Total Projects"
-          value={total}
-          icon={Icons.analytics}
-        />
-        <MetricCard
-          label="Active Projects"
-          value={active}
-          icon="◎"
-          tone="blue"
-        />
-        <MetricCard
-          label="On-Time Rate"
-          value="100%"
-          icon={Icons.clock}
-          tone="green"
-        />
-        <MetricCard
-          label="Overdue Phases"
-          value={overdue}
-          icon="!"
-          tone="red"
-        />
+        {(!projectsLoaded && dataLoading) || !isMounted ? (
+          <>
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+            <Skeleton height={120} />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              label="Total Projects"
+              value={total}
+              icon={Icons.analytics}
+            />
+            <MetricCard
+              label="Active Projects"
+              value={active}
+              icon="◎"
+              tone="blue"
+            />
+            <MetricCard
+              label="On-Time Rate"
+              value="100%"
+              icon={Icons.clock}
+              tone="green"
+            />
+            <MetricCard
+              label="Overdue Phases"
+              value={overdue}
+              icon="!"
+              tone="red"
+            />
+          </>
+        )}
       </div>
       <div className="grid-2">
         <Card className="chart-card">
           <div className="card-title">
             <h2>Projects by Package</h2>
           </div>
-          <div className="card-body" style={{ height: 310 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={packageData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={64}
-                  outerRadius={100}
-                  paddingAngle={2}
-                >
-                  {packageData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
+            {(!projectsLoaded && dataLoading) || !isMounted ? (
+              <Skeleton height="100%" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={packageData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={64}
+                    outerRadius={100}
+                    paddingAngle={2}
+                  >
+                    {packageData.map((_, index) => (
+                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
         <Card className="chart-card">
           <div className="card-title">
             <h2>Phases by Status</h2>
           </div>
-          <div className="card-body" style={{ height: 310 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={phaseStatus}
-                layout="vertical"
-                margin={{ left: 30 }}
-              >
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="status" />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
+            {(!projectsLoaded && dataLoading) || !isMounted ? (
+              <Skeleton height="100%" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={phaseStatus}
+                  layout="vertical"
+                  margin={{ left: 30 }}
+                >
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="status" />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
       </div>

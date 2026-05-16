@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useApp } from "./AppContext";
 import { AIAssistant } from "./AIAssistant";
-import { Button } from "./UI";
+import { Button, PageLoading } from "./UI";
 import { Role } from "@/lib/types";
 
 type NavItem = {
@@ -74,6 +74,11 @@ function navForRole(
         label: "Support",
         href: "/client/support",
         icon: <HelpCircle size={iconSize} />,
+      },
+      {
+        label: "Settings",
+        href: "/client/settings",
+        icon: <Settings size={iconSize} />,
       },
     ];
   }
@@ -175,7 +180,7 @@ export function PortalShell({
   role: Role;
 }) {
   const pathname = usePathname();
-  const { currentUser, logout, state, clientProjects } = useApp();
+  const { currentUser, logout, state, clientProjects, sessionLoading, dataLoading } = useApp();
 
   const counts = useMemo(() => {
     const projects = role === "CLIENT" ? clientProjects : state.projects;
@@ -208,6 +213,16 @@ export function PortalShell({
         ? "Create Project"
         : "My Phases";
 
+  const handleLogout = async () => {
+    await logout();
+    // Force a hard reload to clear bfcache and ensure fresh state
+    window.location.reload();
+  };
+
+  if (sessionLoading || (dataLoading && state.projects.length === 0)) {
+    return <PageLoading />;
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -226,6 +241,7 @@ export function PortalShell({
           <img src="/octalve-logo.svg" alt="Octalve" className="brand-logo" />
           <span>Octalve</span>
         </Link>
+
         <div className="create-btn-wrap">
           <Link href={createHref}>
             <Button className="create-btn">
@@ -233,6 +249,7 @@ export function PortalShell({
             </Button>
           </Link>
         </div>
+
         <nav className="sidebar-nav">
           {nav.map((item) => {
             const active =
@@ -256,6 +273,7 @@ export function PortalShell({
             );
           })}
         </nav>
+
         <div className="sidebar-footer">
           <div className="avatar">
             {currentUser?.name?.[0]?.toLowerCase() ?? "o"}
@@ -274,36 +292,50 @@ export function PortalShell({
           </div>
           <button
             className="icon-btn logout-btn"
-            onClick={logout}
+            onClick={handleLogout}
             title="Logout"
           >
             <LogOut size={18} />
           </button>
         </div>
       </aside>
+
       <main className="main">
         <header className="topbar">
           <div className="search">
             <Search size={18} /> <input placeholder="Search..." />
           </div>
           <div className="top-actions">
-            {counts.approvals > 0 && (
-              <Link
-                href={
-                  role === "CLIENT" ? "/client/approvals" : "/admin/projects"
-                }
-                className="notification-btn"
-              >
-                <CheckSquare size={16} /> {counts.approvals} Pending Approval
-                {counts.approvals > 1 ? "s" : ""}
-              </Link>
-            )}
+            {counts.approvals > 0 &&
+              (role === "CLIENT" || role === "SUPER_ADMIN") && (
+                <Link
+                  href={
+                    role === "CLIENT" ? "/client/approvals" : "/admin/projects"
+                  }
+                  className="notification-btn"
+                >
+                  <CheckSquare size={16} /> {counts.approvals} Pending Approval
+                  {counts.approvals > 1 ? "s" : ""}
+                </Link>
+              )}
             {counts.requests > 0 && role === "SUPER_ADMIN" && (
               <Link href="/admin/project-requests" className="notification-btn">
                 <Bell size={16} /> {counts.requests} Request
                 {counts.requests > 1 ? "s" : ""}
               </Link>
             )}
+            <Link
+              href={
+                role === "STAFF"
+                  ? "/staff/settings"
+                  : role === "SUPER_ADMIN"
+                    ? "/admin/settings"
+                    : "/client/settings"
+              }
+              className="notification-btn"
+            >
+              <Settings size={16} /> Settings
+            </Link>
           </div>
         </header>
         {children}

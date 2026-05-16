@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
+  // URL configured in prisma.config.ts (Prisma 7+ requirement)
 }
 
 enum Role {
@@ -14,12 +14,13 @@ enum Role {
   SUPER_ADMIN
 }
 
+// Title Case to match frontend type: "Launch" | "Impact" | "Growth" | "Partner" | "Custom"
 enum PackageType {
-  LAUNCH
-  IMPACT
-  GROWTH
-  PARTNER
-  CUSTOM
+  Launch
+  Impact
+  Growth
+  Partner
+  Custom
 }
 
 enum ProjectStatus {
@@ -68,6 +69,11 @@ enum ProjectRequestStatus {
   INFO_REQUESTED
 }
 
+enum MessageType {
+  MESSAGE
+  SYSTEM
+}
+
 // Better Auth core user table plus Octalve Suite profile fields.
 model User {
   id            String    @id @default(cuid())
@@ -83,28 +89,37 @@ model User {
   company   String?
   specialty String?
 
+  // Better Auth admin plugin fields
+  banned     Boolean   @default(false)
+  banReason  String?
+  banExpires DateTime?
+
   sessions Session[]
   accounts Account[]
 
-  clientProjects Project[] @relation("ProjectClient")
-  managedProjects Project[] @relation("ProjectManager")
-  assignedPhases ProjectPhase[] @relation("PhaseStaff")
-  projectRequests ProjectRequest[]
-  phaseMessages PhaseMessage[]
-  confirmedPayments ProjectPayment[] @relation("PaymentConfirmer")
-  reviews Review[]
+  clientProjects        Project[]        @relation("ProjectClient")
+  managedProjects       Project[]        @relation("ProjectManager")
+  assignedPhases        ProjectPhase[]   @relation("PhaseStaff")
+  projectRequests       ProjectRequest[]
+  phaseMessages         PhaseMessage[]
+  confirmedPayments     ProjectPayment[] @relation("PaymentConfirmer")
+  reviews               Review[]
+  submittedDeliverables Deliverable[]    @relation("DeliverableSubmitter")
+  notifications         Notification[]
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Better Auth admin plugin field for impersonation tracking
+  impersonatedBy String?
 }
 
 model Account {
@@ -145,27 +160,27 @@ model ProjectTemplate {
 }
 
 model TemplatePhase {
-  id          String            @id @default(cuid())
-  templateId  String
-  template    ProjectTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  order       Int
-  title       String
-  description String?
+  id           String              @id @default(cuid())
+  templateId   String
+  template     ProjectTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order        Int
+  title        String
+  description  String?
   deliverables TemplateDeliverable[]
 }
 
 model TemplateDeliverable {
-  id             String        @id @default(cuid())
+  id              String        @id @default(cuid())
   templatePhaseId String
-  templatePhase  TemplatePhase @relation(fields: [templatePhaseId], references: [id], onDelete: Cascade)
-  name           String
-  order          Int
+  templatePhase   TemplatePhase @relation(fields: [templatePhaseId], references: [id], onDelete: Cascade)
+  name            String
+  order           Int
 }
 
 model ProjectRequest {
-  id                 String               @id @default(cuid())
-  clientId           String
-  client             User                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  clientId            String
+  client              User                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
   packageType         PackageType
   projectName         String
   businessName        String
@@ -177,6 +192,12 @@ model ProjectRequest {
   status              ProjectRequestStatus @default(PENDING_REVIEW)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+
+  // Back-relation: the project created when this request was approved
+  project             Project?
+
+  @@index([clientId])
+  @@index([status])
 }
 
 model Project {
@@ -185,7 +206,7 @@ model Project {
   client            User            @relation("ProjectClient", fields: [clientId], references: [id], onDelete: Cascade)
   title             String
   businessName      String
-  clientEmail       String
+  clientEmail       String          // Snapshot of client email at project creation time
   packageType       PackageType
   status            ProjectStatus   @default(APPROVED_AWAITING_DEPOSIT)
   targetDate        DateTime?
@@ -200,44 +221,58 @@ model Project {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
+  // Link back to the request that spawned this project (null for admin-created projects)
+  requestId         String?         @unique
+  request           ProjectRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
   phases   ProjectPhase[]
   payments ProjectPayment[]
   reviews  Review[]
+
+  @@index([clientId])
+  @@index([projectManagerId])
+  @@index([status])
 }
 
 model ProjectPhase {
-  id              String      @id @default(cuid())
-  projectId       String
-  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phaseNumber     Int
-  title           String
-  description     String?
-  status          PhaseStatus @default(LOCKED)
-  assignedStaffId String?
-  assignedStaff   User?       @relation("PhaseStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  id                  String      @id @default(cuid())
+  projectId           String
+  project             Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phaseNumber         Int
+  title               String
+  description         String?
+  status              PhaseStatus @default(LOCKED)
+  assignedStaffId     String?
+  assignedStaff       User?       @relation("PhaseStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
   approvalRequestedAt DateTime?
-  approvedAt      DateTime?
-  changeRequest   String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  approvedAt          DateTime?
+  changeRequest       String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   deliverables Deliverable[]
   messages     PhaseMessage[]
+
+  @@index([projectId])
+  @@index([assignedStaffId])
 }
 
 model Deliverable {
   id              String            @id @default(cuid())
-  phaseId          String
-  phase            ProjectPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
-  name             String
-  description      String?
-  link             String?
-  linkType         String?
-  status           DeliverableStatus @default(DRAFT)
-  visibleToClient  Boolean           @default(false)
-  submittedById    String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  phaseId         String
+  phase           ProjectPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  link            String?
+  linkType        String?
+  status          DeliverableStatus @default(DRAFT)
+  visibleToClient Boolean           @default(false)
+  submittedById   String?
+  submittedBy     User?             @relation("DeliverableSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([phaseId])
 }
 
 model PhaseMessage {
@@ -247,14 +282,17 @@ model PhaseMessage {
   senderId    String?
   sender      User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
   senderName  String
+  // Accepted values: CLIENT, STAFF, PROJECT_MANAGER, SUPER_ADMIN, SYSTEM
   senderRole  String
   message     String
-  type        String       @default("MESSAGE")
+  type        MessageType  @default(MESSAGE)
   createdAt   DateTime     @default(now())
+
+  @@index([phaseId])
 }
 
 model ProjectPayment {
-  id                 String        @id @default(cuid())
+  id                  String        @id @default(cuid())
   projectId           String
   project             Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   type                PaymentType
@@ -271,16 +309,36 @@ model ProjectPayment {
   note                String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+
+  @@index([projectId])
 }
 
 model Review {
   id                  String   @id @default(cuid())
-  projectId            String
-  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  clientId             String
-  client               User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  rating               Int
-  comment              String
-  permissionToPublish  Boolean  @default(false)
-  createdAt            DateTime @default(now())
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clientId            String
+  client              User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rating              Int
+  comment             String
+  permissionToPublish Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  // One review per client per project
+  @@unique([projectId, clientId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role?
+  title     String
+  body      String
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([role])
 }

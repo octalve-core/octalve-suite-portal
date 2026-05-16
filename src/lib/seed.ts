@@ -102,15 +102,15 @@ const buildPhases = (projectId: string, templateId: string, statuses?: string[])
 
 export const initialState: AppState = {
   users: [
-    { id: "admin_octa", name: "Octa Ive", email: "octalve0@gmail.com", company: "Octalve Team", role: "SUPER_ADMIN" },
-    { id: "pm_adedotun", name: "Adedotun Idowu", email: "aidowu@octalve.com", role: "PROJECT_MANAGER", specialty: "PM" },
-    { id: "staff_marcus", name: "Marcus Chen", email: "marcus@octalve.com", role: "STAFF", specialty: "Designer" },
-    { id: "staff_james", name: "James Wilson", email: "james@octalve.com", role: "STAFF", specialty: "Strategist" },
-    { id: "staff_emily", name: "Emily Rodriguez", email: "emily@octalve.com", role: "STAFF", specialty: "Developer" },
-    { id: "staff_lisa", name: "Lisa Park", email: "lisa@octalve.com", role: "STAFF", specialty: "Copywriter" },
-    { id: "client_hello", name: "hellobrandde", email: "hellobrandde@gmail.com", phone: "08000000000", company: "ChatGPT", role: "CLIENT" },
-    { id: "client_adecrown", name: "Adecrown", email: "adecrown@gmail.com", company: "Adecrown", role: "CLIENT" },
-    { id: "client_sfx", name: "SFx", email: "kolawolemuqaddis@gmail.com", company: "SFx", role: "CLIENT" }
+    // { id: "admin_octa", name: "Octa Ive", email: "octalve0@gmail.com", company: "Octalve Team", role: "SUPER_ADMIN" },
+    // { id: "pm_adedotun", name: "Adedotun Idowu", email: "aidowu@octalve.com", role: "PROJECT_MANAGER", specialty: "PM" },
+    // { id: "staff_marcus", name: "Marcus Chen", email: "marcus@octalve.com", role: "STAFF", specialty: "Designer" },
+    // { id: "staff_james", name: "James Wilson", email: "james@octalve.com", role: "STAFF", specialty: "Strategist" },
+    // { id: "staff_emily", name: "Emily Rodriguez", email: "emily@octalve.com", role: "STAFF", specialty: "Developer" },
+    // { id: "staff_lisa", name: "Lisa Park", email: "lisa@octalve.com", role: "STAFF", specialty: "Copywriter" },
+    // { id: "client_hello", name: "hellobrandde", email: "hellobrandde@gmail.com", phone: "08000000000", company: "ChatGPT", role: "CLIENT" },
+    // { id: "client_adecrown", name: "Adecrown", email: "adecrown@gmail.com", company: "Adecrown", role: "CLIENT" },
+    // { id: "client_sfx", name: "SFx", email: "kolawolemuqaddis@gmail.com", company: "SFx", role: "CLIENT" }
   ],
   templates,
   projects: [

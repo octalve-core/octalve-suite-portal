@@ -6,53 +6,40 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useCallback,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
-import { cloneInitialState } from "@/lib/seed";
+import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api";
 import {
   AppState,
   Deliverable,
-  DeliverableStatus,
   PackageType,
-  PhaseMessage,
-  PhaseStatus,
   Project,
-  ProjectPayment,
   ProjectPhase,
   ProjectRequest,
-  ProjectStatus,
   ProjectTemplate,
   Role,
-  TemplatePhase,
   User,
 } from "@/lib/types";
 
-const STORAGE_KEY = "octalve-suite-state-v1";
-const SESSION_KEY = "octalve-suite-session-v1";
-const SELECTED_PROJECT_KEY = "octalve-suite-selected-project-v1";
-
-type Session = { userId: string; role: Role } | null;
+const SELECTED_PROJECT_KEY = "octalve-suite-selected-project-v2";
 
 type AppContextValue = {
   state: AppState;
-  session: Session;
   currentUser?: User;
+  sessionLoading: boolean;
+  dataLoading: boolean;
   selectedProjectId?: string;
   selectedProject?: Project;
   clientProjects: Project[];
-  login: (role: Role, email?: string) => void;
-  signup: (payload: {
-    name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-  }) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setSelectedProjectId: (id: string) => void;
   resetDemo: () => void;
   createProjectRequest: (
     payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">,
-  ) => string;
+  ) => Promise<string>;
   approveProjectRequest: (
     requestId: string,
     payload: {
@@ -63,7 +50,7 @@ type AppContextValue = {
       targetDate?: string;
       internalNotes?: string;
     },
-  ) => string;
+  ) => Promise<string>;
   createAdminProject: (payload: {
     packageType: PackageType;
     templateId: string;
@@ -76,129 +63,141 @@ type AppContextValue = {
     balanceAmount: number;
     projectManagerId?: string;
     internalNotes?: string;
-  }) => string;
-  createTemplate: (payload: Omit<ProjectTemplate, "id">) => string;
+  }) => Promise<string>;
+  createTemplate: (payload: Omit<ProjectTemplate, "id">) => Promise<string>;
   updateTemplate: (
     templateId: string,
     payload: Partial<Omit<ProjectTemplate, "id">>,
-  ) => void;
-  deleteTemplate: (templateId: string) => void;
+  ) => Promise<void>;
+  deleteTemplate: (templateId: string) => Promise<void>;
   createTeamMember: (payload: {
     name: string;
     email: string;
     specialty: string;
     role: Role;
-  }) => string;
+  }) => Promise<string>;
   updateTeamMember: (
     userId: string,
     payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
-  ) => void;
-  deleteTeamMember: (userId: string) => void;
-  deleteProject: (projectId: string) => void;
-  markPaymentPaid: (paymentId: string) => void;
-  confirmPayment: (paymentId: string) => void;
-  rejectPayment: (paymentId: string, note?: string) => void;
-  assignPhase: (phaseId: string, staffId: string) => void;
+  ) => Promise<void>;
+  deleteTeamMember: (userId: string) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
+  markPaymentPaid: (paymentId: string) => Promise<void>;
+  confirmPayment: (paymentId: string) => Promise<void>;
+  rejectPayment: (paymentId: string, note?: string) => Promise<void>;
+  assignPhase: (phaseId: string, staffId: string) => Promise<void>;
   addDeliverable: (
     phaseId: string,
     payload: Pick<Deliverable, "name" | "description" | "link" | "linkType">,
-  ) => void;
-  requestPhaseApproval: (phaseId: string) => void;
-  approvePhase: (phaseId: string) => void;
-  requestChanges: (phaseId: string, message: string) => void;
-  sendPhaseMessage: (phaseId: string, message: string) => void;
+  ) => Promise<void>;
+  requestPhaseApproval: (phaseId: string) => Promise<void>;
+  approvePhase: (phaseId: string) => Promise<void>;
+  requestChanges: (phaseId: string, message: string) => Promise<void>;
+  sendPhaseMessage: (phaseId: string, message: string) => Promise<void>;
   addReview: (
     projectId: string,
     rating: number,
     comment: string,
     permissionToPublish: boolean,
-  ) => void;
+  ) => Promise<void>;
+  refresh: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function makeId(prefix: string) {
-  return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function makeProjectCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
-}
-
-function currency(amount: number) {
-  return amount;
-}
-
-function notificationForRole(
-  role: Role,
-  title: string,
-  body: string,
-  href?: string,
-) {
-  return {
-    id: makeId("not"),
-    role,
-    title,
-    body,
-    href,
-    read: false,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function normaliseTemplatePhases(
-  phases: Array<Partial<TemplatePhase> & { deliverables?: string[] }>,
-): TemplatePhase[] {
-  return phases
-    .filter((phase) => (phase.title ?? "").trim())
-    .map((phase, index) => ({
-      id: phase.id ?? makeId("tpl_phase"),
-      title: (phase.title ?? `Phase ${index + 1}`).trim(),
-      description: (phase.description ?? "").trim(),
-      deliverables: phase.deliverables?.length
-        ? phase.deliverables
-        : ["Primary deliverable"],
-    }));
-}
+const emptyState: AppState = {
+  users: [],
+  templates: [],
+  projects: [],
+  requests: [],
+  reviews: [],
+  notifications: [],
+};
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<AppState>(() => cloneInitialState());
-  const [session, setSession] = useState<Session>(null);
+  const [state, setState] = useState<AppState>(emptyState);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [isRefreshingState, setIsRefreshingState] = useState(false);
+  const syncInProgressRef = useRef(false);
   const [selectedProjectId, setSelectedProjectIdState] = useState<
     string | undefined
   >(undefined);
 
-  useEffect(() => {
+  // ------- Better Auth session -------
+  const { data: authSession, isPending: sessionLoading } =
+    authClient.useSession();
+
+  const currentUser: User | undefined = useMemo(() => {
+    if (!authSession?.user) return undefined;
+    const u = authSession.user as any;
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: (u.role ?? "CLIENT") as Role,
+      phone: u.phone,
+      company: u.company,
+      specialty: u.specialty,
+    };
+  }, [authSession]);
+
+  // ------- Data Fetching -------
+  const syncPortalData = useCallback(async () => {
+    if (!currentUser || syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
+    setIsRefreshingState(true);
+    setDataLoading(true);
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setState(JSON.parse(stored) as AppState);
-      const sessionStored = localStorage.getItem(SESSION_KEY);
-      if (sessionStored) setSession(JSON.parse(sessionStored) as Session);
-      const selected = localStorage.getItem(SELECTED_PROJECT_KEY);
-      if (selected) setSelectedProjectIdState(selected);
-    } catch {
-      setState(cloneInitialState());
+      // Parallel fetch for speed
+      const [
+        projects,
+        templates,
+        requests,
+        reviews,
+        notifications,
+        team,
+        clients,
+      ] = await Promise.all([
+        api.projects.list(),
+        api.templates.list(),
+        currentUser.role === "SUPER_ADMIN" ? api.projectRequests.list() : Promise.resolve([]),
+        currentUser.role === "SUPER_ADMIN" ? api.reviews.list() : Promise.resolve([]),
+        api.notifications.list(),
+        (currentUser.role === "SUPER_ADMIN" || currentUser.role === "PROJECT_MANAGER") ? api.team.list() : Promise.resolve([]),
+        currentUser.role === "SUPER_ADMIN" ? api.clients.list() : Promise.resolve([]),
+      ]);
+
+      setState({
+        users: [...team, ...clients], // Combine team and clients for the 'users' list
+        templates,
+        projects,
+        requests: requests as ProjectRequest[],
+        reviews,
+        notifications,
+      });
+    } catch (error) {
+      console.error("Failed to fetch app state:", error);
+    } finally {
+      setDataLoading(false);
+      setIsRefreshingState(false);
+      syncInProgressRef.current = false;
     }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      syncPortalData();
+    }
+  }, [currentUser, syncPortalData]);
+
+  // Load selected project ID from storage
+  useEffect(() => {
+    const selected = localStorage.getItem(SELECTED_PROJECT_KEY);
+    if (selected) setSelectedProjectIdState(selected);
   }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
-  }, [state]);
-
-  useEffect(() => {
-    try {
-      if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      else localStorage.removeItem(SESSION_KEY);
-    } catch {}
-  }, [session]);
-
-  const currentUser = useMemo(
-    () => state.users.find((user) => user.id === session?.userId),
-    [state.users, session?.userId],
-  );
   const clientProjects = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === "CLIENT")
@@ -217,57 +216,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!selectedProjectId && selectedProject?.id) {
-      setSelectedProjectIdState(selectedProject.id);
-      try {
-        localStorage.setItem(SELECTED_PROJECT_KEY, selectedProject.id);
-      } catch {}
+      setSelectedProjectId(selectedProject.id);
     }
   }, [selectedProject?.id, selectedProjectId]);
 
-  function login(role: Role, email?: string) {
-    const defaultByRole: Record<Role, string> = {
-      CLIENT: "client_hello",
-      STAFF: "staff_marcus",
-      PROJECT_MANAGER: "pm_adedotun",
-      SUPER_ADMIN: "admin_octa",
-    };
-    const found = email
-      ? state.users.find(
-          (user) => user.email.toLowerCase() === email.toLowerCase(),
-        )
-      : undefined;
-    const user =
-      found && found.role === role
-        ? found
-        : state.users.find((item) => item.id === defaultByRole[role]);
-    if (!user) return;
-    setSession({ userId: user.id, role: user.role });
-    const rolePath =
-      user.role === "CLIENT"
-        ? "/client"
-        : user.role === "STAFF"
-          ? "/staff"
-          : user.role === "PROJECT_MANAGER"
-            ? "/staff"
-            : "/admin";
-    router.push(rolePath);
-  }
+  // ------- Authentication -------
+  async function logout() {
+    const pathname = window.location.pathname;
+    const isProtected =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/staff") ||
+      pathname.startsWith("/client");
 
-  function signup(payload: {
-    name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-  }) {
-    const user: User = { id: makeId("client"), role: "CLIENT", ...payload };
-    setState((prev) => ({ ...prev, users: [...prev.users, user] }));
-    setSession({ userId: user.id, role: "CLIENT" });
-    router.push("/client");
-  }
+    await authClient.signOut();
+    setState(emptyState);
+    setSelectedProjectIdState(undefined);
+    try {
+      localStorage.removeItem(SELECTED_PROJECT_KEY);
+    } catch {}
 
-  function logout() {
-    setSession(null);
-    router.push("/login");
+    if (isProtected) {
+      router.replace(`/login?callbackURL=${encodeURIComponent(pathname)}`);
+    } else {
+      router.replace("/login");
+    }
   }
 
   function setSelectedProjectId(id: string) {
@@ -277,136 +249,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  function resetDemo() {
-    const fresh = cloneInitialState();
-    setState(fresh);
-    setSelectedProjectIdState(undefined);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(SELECTED_PROJECT_KEY);
-    } catch {}
+  async function resetDemo() {
+    // No-op or call a destructive "clear my data" endpoint if needed.
+    // For now, we'll just refresh.
+    await syncPortalData();
   }
 
-  function createProjectRequest(
+  // ------- Mutations -------
+
+  async function createProjectRequest(
     payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">,
   ) {
-    const clientId = currentUser?.id ?? "client_hello";
-    const request: ProjectRequest = {
-      ...payload,
-      id: makeId("req"),
-      clientId,
-      status: "PENDING_REVIEW",
-      createdAt: new Date().toISOString(),
-    };
-    setState((prev) => ({
-      ...prev,
-      requests: [request, ...prev.requests],
-      notifications: [
-        notificationForRole(
-          "SUPER_ADMIN",
-          "New project request",
-          `${request.projectName} is waiting for review.`,
-          "/admin/project-requests",
-        ),
-        ...prev.notifications,
-      ],
-    }));
-    return request.id;
+    const res = await api.projectRequests.create(payload);
+    await syncPortalData();
+    return res.id;
   }
 
-  function createProjectFromTemplate(args: {
-    packageType: PackageType;
-    templateId?: string;
-    title: string;
-    clientId: string;
-    clientEmail: string;
-    businessName: string;
-    targetDate?: string;
-    totalAmount: number;
-    depositAmount: number;
-    balanceAmount: number;
-    projectManagerId?: string;
-    status?: Project["status"];
-    internalNotes?: string;
-    clientBrief?: string;
-  }): Project {
-    const template =
-      state.templates.find((item) => item.id === args.templateId) ??
-      state.templates.find((item) => item.packageType === args.packageType) ??
-      state.templates[0];
-    const projectId = makeId("project");
-    const code = makeProjectCode();
-    const phases = template.phases.map((phase, index) => {
-      const phaseId = `${projectId}_phase_${index + 1}`;
-      return {
-        id: phaseId,
-        projectId,
-        phaseNumber: index + 1,
-        title: phase.title,
-        description: phase.description,
-        status: "LOCKED" as PhaseStatus,
-        assignedStaffId: undefined,
-        deliverables: phase.deliverables.map((name, deliverableIndex) => ({
-          id: `${phaseId}_del_${deliverableIndex + 1}`,
-          phaseId,
-          name,
-          status: "DRAFT" as const,
-          visibleToClient: false,
-        })),
-        messages: [],
-      };
-    });
-    const project: Project = {
-      id: projectId,
-      clientId: args.clientId,
-      title: args.title,
-      businessName: args.businessName,
-      clientEmail: args.clientEmail,
-      packageType: args.packageType,
-      status: args.status ?? "APPROVED_AWAITING_DEPOSIT",
-      targetDate: args.targetDate,
-      projectCode: code,
-      projectManagerId: args.projectManagerId,
-      totalAmount: currency(args.totalAmount),
-      depositAmount: currency(args.depositAmount),
-      balanceAmount: currency(args.balanceAmount),
-      phases,
-      payments: [
-        {
-          id: makeId("pay"),
-          projectId,
-          type: "DEPOSIT",
-          amount: args.depositAmount,
-          status: args.depositAmount > 0 ? "UNPAID" : "CONFIRMED",
-          reference: `OCT-${code}-DEP`,
-          bankName: "Octalve Bank",
-          accountName: "Octalve Consult",
-          accountNumber: "0000000000",
-        },
-        {
-          id: makeId("pay"),
-          projectId,
-          type: "BALANCE",
-          amount: args.balanceAmount,
-          status: args.balanceAmount > 0 ? "UNPAID" : "CONFIRMED",
-          reference: `OCT-${code}-BAL`,
-          bankName: "Octalve Bank",
-          accountName: "Octalve Consult",
-          accountNumber: "0000000000",
-        },
-      ],
-      internalNotes: args.internalNotes,
-      clientBrief: args.clientBrief,
-      createdAt: new Date().toISOString(),
-    };
-    if (args.depositAmount <= 0) {
-      project.status = "ACTIVE";
-      if (project.phases[0]) project.phases[0].status = "IN_PROGRESS";
-    }
-    return project;
-  }
-
-  function approveProjectRequest(
+  async function approveProjectRequest(
     requestId: string,
     payload: {
       totalAmount: number;
@@ -417,102 +276,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       internalNotes?: string;
     },
   ) {
-    let createdId = "";
-    setState((prev) => {
-      const request = prev.requests.find((item) => item.id === requestId);
-      if (!request) return prev;
-      const client = prev.users.find((user) => user.id === request.clientId);
-      const template =
-        prev.templates.find(
-          (item) => item.packageType === request.packageType,
-        ) ?? prev.templates[0];
-      const code = makeProjectCode();
-      const projectId = makeId("project");
-      const phases = template.phases.map((phase, index) => {
-        const phaseId = `${projectId}_phase_${index + 1}`;
-        return {
-          id: phaseId,
-          projectId,
-          phaseNumber: index + 1,
-          title: phase.title,
-          description: phase.description,
-          status: "LOCKED" as PhaseStatus,
-          assignedStaffId: undefined,
-          deliverables: phase.deliverables.map((name, deliverableIndex) => ({
-            id: `${phaseId}_del_${deliverableIndex + 1}`,
-            phaseId,
-            name,
-            status: "DRAFT" as const,
-            visibleToClient: false,
-          })),
-          messages: [],
-        };
-      });
-      const project: Project = {
-        id: projectId,
-        clientId: request.clientId,
-        title: request.projectName,
-        businessName: request.businessName,
-        clientEmail: client?.email ?? "client@company.com",
-        packageType: request.packageType,
-        status: "APPROVED_AWAITING_DEPOSIT",
-        targetDate: payload.targetDate,
-        projectCode: code,
-        projectManagerId: payload.projectManagerId,
-        totalAmount: payload.totalAmount,
-        depositAmount: payload.depositAmount,
-        balanceAmount: payload.balanceAmount,
-        phases,
-        payments: [
-          {
-            id: makeId("pay"),
-            projectId,
-            type: "DEPOSIT",
-            amount: payload.depositAmount,
-            status: "UNPAID",
-            reference: `OCT-${code}-DEP`,
-            bankName: "Octalve Bank",
-            accountName: "Octalve Consult",
-            accountNumber: "0000000000",
-          },
-          {
-            id: makeId("pay"),
-            projectId,
-            type: "BALANCE",
-            amount: payload.balanceAmount,
-            status: "UNPAID",
-            reference: `OCT-${code}-BAL`,
-            bankName: "Octalve Bank",
-            accountName: "Octalve Consult",
-            accountNumber: "0000000000",
-          },
-        ],
-        internalNotes: payload.internalNotes,
-        clientBrief: `${request.projectGoal}\n${request.projectDescription}`,
-        createdAt: new Date().toISOString(),
-      };
-      createdId = project.id;
-      return {
-        ...prev,
-        requests: prev.requests.map((item) =>
-          item.id === requestId ? { ...item, status: "APPROVED" } : item,
-        ),
-        projects: [project, ...prev.projects],
-        notifications: [
-          notificationForRole(
-            "CLIENT",
-            "Project approved",
-            `${project.title} has been approved. Deposit payment is required.`,
-            "/client/payments",
-          ),
-          ...prev.notifications,
-        ],
-      };
-    });
-    return createdId;
+    const res = await api.projectRequests.approve(requestId, payload);
+    await syncPortalData();
+    return res.id;
   }
 
-  function createAdminProject(payload: {
+  async function createAdminProject(payload: {
     packageType: PackageType;
     templateId: string;
     title: string;
@@ -525,505 +294,125 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     projectManagerId?: string;
     internalNotes?: string;
   }) {
-    let createdId = "";
-    setState((prev) => {
-      let client = prev.users.find(
-        (user) =>
-          user.email.toLowerCase() === payload.clientEmail.toLowerCase(),
-      );
-      const users = [...prev.users];
-      if (!client) {
-        client = {
-          id: makeId("client"),
-          name: payload.clientName,
-          email: payload.clientEmail,
-          company: payload.clientName,
-          role: "CLIENT",
-        };
-        users.push(client);
-      }
-      const tempState = state;
-      const template =
-        tempState.templates.find((item) => item.id === payload.templateId) ??
-        tempState.templates.find(
-          (item) => item.packageType === payload.packageType,
-        ) ??
-        tempState.templates[0];
-      const projectId = makeId("project");
-      const code = makeProjectCode();
-      const phases = template.phases.map((phase, index) => {
-        const phaseId = `${projectId}_phase_${index + 1}`;
-        return {
-          id: phaseId,
-          projectId,
-          phaseNumber: index + 1,
-          title: phase.title,
-          description: phase.description,
-          status: "LOCKED" as PhaseStatus,
-          deliverables: phase.deliverables.map((name, deliverableIndex) => ({
-            id: `${phaseId}_del_${deliverableIndex + 1}`,
-            phaseId,
-            name,
-            status: "DRAFT" as const,
-            visibleToClient: false,
-          })),
-          messages: [],
-        };
-      });
-      const project: Project = {
-        id: projectId,
-        clientId: client.id,
-        title: payload.title,
-        businessName: payload.clientName,
-        clientEmail: payload.clientEmail,
-        packageType: payload.packageType,
-        status: "APPROVED_AWAITING_DEPOSIT",
-        targetDate: payload.targetDate,
-        projectCode: code,
-        projectManagerId: payload.projectManagerId,
-        totalAmount: payload.totalAmount,
-        depositAmount: payload.depositAmount,
-        balanceAmount: payload.balanceAmount,
-        phases,
-        payments: [
-          {
-            id: makeId("pay"),
-            projectId,
-            type: "DEPOSIT",
-            amount: payload.depositAmount,
-            status: "UNPAID",
-            reference: `OCT-${code}-DEP`,
-            bankName: "Octalve Bank",
-            accountName: "Octalve Consult",
-            accountNumber: "0000000000",
-          },
-          {
-            id: makeId("pay"),
-            projectId,
-            type: "BALANCE",
-            amount: payload.balanceAmount,
-            status: "UNPAID",
-            reference: `OCT-${code}-BAL`,
-            bankName: "Octalve Bank",
-            accountName: "Octalve Consult",
-            accountNumber: "0000000000",
-          },
-        ],
-        internalNotes: payload.internalNotes,
-        createdAt: new Date().toISOString(),
-      };
-      createdId = project.id;
-      return { ...prev, users, projects: [project, ...prev.projects] };
-    });
-    return createdId;
+    const res = await api.projects.create(payload);
+    await syncPortalData();
+    return res.id;
   }
 
-  function createTemplate(payload: Omit<ProjectTemplate, "id">) {
-    const id = makeId("tpl");
-    setState((prev) => ({
-      ...prev,
-      templates: [
-        { ...payload, id, phases: normaliseTemplatePhases(payload.phases) },
-        ...prev.templates,
-      ],
-    }));
-    return id;
+  async function createTemplate(payload: Omit<ProjectTemplate, "id">) {
+    const res = await api.templates.create(payload);
+    await syncPortalData();
+    return res.id;
   }
 
-  function updateTemplate(
+  async function updateTemplate(
     templateId: string,
     payload: Partial<Omit<ProjectTemplate, "id">>,
   ) {
-    setState((prev) => ({
-      ...prev,
-      templates: prev.templates.map((template) =>
-        template.id === templateId
-          ? {
-              ...template,
-              ...payload,
-              phases: payload.phases
-                ? normaliseTemplatePhases(payload.phases)
-                : template.phases,
-            }
-          : template,
-      ),
-    }));
+    await api.templates.update(templateId, payload);
+    await syncPortalData();
   }
 
-  function deleteTemplate(templateId: string) {
-    setState((prev) => ({
-      ...prev,
-      templates: prev.templates.filter(
-        (template) => template.id !== templateId,
-      ),
-    }));
+  async function deleteTemplate(templateId: string) {
+    await api.templates.delete(templateId);
+    await syncPortalData();
   }
 
-  function createTeamMember(payload: {
+  async function createTeamMember(payload: {
     name: string;
     email: string;
     specialty: string;
     role: Role;
   }) {
-    const id = makeId("team");
-    setState((prev) => ({
-      ...prev,
-      users: [...prev.users, { id, ...payload }],
-    }));
-    return id;
+    const res = await api.team.create(payload);
+    await syncPortalData();
+    return res.id;
   }
 
-  function updateTeamMember(
+  async function updateTeamMember(
     userId: string,
     payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
   ) {
-    setState((prev) => ({
-      ...prev,
-      users: prev.users.map((user) =>
-        user.id === userId ? { ...user, ...payload } : user,
-      ),
-    }));
+    await api.team.update(userId, payload);
+    await syncPortalData();
   }
 
-  function deleteTeamMember(userId: string) {
-    setState((prev) => ({
-      ...prev,
-      users: prev.users.filter((user) => user.id !== userId),
-      projects: prev.projects.map((project) => ({
-        ...project,
-        projectManagerId:
-          project.projectManagerId === userId
-            ? undefined
-            : project.projectManagerId,
-        phases: project.phases.map((phase) =>
-          phase.assignedStaffId === userId
-            ? { ...phase, assignedStaffId: undefined }
-            : phase,
-        ),
-      })),
-    }));
+  async function deleteTeamMember(userId: string) {
+    await api.team.delete(userId);
+    await syncPortalData();
   }
 
-  function deleteProject(projectId: string) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.filter((project) => project.id !== projectId),
-    }));
+  async function deleteProject(projectId: string) {
+    await api.projects.delete(projectId);
+    await syncPortalData();
   }
 
-  function updatePayment(
-    paymentId: string,
-    fn: (payment: ProjectPayment, project: Project) => ProjectPayment,
-  ) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((project) => {
-        if (!project.payments.some((payment) => payment.id === paymentId))
-          return project;
-        const payments = project.payments.map((payment) =>
-          payment.id === paymentId ? fn(payment, project) : payment,
-        );
-        return { ...project, payments };
-      }),
-    }));
+  async function markPaymentPaid(paymentId: string) {
+    await api.payments.markPaid(paymentId);
+    await syncPortalData();
   }
 
-  function markPaymentPaid(paymentId: string) {
-    updatePayment(paymentId, (payment) => ({
-      ...payment,
-      status: "PENDING_CONFIRMATION",
-      clientMarkedPaidAt: new Date().toISOString(),
-    }));
-    setState((prev) => ({
-      ...prev,
-      notifications: [
-        notificationForRole(
-          "SUPER_ADMIN",
-          "Payment pending confirmation",
-          "A client marked a manual payment as paid.",
-          "/admin/payments",
-        ),
-        ...prev.notifications,
-      ],
-    }));
+  async function confirmPayment(paymentId: string) {
+    await api.payments.confirm(paymentId);
+    await syncPortalData();
   }
 
-  function confirmPayment(paymentId: string) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((project) => {
-        const payment = project.payments.find((item) => item.id === paymentId);
-        if (!payment) return project;
-        const payments = project.payments.map((item) =>
-          item.id === paymentId
-            ? {
-                ...item,
-                status: "CONFIRMED" as const,
-                confirmedAt: new Date().toISOString(),
-              }
-            : item,
-        );
-        let nextProject = { ...project, payments };
-        if (payment.type === "DEPOSIT") {
-          nextProject.status = "ACTIVE";
-          if (nextProject.phases[0]?.status === "LOCKED") {
-            nextProject.phases = nextProject.phases.map((phase, index) =>
-              index === 0 ? { ...phase, status: "IN_PROGRESS" } : phase,
-            );
-          }
-        }
-        if (
-          payment.type === "BALANCE" &&
-          project.status === "BALANCE_PENDING_CONFIRMATION"
-        ) {
-          nextProject.status = "ACTIVE";
-          const finalIndex = nextProject.phases.length - 1;
-          nextProject.phases = nextProject.phases.map((phase, index) =>
-            index === finalIndex && phase.status === "LOCKED"
-              ? { ...phase, status: "IN_PROGRESS" }
-              : phase,
-          );
-        }
-        return nextProject;
-      }),
-      notifications: [
-        notificationForRole(
-          "CLIENT",
-          "Payment confirmed",
-          "Your payment has been confirmed.",
-          "/client",
-        ),
-        ...prev.notifications,
-      ],
-    }));
+  async function rejectPayment(paymentId: string, note?: string) {
+    await api.payments.reject(paymentId, note);
+    await syncPortalData();
   }
 
-  function rejectPayment(paymentId: string, note?: string) {
-    updatePayment(paymentId, (payment) => ({
-      ...payment,
-      status: "REJECTED",
-      note,
-    }));
+  async function assignPhase(phaseId: string, staffId: string) {
+    await api.phases.assign(phaseId, staffId);
+    await syncPortalData();
   }
 
-  function updatePhase(
-    phaseId: string,
-    fn: (phase: ProjectPhase, project: Project) => ProjectPhase,
-    projectFn?: (project: Project) => Project,
-  ) {
-    setState((prev) => ({
-      ...prev,
-      projects: prev.projects.map((project) => {
-        if (!project.phases.some((phase) => phase.id === phaseId))
-          return project;
-        const updated = {
-          ...project,
-          phases: project.phases.map((phase) =>
-            phase.id === phaseId ? fn(phase, project) : phase,
-          ),
-        };
-        return projectFn ? projectFn(updated) : updated;
-      }),
-    }));
-  }
-
-  function assignPhase(phaseId: string, staffId: string) {
-    updatePhase(phaseId, (phase) => ({ ...phase, assignedStaffId: staffId }));
-  }
-
-  function addDeliverable(
+  async function addDeliverable(
     phaseId: string,
     payload: Pick<Deliverable, "name" | "description" | "link" | "linkType">,
   ) {
-    updatePhase(phaseId, (phase) => ({
-      ...phase,
-      deliverables: [
-        ...phase.deliverables,
-        {
-          id: makeId("del"),
-          phaseId,
-          name: payload.name,
-          description: payload.description,
-          link: payload.link,
-          linkType: payload.linkType,
-          status: "DRAFT",
-          visibleToClient: false,
-          submittedById: currentUser?.id,
-        },
-      ],
-    }));
+    await api.phases.addDeliverable(phaseId, payload);
+    await syncPortalData();
   }
 
-  function requestPhaseApproval(phaseId: string) {
-    updatePhase(phaseId, (phase) => ({
-      ...phase,
-      status: "AWAITING_APPROVAL",
-      approvalRequestedAt: new Date().toISOString(),
-      deliverables: phase.deliverables.map((deliverable) => ({
-        ...deliverable,
-        status:
-          deliverable.status === "APPROVED" ? "APPROVED" : "READY_FOR_REVIEW",
-        visibleToClient: true,
-      })),
-      messages: [
-        ...phase.messages,
-        {
-          id: makeId("msg"),
-          phaseId,
-          senderName: "System",
-          senderRole: "SYSTEM",
-          message: "Approval requested for this phase",
-          createdAt: new Date().toISOString(),
-          type: "SYSTEM",
-        },
-      ],
-    }));
-    setState((prev) => ({
-      ...prev,
-      notifications: [
-        notificationForRole(
-          "CLIENT",
-          "Phase approval requested",
-          "A project phase is ready for your review.",
-          "/client/approvals",
-        ),
-        ...prev.notifications,
-      ],
-    }));
+  async function requestPhaseApproval(phaseId: string) {
+    await api.phases.requestApproval(phaseId);
+    await syncPortalData();
   }
 
-  function approvePhase(phaseId: string) {
-    updatePhase(
-      phaseId,
-      (phase) => ({
-        ...phase,
-        status: "APPROVED",
-        approvedAt: new Date().toISOString(),
-        deliverables: phase.deliverables.map((deliverable) => ({
-          ...deliverable,
-          status: "APPROVED",
-          visibleToClient: true,
-        })),
-        messages: [
-          ...phase.messages,
-          {
-            id: makeId("msg"),
-            phaseId,
-            senderName: currentUser?.name ?? "Client",
-            senderRole: currentUser?.role ?? "CLIENT",
-            message: `${currentUser?.name ?? "Client"} approved this phase`,
-            createdAt: new Date().toISOString(),
-            type: "SYSTEM",
-          },
-        ],
-      }),
-      (project) => {
-        const index = project.phases.findIndex((phase) => phase.id === phaseId);
-        const nextIndex = index + 1;
-        const finalIndex = project.phases.length - 1;
-        let nextProject = { ...project };
-        if (nextIndex < project.phases.length) {
-          if (nextIndex === finalIndex) {
-            const balance = project.payments.find(
-              (pay) => pay.type === "BALANCE",
-            );
-            if (
-              balance &&
-              balance.amount > 0 &&
-              balance.status !== "CONFIRMED"
-            ) {
-              nextProject.status = "AWAITING_BALANCE";
-            } else {
-              nextProject.phases = nextProject.phases.map((phase, idx) =>
-                idx === nextIndex && phase.status === "LOCKED"
-                  ? { ...phase, status: "IN_PROGRESS" }
-                  : phase,
-              );
-            }
-          } else {
-            nextProject.phases = nextProject.phases.map((phase, idx) =>
-              idx === nextIndex && phase.status === "LOCKED"
-                ? { ...phase, status: "IN_PROGRESS" }
-                : phase,
-            );
-          }
-        } else {
-          nextProject.status = "COMPLETED";
-        }
-        return nextProject;
-      },
-    );
+  async function approvePhase(phaseId: string) {
+    await api.phases.approve(phaseId);
+    await syncPortalData();
   }
 
-  function requestChanges(phaseId: string, message: string) {
-    updatePhase(phaseId, (phase) => ({
-      ...phase,
-      status: "CHANGES_REQUESTED",
-      changeRequest: message,
-      deliverables: phase.deliverables.map((deliverable) => ({
-        ...deliverable,
-        status: "NEEDS_CHANGES",
-      })),
-      messages: [
-        ...phase.messages,
-        {
-          id: makeId("msg"),
-          phaseId,
-          senderName: currentUser?.name ?? "Client",
-          senderRole: currentUser?.role ?? "CLIENT",
-          message,
-          createdAt: new Date().toISOString(),
-          type: "MESSAGE",
-        },
-      ],
-    }));
+  async function requestChanges(phaseId: string, message: string) {
+    await api.phases.requestChanges(phaseId, message);
+    await syncPortalData();
   }
 
-  function sendPhaseMessage(phaseId: string, message: string) {
-    if (!message.trim()) return;
-    const msg: PhaseMessage = {
-      id: makeId("msg"),
-      phaseId,
-      senderId: currentUser?.id,
-      senderName: currentUser?.name ?? "User",
-      senderRole: currentUser?.role ?? "CLIENT",
-      message,
-      createdAt: new Date().toISOString(),
-      type: "MESSAGE",
-    };
-    updatePhase(phaseId, (phase) => ({
-      ...phase,
-      messages: [...phase.messages, msg],
-    }));
+  async function sendPhaseMessage(phaseId: string, message: string) {
+    await api.messages.send(phaseId, message);
+    await syncPortalData();
   }
 
-  function addReview(
+  async function addReview(
     projectId: string,
     rating: number,
     comment: string,
     permissionToPublish: boolean,
   ) {
-    const review = {
-      id: makeId("review"),
-      projectId,
-      clientId: currentUser?.id ?? "client_hello",
-      rating,
-      comment,
-      permissionToPublish,
-      createdAt: new Date().toISOString(),
-    };
-    setState((prev) => ({ ...prev, reviews: [review, ...prev.reviews] }));
+    await api.reviews.create({ projectId, rating, comment, permissionToPublish });
+    await syncPortalData();
   }
 
   const value: AppContextValue = {
     state,
-    session,
     currentUser,
+    sessionLoading,
+    dataLoading: dataLoading || isRefreshingState,
     selectedProjectId: selectedProject?.id,
     selectedProject,
     clientProjects,
-    login,
-    signup,
     logout,
     setSelectedProjectId,
     resetDemo,
@@ -1047,6 +436,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     requestChanges,
     sendPhaseMessage,
     addReview,
+    refresh: syncPortalData,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
