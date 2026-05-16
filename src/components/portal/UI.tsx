@@ -356,6 +356,7 @@ export interface DataListProps<T> {
   allowedViews?: ViewMode[];
   defaultView?: ViewMode;
   allowReverse?: boolean;
+  actions?: React.ReactNode;
 }
 
 export function DataList<T>({
@@ -368,6 +369,7 @@ export function DataList<T>({
   allowedViews = ["list", "grid"],
   defaultView = "list",
   allowReverse = true,
+  actions,
 }: DataListProps<T>) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<ViewMode>(defaultView);
@@ -397,39 +399,68 @@ export function DataList<T>({
   const viewClassMap: Record<ViewMode, string> = {
     list: "stack",
     grid: "grid-2-even", // 2 items per row
-    grid2: "grid-3",     // 3 items per row
-    grid3: "grid-4",     // 4 items per row
+    grid2: "grid-3", // 3 items per row
+    grid3: "grid-4", // 4 items per row
   };
 
   return (
-    <Card>
+    <Card className="datalist-card">
       <div
-        className="card-title"
+        className="card-title datalist-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: 16,
+          gap: 12,
         }}
       >
-        <div>{title}</div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div className="datalist-title">{title}</div>
+        <div
+          className="datalist-controls"
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+            flex: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          {actions && (
+            <div
+              className="datalist-actions"
+              style={{ display: "flex", gap: 8, alignItems: "center" }}
+            >
+              {actions}
+            </div>
+          )}
           {filterFn && (
-            <Input
-              placeholder="Search..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              style={{ width: 200, padding: "6px 12px", height: 36 }}
-            />
+            <div
+              className="datalist-search"
+              style={{ position: "relative", minWidth: 160 }}
+            >
+              <Input
+                placeholder="Search..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 12px 6px 12px",
+                  height: 36,
+                  fontSize: 13,
+                }}
+              />
+            </div>
           )}
           <div
+            className="datalist-views"
             style={{
               display: "flex",
               gap: 4,
-              background: "var(--background)",
+              background: "var(--surface-soft)",
               padding: 4,
-              borderRadius: 6,
+              borderRadius: 8,
               border: "1px solid var(--line)",
             }}
           >
@@ -438,11 +469,10 @@ export function DataList<T>({
                 onClick={() => setIsReversed(!isReversed)}
                 style={{
                   padding: "4px 8px",
-                  borderRadius: 4,
+                  borderRadius: 6,
                   background: isReversed ? "var(--surface)" : "transparent",
                   border: "none",
                   cursor: "pointer",
-                  marginRight: 4,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -482,13 +512,13 @@ export function DataList<T>({
           </div>
         </div>
       </div>
+
       <div className={`card-body ${viewClassMap[view]}`}>
-        {currentData.length > 0 ? (
-          currentData.map((item, index) => renderItem(item, view))
-        ) : (
-          emptyState || <p>No results found.</p>
-        )}
+        {currentData.length > 0
+          ? currentData.map((item, index) => renderItem(item, view))
+          : emptyState || <p>No results found.</p>}
       </div>
+
       {totalPages > 1 && (
         <div
           style={{
@@ -506,9 +536,11 @@ export function DataList<T>({
           >
             Previous
           </Button>
+
           <span style={{ fontSize: 14, color: "var(--muted)" }}>
             Page {page} of {totalPages}
           </span>
+
           <Button
             variant="secondary"
             disabled={page === totalPages}

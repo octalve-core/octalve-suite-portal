@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -79,8 +79,21 @@ function deliverableBadge(status: string) {
 
 function ActionMenu({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
   return (
-    <div className="actions-wrap">
+    <div className="actions-wrap" ref={ref}>
       <button
         className="icon-btn"
         onClick={(event) => {
@@ -92,10 +105,7 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
         <MoreVertical size={18} />
       </button>
       {open && (
-        <div
-          className="action-menu"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="action-menu" onClick={() => setOpen(false)}>
           {children}
         </div>
       )}
@@ -298,22 +308,31 @@ export function AdminOverview() {
 
 export function AdminProjects() {
   const { state, deleteProject } = useApp();
-  const [search, setSearch] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [status, setStatus] = useState("All Status");
   const [pkg, setPkg] = useState("All Packages");
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const projects = state.projects.filter((project) => {
-    const matchesSearch = `${project.title} ${project.businessName}`
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchesStatus = status === "All Status" || project.status === status;
-    const matchesPkg = pkg === "All Packages" || project.packageType === pkg;
-    return matchesSearch && matchesStatus && matchesPkg;
+
+  const activeCount = state.projects.filter((p) =>
+    ["ACTIVE", "AWAITING_BALANCE"].includes(p.status),
+  ).length;
+  const awaitingDeposit = state.projects.filter(
+    (p) => p.status === "APPROVED_AWAITING_DEPOSIT",
+  ).length;
+  const completedCount = state.projects.filter(
+    (p) => p.status === "COMPLETED",
+  ).length;
+
+  const filteredProjects = state.projects.filter((p) => {
+    const matchesStatus = status === "All Status" || p.status === status;
+    const matchesPkg = pkg === "All Packages" || p.packageType === pkg;
+    return matchesStatus && matchesPkg;
   });
+
   return (
     <div className="content">
       <PageHeader
         title="Projects"
+        subtitle={`${state.projects.length} total projects`}
         action={
           <Link href="/admin/projects/new">
             <Button>
@@ -322,96 +341,229 @@ export function AdminProjects() {
           </Link>
         }
       />
-      <div className="form-grid" style={{ maxWidth: 980, marginBottom: 28 }}>
-        <Input
-          placeholder="Search projects..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Active Projects"
+          value={activeCount}
+          icon={Icons.projects}
+          tone="blue"
         />
-        <Select
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <option>All Status</option>
-          <option>ACTIVE</option>
-          <option>APPROVED_AWAITING_DEPOSIT</option>
-          <option>PENDING_REVIEW</option>
-          <option>COMPLETED</option>
-        </Select>
-        <Select value={pkg} onChange={(event) => setPkg(event.target.value)}>
-          <option>All Packages</option>
-          <option>Launch</option>
-          <option>Impact</option>
-          <option>Growth</option>
-          <option>Partner</option>
-          <option>Custom</option>
-        </Select>
+        <MetricCard
+          label="Awaiting Deposit"
+          value={awaitingDeposit}
+          icon={Icons.clock}
+          tone="orange"
+        />
+        <MetricCard
+          label="Completed"
+          value={completedCount}
+          icon={Icons.check}
+          tone="green"
+        />
       </div>
-      <div className="grid-3">
-        {projects.map((project) => (
-          <Card
-            key={project.id}
-            className="project-card"
-            style={{ position: "relative" }}
-          >
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Project Portfolio</h2>}
+          defaultView="grid"
+          allowedViews={["grid", "grid2", "grid3", "list"]}
+          data={filteredProjects}
+          actions={
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+              className="datalist-filters"
+              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
             >
-              <Badge className={packageClass(project.packageType)}>
-                {project.packageType}
-              </Badge>
-              <ActionMenu>
-                <Link href={`/admin/projects/${project.id}`}>
-                  <Edit3 size={15} /> Open details
-                </Link>
-                <Button
-                  variant="ghost"
-                  className="danger"
-                  style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
-                  loading={pendingAction === `delete-${project.id}`}
-                  onClick={async () => {
-                    if (confirm(`Are you sure you want to delete ${project.title}?`)) {
-                      setPendingAction(`delete-${project.id}`);
-                      try {
-                        await deleteProject(project.id);
-                      } finally {
-                        setPendingAction(null);
-                      }
-                    }
-                  }}
-                >
-                  <Trash2 size={15} /> Delete project
-                </Button>
-              </ActionMenu>
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
+              >
+                <option>All Status</option>
+                <option>ACTIVE</option>
+                <option>APPROVED_AWAITING_DEPOSIT</option>
+                <option>PENDING_REVIEW</option>
+                <option>COMPLETED</option>
+              </Select>
+              <Select
+                value={pkg}
+                onChange={(e) => setPkg(e.target.value)}
+                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
+              >
+                <option>All Packages</option>
+                <option>Launch</option>
+                <option>Impact</option>
+                <option>Growth</option>
+                <option>Partner</option>
+                <option>Custom</option>
+              </Select>
             </div>
-            <Link href={`/admin/projects/${project.id}`}>
-              <div>
-                <h3>{project.title}</h3>
-                <p>{project.businessName}</p>
-              </div>
-              <Badge className={statusClass(project.status)}>
-                {statusLabel(project.status)}
-              </Badge>
-              <div className="project-card-footer">
-                <div className="timeline-row">
-                  <span style={{ color: "var(--muted)" }}>Progress</span>
-                  <strong>
-                    {
-                      project.phases.filter((p) => p.status === "APPROVED")
-                        .length
-                    }
-                    /{project.phases.length} phases
-                  </strong>
+          }
+          filterFn={(project, query) => {
+            const text =
+              `${project.title} ${project.businessName} ${project.status} ${project.packageType} ${project.projectCode}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={9}
+          emptyState={
+            <EmptyState
+              title="No projects found"
+              body="No projects match your search criteria."
+            />
+          }
+          renderItem={(project, view) => {
+            if (view.startsWith("grid")) {
+              return (
+                <Card
+                  key={project.id}
+                  className="project-card"
+                  style={{ position: "relative" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Badge className={packageClass(project.packageType)}>
+                      {project.packageType}
+                    </Badge>
+                    <ActionMenu>
+                      <Link href={`/admin/projects/${project.id}`}>
+                        <Edit3 size={15} /> Open details
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        className="danger"
+                        style={{
+                          color: "var(--danger)",
+                          width: "100%",
+                          justifyContent: "flex-start",
+                          height: 32,
+                          padding: "0 8px",
+                        }}
+                        loading={pendingAction === `delete-${project.id}`}
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Are you sure you want to delete ${project.title}?`,
+                            )
+                          ) {
+                            setPendingAction(`delete-${project.id}`);
+                            try {
+                              await deleteProject(project.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} /> Delete project
+                      </Button>
+                    </ActionMenu>
+                  </div>
+                  <Link href={`/admin/projects/${project.id}`}>
+                    <div>
+                      <h3>{project.title}</h3>
+                      <p>{project.businessName}</p>
+                    </div>
+                    <Badge className={statusClass(project.status)}>
+                      {statusLabel(project.status)}
+                    </Badge>
+                    <div className="project-card-footer">
+                      <div className="timeline-row">
+                        <span style={{ color: "var(--muted)" }}>Progress</span>
+                        <strong>
+                          {
+                            project.phases.filter(
+                              (p) => p.status === "APPROVED",
+                            ).length
+                          }
+                          /{project.phases.length} phases
+                        </strong>
+                      </div>
+                      <ProgressBar value={projectProgress(project)} />
+                    </div>
+                  </Link>
+                </Card>
+              );
+            }
+
+            return (
+              <div
+                key={project.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16 }}>
+                  <div
+                    className={`metric-icon tone-${project.status === "COMPLETED" ? "green" : ["ACTIVE", "AWAITING_BALANCE"].includes(project.status) ? "blue" : "orange"}`}
+                    style={{ width: 40, height: 40, fontSize: 16 }}
+                  >
+                    {Icons.projects}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                      {project.title}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 0 }}>
+                      {project.businessName} • {project.packageType}
+                    </p>
+                    <div style={{ marginTop: 8 }}>
+                      <Badge className={statusClass(project.status)}>
+                        {statusLabel(project.status)}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
-                <ProgressBar value={projectProgress(project)} />
+
+                <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+                  <div style={{ width: 160 }}>
+                    <div
+                      className="timeline-row"
+                      style={{ marginBottom: 8, fontSize: 13 }}
+                    >
+                      <span style={{ color: "var(--muted)" }}>Progress</span>
+                      <strong>{projectProgress(project)}%</strong>
+                    </div>
+                    <ProgressBar value={projectProgress(project)} />
+                  </div>
+                  <ActionMenu>
+                    <Link href={`/admin/projects/${project.id}`}>
+                      View Details
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${project.title}?`,
+                          )
+                        ) {
+                          await deleteProject(project.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </ActionMenu>
+                </div>
               </div>
-            </Link>
-          </Card>
-        ))}
+            );
+          }}
+        />
       </div>
     </div>
   );
@@ -1424,67 +1576,163 @@ function RequestReviewModal({
 
 export function AdminClients() {
   const { state } = useApp();
-  const [search, setSearch] = useState("");
-  const clients = state.users.filter(
+
+  const totalClients = state.users.filter((u) => u.role === "CLIENT").length;
+  const highValue = state.users.filter(
     (u) =>
       u.role === "CLIENT" &&
-      `${u.name} ${u.email} ${u.company}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+      state.projects.filter((p) => p.clientId === u.id).length >= 2,
+  ).length;
+  const activeProjects = state.projects.filter(
+    (p) => p.status === "ACTIVE",
+  ).length;
+
   return (
     <div className="content">
-      <PageHeader title="Clients" />
-      <Input
-        placeholder="Search clients..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ maxWidth: 520, marginBottom: 28 }}
+      <PageHeader
+        title="Clients"
+        subtitle={`${totalClients} registered clients`}
       />
-      <div className="grid-3">
-        {clients.map((client) => {
-          const projects = state.projects.filter(
-            (p) => p.clientId === client.id,
-          );
-          return (
-            <Card key={client.id} className="card-body">
-              <div className="deliverable-main">
-                <div className="package-icon">▥</div>
-                <div>
-                  <h3 style={{ margin: 0 }}>{client.company ?? client.name}</h3>
-                  <p style={{ color: "var(--muted)", margin: 4 }}>
-                    ✉ {client.email}
-                  </p>
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Clients"
+          value={totalClients}
+          icon={Icons.clients}
+          tone="blue"
+        />
+        <MetricCard
+          label="High Value"
+          value={highValue}
+          icon="★"
+          tone="orange"
+        />
+        <MetricCard
+          label="Active Projects"
+          value={activeProjects}
+          icon={Icons.projects}
+          tone="purple"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Client Directory</h2>}
+          data={state.users.filter((u) => u.role === "CLIENT")}
+          defaultView="grid2"
+          allowedViews={["grid2", "list"]}
+          filterFn={(u, q) =>
+            `${u.name} ${u.email} ${u.company}`
+              .toLowerCase()
+              .includes(q.toLowerCase())
+          }
+          renderItem={(client, view) => {
+            const projects = state.projects.filter(
+              (p) => p.clientId === client.id,
+            );
+
+            if (view === "list") {
+              return (
+                <div
+                  key={client.id}
+                  className="deliverable-row"
+                  style={{
+                    padding: "16px 0",
+                    borderBottom: "1px solid var(--line)",
+                  }}
+                >
+                  <div className="deliverable-main">
+                    <div className="avatar">{client.name[0]}</div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16 }}>
+                        {client.company ?? client.name}
+                      </h3>
+                      <p style={{ color: "var(--muted)", margin: 0 }}>
+                        {client.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    style={{ display: "flex", gap: 32, alignItems: "center" }}
+                  >
+                    <div style={{ textAlign: "right" }}>
+                      <strong>{projects.length}</strong>
+                      <p
+                        style={{
+                          color: "var(--muted)",
+                          margin: 0,
+                          fontSize: 12,
+                        }}
+                      >
+                        Projects
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {[...new Set(projects.map((p) => p.packageType))].map(
+                        (p) => (
+                          <Badge key={p} className={packageClass(p)}>
+                            {p[0]}
+                          </Badge>
+                        ),
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="grid-3" style={{ margin: "22px 0" }}>
-                <div>
-                  <span>Active</span>
-                  <strong>
-                    {projects.filter((p) => p.status === "ACTIVE").length}
-                  </strong>
+              );
+            }
+
+            return (
+              <Card key={client.id} className="card-body">
+                <div className="deliverable-main" style={{ marginBottom: 20 }}>
+                  <div className="avatar" style={{ width: 48, height: 48 }}>
+                    {client.name[0]}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0 }}>
+                      {client.company ?? client.name}
+                    </h3>
+                    <p style={{ color: "var(--muted)", margin: 4 }}>
+                      {client.email}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <span>Completed</span>
-                  <strong>
-                    {projects.filter((p) => p.status === "COMPLETED").length}
-                  </strong>
+                <div className="grid-3" style={{ margin: "22px 0" }}>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Active
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.filter((p) => p.status === "ACTIVE").length}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Done
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.filter((p) => p.status === "COMPLETED").length}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Total
+                    </span>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {projects.length}
+                    </strong>
+                  </div>
                 </div>
-                <div>
-                  <span>Total</span>
-                  <strong>{projects.length}</strong>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[...new Set(projects.map((p) => p.packageType))].map((p) => (
+                    <Badge key={p} className={packageClass(p)}>
+                      {p}
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {[...new Set(projects.map((p) => p.packageType))].map((p) => (
-                  <Badge key={p} className={packageClass(p)}>
-                    {p}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          }}
+        />
       </div>
     </div>
   );
@@ -1493,94 +1741,271 @@ export function AdminClients() {
 export function AdminTemplates() {
   const { state, createTemplate, updateTemplate, deleteTemplate } = useApp();
   const [modal, setModal] = useState<ProjectTemplate | "new" | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(state.templates.slice(0, 1).map((t) => [t.id, true])),
-  );
+  const [open, setOpen] = useState<Record<string, boolean>>({});
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  const avgPhases = Math.round(
+    state.templates.reduce((acc, t) => acc + t.phases.length, 0) /
+      state.templates.length || 0,
+  );
 
   return (
     <div className="content">
       <PageHeader
         title="Templates"
+        subtitle="Manage standardized project structures"
         action={
           <Button onClick={() => setModal("new")}>
             <Plus size={18} /> Create Template
           </Button>
         }
       />
-      <div className="grid-2-even">
-        {state.templates.map((template) => (
-          <Card key={template.id} className="card-body">
-            <div className="deliverable-main">
-              <div className="package-icon">{template.packageType[0]}</div>
-              <div>
-                <h2 style={{ margin: 0 }}>{template.name}</h2>
-                <Badge className={packageClass(template.packageType)}>
-                  {template.packageType}
-                </Badge>
-              </div>
-              <ActionMenu>
-                <button onClick={() => setModal(template)}>
-                  <Edit3 size={15} /> Edit template
-                </button>
-                <Button
-                  variant="ghost"
-                  className="danger"
-                  style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
-                  loading={pendingAction === `delete-${template.id}`}
-                  onClick={async () => {
-                    if (confirm(`Are you sure you want to delete ${template.packageType} template?`)) {
-                      setPendingAction(`delete-${template.id}`);
-                      try {
-                        await deleteTemplate(template.id);
-                      } finally {
-                        setPendingAction(null);
-                      }
-                    }
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Templates"
+          value={state.templates.length}
+          icon={Icons.templates}
+          tone="purple"
+        />
+        <MetricCard
+          label="Avg. Phases"
+          value={avgPhases}
+          icon={Icons.phases}
+          tone="blue"
+        />
+        <MetricCard
+          label="Ready Packages"
+          value={new Set(state.templates.map((t) => t.packageType)).size}
+          icon={Icons.check}
+          tone="green"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Standard Packages</h2>}
+          data={state.templates}
+          defaultView="grid"
+          allowedViews={["grid", "list"]}
+          filterFn={(t, q) =>
+            `${t.name} ${t.packageType} ${t.description}`
+              .toLowerCase()
+              .includes(q.toLowerCase())
+          }
+          renderItem={(template, view) => {
+            if (view === "list") {
+              const isOpen = open[template.id];
+
+              return (
+                <div key={template.id} className="template-list-item">
+                  <div
+                    className="deliverable-row"
+                    style={{ padding: "16px 0" }}
+                  >
+                    <div className="deliverable-main">
+                      <div
+                        className="package-icon"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          fontSize: 18,
+                          borderRadius: 14,
+                        }}
+                      >
+                        {template.packageType[0]}
+                      </div>
+
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
+                          {template.name}
+                        </h3>
+                        <p
+                          style={{
+                            color: "var(--muted)",
+                            margin: "2px 0 0",
+                            fontSize: 13,
+                          }}
+                        >
+                          {template.phases.length} Phases •{" "}
+                          <span style={{ color: "var(--primary)" }}>
+                            {template.packageType}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{ display: "flex", gap: 12, alignItems: "center" }}
+                    >
+                      <Button
+                        variant="secondary"
+                        onClick={() => setModal(template)}
+                        style={{ height: 32, padding: "0 14px", fontSize: 13 }}
+                      >
+                        Edit
+                      </Button>
+                      <button
+                        className="icon-btn"
+                        style={{
+                          background: isOpen ? "var(--primary-soft)" : "",
+                          color: isOpen ? "var(--primary)" : "",
+                        }}
+                        onClick={() =>
+                          setOpen((prev) => ({
+                            ...prev,
+                            [template.id]: !prev[template.id],
+                          }))
+                        }
+                      >
+                        {isOpen ? (
+                          <ChevronUp size={18} />
+                        ) : (
+                          <ChevronDown size={18} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <div className="phase-list-nested">
+                      {template.phases.map((p, i) => (
+                        <div key={p.id} className="phase-row-compact">
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              alignItems: "center",
+                            }}
+                          >
+                            <span className="badge badge-slate">{i + 1}</span>
+                            <strong style={{ fontWeight: 600 }}>
+                              {p.title}
+                            </strong>
+                          </div>
+                          <span
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: 12,
+                              background: "#f1f5f9",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                            }}
+                          >
+                            {p.deliverables.length} deliverables
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <Card key={template.id} className="card-body">
+                <div className="deliverable-main">
+                  <div className="package-icon">{template.packageType[0]}</div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ margin: 0, fontSize: 18 }}>{template.name}</h2>
+                    <Badge className={packageClass(template.packageType)}>
+                      {template.packageType}
+                    </Badge>
+                  </div>
+
+                  <ActionMenu>
+                    <button onClick={() => setModal(template)}>
+                      <Edit3 size={15} /> Edit template
+                    </button>
+
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      loading={pendingAction === `delete-${template.id}`}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${template.packageType} template?`,
+                          )
+                        ) {
+                          setPendingAction(`delete-${template.id}`);
+                          try {
+                            await deleteTemplate(template.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} /> Delete template
+                    </Button>
+                  </ActionMenu>
+                </div>
+
+                <p
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 14,
+                    margin: "12px 0 20px",
+                    lineHeight: 1.5,
                   }}
                 >
-                  <Trash2 size={15} /> Delete template
-                </Button>
-              </ActionMenu>
-            </div>
-            <p style={{ color: "var(--muted)" }}>{template.description}</p>
-            <div className="template-phase-header">
-              <strong>{template.phases.length} Phases</strong>
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setOpen((prev) => ({
-                    ...prev,
-                    [template.id]: !prev[template.id],
-                  }))
-                }
-              >
-                {open[template.id] ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}{" "}
-                {open[template.id] ? "Collapse" : "Expand"}
-              </Button>
-            </div>
-            {open[template.id] && (
-              <div className="stack" style={{ marginTop: 18 }}>
-                {template.phases.map((p, i) => (
-                  <div className="template-phase-row" key={p.id}>
-                    <div className="deliverable-main">
-                      <span className="badge badge-slate">{i + 1}</span>
-                      <strong>{p.title}</strong>
-                    </div>
-                    <span style={{ color: "var(--muted)" }}>
-                      {p.deliverables.length} deliverables
-                    </span>
+                  {template.description}
+                </p>
+
+                <div className="template-phase-header">
+                  <strong>{template.phases.length} Phases</strong>
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setOpen((prev) => ({
+                        ...prev,
+                        [template.id]: !prev[template.id],
+                      }))
+                    }
+                    style={{ fontSize: 13 }}
+                  >
+                    {open[template.id] ? (
+                      <ChevronUp size={14} />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}{" "}
+                    {open[template.id] ? "Collapse" : "Expand"}
+                  </Button>
+                </div>
+
+                {open[template.id] && (
+                  <div className="stack" style={{ marginTop: 18 }}>
+                    {template.phases.map((p, i) => (
+                      <div className="template-phase-row" key={p.id}>
+                        <div className="deliverable-main">
+                          <span
+                            className="badge badge-slate"
+                            style={{ minWidth: 24, justifyContent: "center" }}
+                          >
+                            {i + 1}
+                          </span>
+                          <strong style={{ fontSize: 14 }}>{p.title}</strong>
+                        </div>
+                        <span style={{ color: "var(--muted)", fontSize: 12 }}>
+                          {p.deliverables.length} deliverables
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        ))}
+                )}
+              </Card>
+            );
+          }}
+        />
       </div>
+
       {modal && (
         <TemplateModal
           template={modal === "new" ? undefined : modal}
@@ -1692,7 +2117,7 @@ function TemplateModal({
             <Card
               key={index}
               className="card-body"
-              style={{ boxShadow: "none" }}
+              style={{ boxShadow: "none", background: "var(--surface-soft)" }}
             >
               <div className="deliverable-main">
                 <span className="badge badge-purple">{index + 1}</span>
@@ -1749,11 +2174,23 @@ export function AdminTeam() {
   const [modal, setModal] = useState<User | "new" | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const team = state.users.filter((u) => u.role !== "CLIENT");
+
+  // Pre-calculate assignments for metrics and sorting
+  const teamWithStats = team.map((member) => {
+    const assigned = state.projects
+      .flatMap((p) => p.phases)
+      .filter((phase) => phase.assignedStaffId === member.id).length;
+    return { ...member, assigned };
+  });
+
+  const totalPhases = teamWithStats.reduce((sum, m) => sum + m.assigned, 0);
+  const highLoad = teamWithStats.filter((m) => m.assigned > 5).length;
+
   return (
-    <div className="content narrow">
+    <div className="content">
       <PageHeader
         title="Team"
-        subtitle={`${team.length} team members`}
+        subtitle="Manage your agency staff and workload"
         action={
           <Button onClick={() => setModal("new")}>
             <Plus size={18} /> Add Team Member
@@ -1761,55 +2198,201 @@ export function AdminTeam() {
         }
       />
 
-      <div className="grid-2-even">
-        {team.map((member) => {
-          const assigned = state.projects
-            .flatMap((p) => p.phases)
-            .filter((phase) => phase.assignedStaffId === member.id).length;
-          return (
-            <Card key={member.id} className="card-body">
-              <div className="deliverable-main">
-                <div className="avatar">{member.name[0]}</div>
-                <div>
-                  <h3 style={{ margin: 0 }}>{member.name}</h3>
-                  <p style={{ margin: 4, color: "var(--muted)" }}>
-                    ✉ {member.email}
-                  </p>
-                </div>
-                <ActionMenu>
-                  <button onClick={() => setModal(member)}>
-                    <Edit3 size={15} /> Edit member
-                  </button>
-                  <Button
-                    variant="ghost"
-                    className="danger"
-                    style={{ color: "var(--danger)", width: "100%", justifyContent: "flex-start", height: 32, padding: "0 8px" }}
-                    loading={pendingAction === `delete-${member.id}`}
-                    onClick={async () => {
-                      if (confirm(`Are you sure you want to delete ${member.name}?`)) {
-                        setPendingAction(`delete-${member.id}`);
-                        try {
-                          await deleteTeamMember(member.id);
-                        } finally {
-                          setPendingAction(null);
-                        }
-                      }
-                    }}
+      <div className="metric-grid">
+        <MetricCard
+          label="Total Members"
+          value={team.length}
+          icon={Icons.team}
+          tone="blue"
+        />
+        <MetricCard
+          label="Active Phases"
+          value={totalPhases}
+          icon={Icons.phases}
+          tone="purple"
+        />
+        <MetricCard
+          label="High Load Staff"
+          value={highLoad}
+          icon="!"
+          tone="red"
+        />
+      </div>
+
+      <div className="grid-1" style={{ marginTop: 24 }}>
+        <DataList
+          title={<h2>Team Directory</h2>}
+          defaultView="grid"
+          allowedViews={["list", "grid", "grid2"]}
+          data={teamWithStats}
+          filterFn={(member, query) => {
+            const text =
+              `${member.name} ${member.email} ${member.specialty} ${member.role}`.toLowerCase();
+            return text.includes(query.toLowerCase());
+          }}
+          itemsPerPage={8}
+          emptyState={
+            <EmptyState
+              title="No team members"
+              body="No staff match your criteria."
+            />
+          }
+          renderItem={(member, view) => {
+            if (view.startsWith("grid")) {
+              return (
+                <Card key={member.id} className="card-body">
+                  <div className="deliverable-main">
+                    <div className="avatar">{member.name[0]}</div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: 0 }}>{member.name}</h3>
+                      <p
+                        style={{
+                          margin: "4px 0",
+                          color: "var(--muted)",
+                          fontSize: 13,
+                        }}
+                      >
+                        ✉ {member.email}
+                      </p>
+                    </div>
+                    <ActionMenu>
+                      <button onClick={() => setModal(member)}>
+                        <Edit3 size={15} /> Edit member
+                      </button>
+
+                      <Button
+                        variant="ghost"
+                        className="danger"
+                        style={{
+                          color: "var(--danger)",
+                          width: "100%",
+                          justifyContent: "flex-start",
+                          height: 32,
+                          padding: "0 8px",
+                        }}
+                        loading={pendingAction === `delete-${member.id}`}
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              `Are you sure you want to delete ${member.name}?`,
+                            )
+                          ) {
+                            setPendingAction(`delete-${member.id}`);
+                            try {
+                              await deleteTeamMember(member.id);
+                            } finally {
+                              setPendingAction(null);
+                            }
+                          }
+                        }}
+                      >
+                        <Trash2 size={15} /> Delete member
+                      </Button>
+                    </ActionMenu>
+                  </div>
+
+                  <div
+                    className="timeline-row"
+                    style={{ marginTop: 20, marginBottom: 12 }}
                   >
-                    <Trash2 size={15} /> Delete member
-                  </Button>
-                </ActionMenu>
+                    <span style={{ fontSize: 14 }}>
+                      ▣ {member.assigned} active phases
+                    </span>
+                    {member.assigned > 5 && (
+                      <Badge className="badge-red">High load</Badge>
+                    )}
+                  </div>
+
+                  <Badge className="badge-purple">
+                    {member.specialty ?? statusLabel(member.role)}
+                  </Badge>
+                </Card>
+              );
+            }
+
+            return (
+              <div
+                key={member.id}
+                className="deliverable-row"
+                style={{
+                  padding: "16px 0",
+                  borderBottom: "1px solid var(--line)",
+                }}
+              >
+                <div className="deliverable-main" style={{ gap: 16 }}>
+                  <div className="avatar" style={{ width: 40, height: 40 }}>
+                    {member.name[0]}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                      {member.name}
+                    </h3>
+                    <p
+                      style={{ color: "var(--muted)", margin: 0, fontSize: 14 }}
+                    >
+                      {member.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <Badge className="badge-purple">
+                      {member.specialty ?? statusLabel(member.role)}
+                    </Badge>
+                  </div>
+                  <div style={{ width: 140, textAlign: "right" }}>
+                    <strong>{member.assigned} phases</strong>
+                    {member.assigned > 5 && (
+                      <p
+                        style={{
+                          color: "var(--danger)",
+                          fontSize: 12,
+                          margin: 0,
+                        }}
+                      >
+                        High Load
+                      </p>
+                    )}
+                  </div>
+                  <ActionMenu>
+                    <button onClick={() => setModal(member)}>
+                      <Edit3 size={14} /> Edit
+                    </button>
+                    <Button
+                      variant="ghost"
+                      className="danger"
+                      style={{
+                        color: "var(--danger)",
+                        width: "100%",
+                        justifyContent: "flex-start",
+                        height: 32,
+                        padding: "0 8px",
+                      }}
+                      loading={pendingAction === `delete-${member.id}`}
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `Are you sure you want to delete ${member.name}?`,
+                          )
+                        ) {
+                          setPendingAction(`delete-${member.id}`);
+                          try {
+                            await deleteTeamMember(member.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete
+                    </Button>
+                  </ActionMenu>
+                </div>
               </div>
-              <div className="timeline-row" style={{ marginTop: 24 }}>
-                <span>▣ {assigned} active phases</span>
-                {assigned > 5 && <Badge className="badge-red">High load</Badge>}
-              </div>
-              <Badge className="badge-purple">
-                {member.specialty ?? statusLabel(member.role)}
-              </Badge>
-            </Card>
-          );
-        })}
+            );
+          }}
+        />
       </div>
 
       {modal && (
@@ -2189,9 +2772,10 @@ export function AdminAnalytics() {
   const projectsLoaded = state.projects?.length > 0;
   const total = state.projects?.length;
   const active = state.projects?.filter((p) => p.status === "ACTIVE").length;
-  const overdue = state?.projects
-    ?.flatMap((p) => p.phases)
-    ?.filter((p) => p.status === "CHANGES_REQUESTED")?.length || 0;
+  const overdue =
+    state?.projects
+      ?.flatMap((p) => p.phases)
+      ?.filter((p) => p.status === "CHANGES_REQUESTED")?.length || 0;
   const packageData = (
     ["Launch", "Impact", "Growth", "Partner"] as PackageType[]
   ).map((name) => ({
@@ -2205,8 +2789,9 @@ export function AdminAnalytics() {
     "APPROVED",
   ].map((s) => ({
     status: statusLabel(s as any),
-    count: state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
-      ?.length || 0,
+    count:
+      state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
+        ?.length || 0,
   }));
   const COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"];
   return (
