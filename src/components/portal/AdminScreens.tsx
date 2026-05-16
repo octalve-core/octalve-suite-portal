@@ -52,6 +52,7 @@ import {
   Modal,
   packageClass,
   PageHeader,
+  PageLoading,
   ProgressBar,
   projectProgress,
   Select,
@@ -1102,16 +1103,33 @@ export function AdminPhaseDetail({
 }
 
 export function AdminCreateProject() {
-  const { state, createAdminProject } = useApp();
+  const { state, createAdminProject, dataLoading } = useApp();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
+
+  if (state.templates.length === 0) {
+    if (dataLoading) return <PageLoading />;
+
+    return (
+      <div className="content">
+        <BackLink href="/admin/projects" />
+        <EmptyState
+          title="No Templates Found"
+          body="You need to create at least one project template before you can create a new project."
+        />
+      </div>
+    );
+  }
+
   const template =
     state.templates.find((t) => t.packageType === packageType) ??
     state.templates[0];
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [form, setForm] = useState({
-    templateId: template.id,
+    templateId: template?.id ?? "",
     title: "",
     clientName: "",
     clientEmail: "",
@@ -1178,7 +1196,7 @@ export function AdminCreateProject() {
           <Card className="template-preview">
             <h3>Template Preview</h3>
             <ol>
-              {selectedTemplate.phases.map((p) => (
+              {selectedTemplate?.phases?.map((p) => (
                 <li key={p.id}>{p.title}</li>
               ))}
             </ol>
@@ -1310,7 +1328,7 @@ export function AdminCreateProject() {
             </div>
             <div className="timeline-row">
               <span>Phases</span>
-              <strong>{selectedTemplate.phases.length}</strong>
+              <strong>{selectedTemplate?.phases?.length ?? 0}</strong>
             </div>
             <div className="timeline-row">
               <span>Deposit</span>
@@ -1357,7 +1375,7 @@ export function AdminCreateProject() {
                 const id = await createAdminProject({
                   ...form,
                   packageType,
-                  templateId: selectedTemplate.id,
+                  templateId: selectedTemplate?.id ?? "",
                 });
                 router.push(`/admin/projects/${id}`);
               } catch (err: any) {

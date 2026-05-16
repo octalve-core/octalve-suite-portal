@@ -377,7 +377,7 @@ export function DataList<T>({
   data,
   filterFn,
   renderItem,
-  itemsPerPage = 10,
+  itemsPerPage: initialItemsPerPage = 10,
   emptyState,
   title,
   allowedViews = ["list", "grid"],
@@ -389,6 +389,7 @@ export function DataList<T>({
   const [view, setView] = useState<ViewMode>(defaultView);
   const [isReversed, setIsReversed] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialItemsPerPage);
 
   const filtered = useMemo(() => {
     let result = data;
@@ -401,14 +402,14 @@ export function DataList<T>({
     return result;
   }, [data, query, filterFn, isReversed]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentData = filtered.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage,
+    (page - 1) * pageSize,
+    page * pageSize,
   );
 
-  // Reset page when query changes
-  useEffect(() => setPage(1), [query]);
+  // Reset page when query or pageSize changes
+  useEffect(() => setPage(1), [query, pageSize]);
 
   const viewClassMap: Record<ViewMode, string> = {
     list: "stack",
@@ -467,6 +468,29 @@ export function DataList<T>({
               />
             </div>
           )}
+
+          <div
+            className="datalist-pagesize"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>Show:</span>
+            <Select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              style={{
+                height: 36,
+                padding: "0 24px 0 10px",
+                fontSize: 13,
+                minWidth: 70,
+                background: "var(--surface-soft)",
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </Select>
+          </div>
           <div
             className="datalist-views"
             style={{

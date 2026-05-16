@@ -1,2 +1,5 @@
 import { SignupScreen } from "@/components/portal/AuthScreens";
-export default function Page() { return <SignupScreen />; }
+
+export default function Page() {
+  return <SignupScreen />;
+}

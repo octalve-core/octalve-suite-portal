@@ -20,7 +20,9 @@ function ResetPasswordForm() {
   async function handleReset() {
     setError("");
     if (!token) {
-      setError("Invalid or missing reset token. Please request a new reset link.");
+      setError(
+        "Invalid or missing reset token. Please request a new reset link.",
+      );
       return;
     }
     if (password.length < 8) {
