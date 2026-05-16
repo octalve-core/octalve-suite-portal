@@ -177,11 +177,17 @@ export function Button({
 export function Badge({
   children,
   className = "",
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
-  return <span className={cx("badge", className)}>{children}</span>;
+  return (
+    <span className={cx("badge", className)} style={style}>
+      {children}
+    </span>
+  );
 }
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -249,9 +255,17 @@ export function EmptyState({
   );
 }
 
-export function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({
+  value,
+  className = "",
+  style,
+}: {
+  value: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <div className="progress">
+    <div className={cx("progress", className)} style={style}>
       <span style={{ width: `${Math.max(0, Math.min(value, 100))}%` }} />
     </div>
   );

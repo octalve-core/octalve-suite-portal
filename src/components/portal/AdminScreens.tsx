@@ -115,36 +115,62 @@ function ActionMenu({ children }: { children: React.ReactNode }) {
 
 function RecentProjects() {
   const { state } = useApp();
+  const projects = state.projects.slice(0, 6);
+
   return (
     <Card>
       <div className="card-title">
         <h2>Recent Projects</h2>
-        <Link className="btn btn-ghost" href="/admin/projects">
-          View All {Icons.arrow}
+        <Link href="/admin/projects" className="btn btn-ghost" style={{ fontSize: 13 }}>
+          View all {Icons.arrow}
         </Link>
       </div>
-      <div className="card-body stack">
-        {state.projects.slice(0, 6).map((project) => (
+      <div className="card-body stack" style={{ gap: 10 }}>
+        {projects.map((project) => (
           <Link
             href={`/admin/projects/${project.id}`}
             className="timeline-row"
             key={project.id}
+            style={{ 
+              padding: '12px 14px', 
+              borderRadius: 12, 
+              background: '#f8fafc',
+              border: '1px solid transparent',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = '#fff';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.04)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = 'transparent';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            <div>
-              <strong>{project.title}</strong>
-              <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <strong style={{ display: 'block', fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {project.title}
+              </strong>
+              <p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 12 }}>
                 {project.businessName}
               </p>
             </div>
-            <Badge className={packageClass(project.packageType)}>
-              {project.packageType}
-            </Badge>
-            <strong>
-              {project.phases.filter((p) => p.status === "APPROVED").length}/
-              {project.phases.length}
-            </strong>
-            <div style={{ width: 120 }}>
-              <ProgressBar value={projectProgress(project)} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <Badge className={packageClass(project.packageType)} style={{ minWidth: 70, textAlign: 'center' }}>
+                {project.packageType}
+              </Badge>
+              <div style={{ textAlign: 'right', minWidth: 40 }}>
+                <strong style={{ fontSize: 13 }}>
+                  {project.phases.filter((p) => p.status === "APPROVED").length}/
+                  {project.phases.length}
+                </strong>
+                <p style={{ margin: 0, fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>Phases</p>
+              </div>
+              <div style={{ width: 100 }}>
+                <ProgressBar value={projectProgress(project)} style={{ height: 6 }} />
+              </div>
             </div>
           </Link>
         ))}
@@ -186,6 +212,7 @@ export function AdminOverview() {
           </Link>
         }
       />
+
       <div className="metric-grid">
         <MetricCard
           label="Active Projects"
@@ -212,8 +239,10 @@ export function AdminOverview() {
           tone="green"
         />
       </div>
+
       <div className="grid-2">
         <RecentProjects />
+
         <div className="stack">
           <Card>
             <div className="card-title">
@@ -249,24 +278,39 @@ export function AdminOverview() {
               )}
             </div>
           </Card>
+
           <Card>
             <div className="card-title">
               <h2>By Package</h2>
             </div>
-            <div className="card-body stack">
+            <div className="card-body stack" style={{ gap: 20 }}>
               {packageCounts.map((item) => (
                 <div key={item.pkg}>
-                  <div className="timeline-row">
-                    <Badge className={packageClass(item.pkg)}>{item.pkg}</Badge>
-                    <strong>{item.count}</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Badge className={packageClass(item.pkg)} style={{ fontWeight: 700 }}>{item.pkg}</Badge>
+                    <div style={{ textAlign: "right" }}>
+                      <strong style={{ fontSize: 16 }}>{item.count}</strong>
+                      <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 4 }}>projects</span>
+                    </div>
                   </div>
-                  <ProgressBar value={Math.max(8, item.count * 25)} />
+                  <ProgressBar
+                    value={Math.max(5, (item.count / Math.max(1, state.projects.length)) * 100)}
+                    style={{ height: 6, background: '#f1f5f9' }}
+                  />
                 </div>
               ))}
             </div>
           </Card>
         </div>
       </div>
+
       <Card style={{ marginTop: 24 }}>
         <div className="card-title">
           <h2>Team Workload</h2>
@@ -274,29 +318,59 @@ export function AdminOverview() {
             Manage Team {Icons.arrow}
           </Link>
         </div>
-        <div className="card-body grid-3">
+        <div className="card-body workload-grid">
           {state.users
             .filter((u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN")
             .map((user) => {
               const phases = state.projects
                 .flatMap((project) => project.phases)
                 .filter((phase) => phase.assignedStaffId === user.id).length;
+              const loadPercent = Math.min(100, (phases / 10) * 100);
+              const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
+
               return (
-                <div key={user.id} style={{ textAlign: "center" }}>
-                  <div className="avatar" style={{ margin: "0 auto 10px" }}>
-                    {user.name[0]}
-                  </div>
-                  <strong>{user.name}</strong>
-                  <p style={{ color: "var(--muted)", margin: 4 }}>
-                    {user.specialty ?? user.role}
-                  </p>
-                  <span
+                <div key={user.id} className="workload-card">
+                  <div
+                    className="avatar"
                     style={{
-                      color: phases > 5 ? "var(--danger)" : "var(--primary)",
+                      width: 52,
+                      height: 52,
+                      fontSize: 18,
+                      background: `var(--${loadTone}-soft)`,
+                      color: `var(--${loadTone})`,
                     }}
                   >
-                    {phases} phases
-                  </span>
+                    {user.name[0]}
+                  </div>
+                  <div className="workload-info">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <strong>{user.name}</strong>
+                      <Badge className={`badge-${loadTone}`} style={{ fontSize: 10 }}>
+                        {phases > 7 ? "High" : "Optimal"}
+                      </Badge>
+                    </div>
+                    <p>{user.specialty ?? user.role}</p>
+                    <div className="workload-stat">
+                      <span style={{ color: `var(--${loadTone})` }}>
+                        {phases} active phases
+                      </span>
+                      <span>{Math.round(loadPercent)}%</span>
+                    </div>
+                    <ProgressBar
+                      value={loadPercent}
+                      style={{
+                        height: 6,
+                        background: "#e2e8f0",
+                        "--progress-fill": `var(--${loadTone})`,
+                      } as any}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -1817,7 +1891,9 @@ export function AdminTemplates() {
                       </div>
 
                       <div>
-                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>
+                        <h3
+                          style={{ margin: 0, fontSize: 16, fontWeight: 800 }}
+                        >
                           {template.name}
                         </h3>
                         <p

@@ -1687,3 +1687,51 @@ strong,
   height: 24px;
   font-size: 11px;
 }
+
+/* Team Workload Premium Styling */
+.workload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+.workload-card {
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+.workload-card:hover {
+  background: #fff;
+  border-color: var(--primary-soft);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+.workload-info {
+  flex: 1;
+  min-width: 0;
+}
+.workload-info strong {
+  display: block;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.workload-info p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 2px 0 8px;
+}
+.workload-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
