@@ -11,21 +11,26 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:use:pg": "node scripts/switch-db.mjs postgres",
+    "db:use:sqlite": "node scripts/switch-db.mjs sqlite",
     "auth:generate": "npx auth@latest generate",
     "db:seed": "npx tsx src/lib/seed-db.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "7.8.0",
     "@prisma/client-runtime-utils": "^7.8.0",
     "better-auth": "latest",
+    "better-sqlite3": "^12.10.0",
     "lucide-react": "^0.546.0",
     "next": "^16.2.5",
     "pg": "^8.20.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "recharts": "^3.3.0",
+    "sqlite3": "^6.0.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {

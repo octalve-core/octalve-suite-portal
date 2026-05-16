@@ -9,10 +9,10 @@ export async function proxy(request: NextRequest) {
 
   // Allow public routes through
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    // If already logged in and hitting login/signup, redirect away
-    if (sessionCookie && (pathname === "/login" || pathname === "/signup")) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+    // // If already logged in and hitting login/signup, redirect away
+    // if (sessionCookie && (pathname === "/login" || pathname === "/signup")) {
+    //   return NextResponse.redirect(new URL("/", request.url));
+    // }
     const response = NextResponse.next();
     response.headers.set("Cache-Control", "no-store, max-age=0, must-revalidate");
     response.headers.set("Pragma", "no-cache");
