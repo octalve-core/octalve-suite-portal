@@ -2641,17 +2641,37 @@ export function AdminPayments() {
             />
           }
           renderItem={({ project, payment }, view) => {
+            const statusTone =
+              payment.status === "CONFIRMED"
+                ? "success"
+                : payment.status === "PENDING_CONFIRMATION"
+                  ? "warning"
+                  : payment.status === "UNPAID"
+                    ? "blue"
+                    : "danger";
+
             if (view.startsWith("grid")) {
               return (
                 <div
                   key={payment.id}
                   style={{
-                    border: "1px solid var(--line)",
-                    borderRadius: 12,
-                    padding: 16,
+                    background: `var(--${statusTone}-soft)`,
+                    border: `1px solid transparent`,
+                    borderRadius: 16,
+                    padding: 20,
                     display: "flex",
                     flexDirection: "column",
                     gap: 16,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = `var(--${statusTone})`;
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 24px rgba(0,0,0,0.05)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = "transparent";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
                   <div
@@ -2665,8 +2685,8 @@ export function AdminPayments() {
                       <Badge className={statusClass(payment.status)}>
                         {statusLabel(payment.status)}
                       </Badge>
-                      <h3 style={{ margin: "8px 0 4px", fontSize: 16 }}>
-                        {project.title} — {payment.type}
+                      <h3 style={{ margin: "12px 0 4px", fontSize: 16 }}>
+                        {project.title}
                       </h3>
                       <p
                         style={{
@@ -2675,12 +2695,12 @@ export function AdminPayments() {
                           fontSize: 13,
                         }}
                       >
-                        {project.businessName} • Ref: {payment.reference}
+                        {payment.type} • {project.businessName}
                       </p>
                     </div>
                     <div
-                      className={`metric-icon tone-${payment.status === "CONFIRMED" ? "green" : payment.status === "PENDING_CONFIRMATION" ? "orange" : "blue"}`}
-                      style={{ width: 36, height: 36, fontSize: 16 }}
+                      className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
+                      style={{ width: 40, height: 40, fontSize: 18 }}
                     >
                       {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
                     </div>
@@ -2692,13 +2712,26 @@ export function AdminPayments() {
                       alignItems: "flex-end",
                     }}
                   >
-                    <strong style={{ fontSize: 20 }}>
-                      {formatNaira(payment.amount)}
-                    </strong>
+                    <div>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "var(--muted)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Amount
+                      </span>
+                      <strong style={{ fontSize: 20, display: "block" }}>
+                        {formatNaira(payment.amount)}
+                      </strong>
+                    </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       {payment.status === "PENDING_CONFIRMATION" && (
                         <Button
                           variant="success"
+                          style={{ height: 32, fontSize: 13, padding: "0 12px" }}
                           loading={pendingAction === `confirm-${payment.id}`}
                           onClick={async () => {
                             setPendingAction(`confirm-${payment.id}`);
@@ -2709,7 +2742,7 @@ export function AdminPayments() {
                             }
                           }}
                         >
-                          Confirm
+                          Confirm ✓
                         </Button>
                       )}
                     </div>
@@ -2723,110 +2756,73 @@ export function AdminPayments() {
                 key={payment.id}
                 className="deliverable-row"
                 style={{
-                  padding: "16px 0",
-                  borderBottom: "1px solid var(--line)",
+                  padding: "16px",
+                  borderRadius: 16,
+                  background: `var(--${statusTone}-soft)`,
+                  marginBottom: 12,
+                  alignItems: "center",
                 }}
               >
-                <div className="deliverable-main" style={{ gap: 16 }}>
+                <div className="deliverable-main" style={{ gap: 16, flex: 1 }}>
                   <div
-                    className={`metric-icon tone-${payment.status === "CONFIRMED" ? "green" : payment.status === "PENDING_CONFIRMATION" ? "orange" : "blue"}`}
+                    className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
+                    style={{ width: 44, height: 44, fontSize: 18 }}
                   >
                     {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
                   </div>
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: "0 0 2px", fontSize: 16 }}>
                       {project.title} — {payment.type}
                     </h3>
-                    <p style={{ color: "var(--muted)", margin: 0 }}>
+                    <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
                       {project.businessName} • Ref: {payment.reference}
                     </p>
-                    <div
-                      style={{
-                        marginTop: 8,
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
-                    >
-                      <Badge className={statusClass(payment.status)}>
-                        {statusLabel(payment.status)}
-                      </Badge>
-                      {payment.status === "PENDING_CONFIRMATION" && (
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: "var(--warning)",
-                            fontWeight: 500,
-                          }}
-                        >
-                          Action Required
-                        </span>
-                      )}
-                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", marginRight: 24 }}>
+                    <strong style={{ display: "block", fontSize: 18 }}>
+                      {formatNaira(payment.amount)}
+                    </strong>
+                    <Badge className={statusClass(payment.status)} style={{ fontSize: 11 }}>
+                      {statusLabel(payment.status)}
+                    </Badge>
                   </div>
                 </div>
-
-                <div style={{ textAlign: "right" }}>
-                  <strong style={{ fontSize: 20, display: "block" }}>
-                    {formatNaira(payment.amount)}
-                  </strong>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      marginTop: 12,
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    {payment.status === "PENDING_CONFIRMATION" && (
-                      <>
-                        <Button
-                          variant="secondary"
-                          loading={pendingAction === `reject-${payment.id}`}
-                          onClick={async () => {
+                <div style={{ display: "flex", gap: 10 }}>
+                  {payment.status === "PENDING_CONFIRMATION" && (
+                    <>
+                      <Button
+                        variant="secondary"
+                        style={{ height: 36, fontSize: 13 }}
+                        onClick={async () => {
+                          if (confirm("Reject this payment?")) {
                             setPendingAction(`reject-${payment.id}`);
                             try {
                               await rejectPayment(payment.id);
                             } finally {
                               setPendingAction(null);
                             }
-                          }}
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          variant="success"
-                          loading={pendingAction === `confirm-${payment.id}`}
-                          onClick={async () => {
-                            setPendingAction(`confirm-${payment.id}`);
-                            try {
-                              await confirmPayment(payment.id);
-                            } finally {
-                              setPendingAction(null);
-                            }
-                          }}
-                        >
-                          Confirm Payment
-                        </Button>
-                      </>
-                    )}
-                    {payment.status === "UNPAID" && (
-                      <span style={{ fontSize: 13, color: "var(--muted)" }}>
-                        Awaiting client action
-                      </span>
-                    )}
-                    {payment.status === "CONFIRMED" && (
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: "var(--success)",
-                          fontWeight: 500,
+                          }
                         }}
                       >
-                        Payment Confirmed
-                      </span>
-                    )}
-                  </div>
+                        Reject
+                      </Button>
+                      <Button
+                        variant="success"
+                        style={{ height: 36, fontSize: 13 }}
+                        loading={pendingAction === `confirm-${payment.id}`}
+                        onClick={async () => {
+                          setPendingAction(`confirm-${payment.id}`);
+                          try {
+                            await confirmPayment(payment.id);
+                          } finally {
+                            setPendingAction(null);
+                          }
+                        }}
+                      >
+                        Confirm ✓
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             );
