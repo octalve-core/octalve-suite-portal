@@ -3,7 +3,7 @@
 import type React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart3,
   Bell,
@@ -15,6 +15,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
   Plus,
   Search,
   Settings,
@@ -23,6 +24,7 @@ import {
   Layers3,
   MessageSquareText,
   ListChecks,
+  X,
 } from "lucide-react";
 import { useApp } from "./AppContext";
 import { AIAssistant } from "./AIAssistant";
@@ -200,7 +202,19 @@ export function PortalShell({
   }, [clientProjects, role, state.projects, state.requests]);
 
   const nav = navForRole(role, counts);
-  const createHref =
+    const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+
+  const isActiveHref = (href: string) =>
+    pathname === href ||
+    (href !== "/admin" &&
+      href !== "/client" &&
+      href !== "/staff" &&
+      pathname.startsWith(href));
+
+  const mobileMoreNav = nav.slice(3);
+  const mobileMoreActive =
+    mobileMoreOpen || mobileMoreNav.some((item) => isActiveHref(item.href));
+const createHref =
     role === "CLIENT"
       ? "/client/projects/new"
       : role === "SUPER_ADMIN"
@@ -252,12 +266,7 @@ export function PortalShell({
 
         <nav className="sidebar-nav">
           {nav.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== "/admin" &&
-                item.href !== "/client" &&
-                item.href !== "/staff" &&
-                pathname.startsWith(item.href));
+            const active = isActiveHref(item.href);
             return (
               <Link
                 key={item.href}
@@ -272,7 +281,22 @@ export function PortalShell({
               </Link>
             );
           })}
-        </nav>
+                </nav>
+
+        <div className="mobile-more-wrap">
+          <button
+            type="button"
+            className={mobileMoreActive ? "nav-link mobile-more-trigger active" : "nav-link mobile-more-trigger"}
+            onClick={() => setMobileMoreOpen((value) => !value)}
+            aria-expanded={mobileMoreOpen}
+            aria-label="Open more navigation"
+          >
+            <span className="nav-icon">
+              <MoreHorizontal size={20} />
+            </span>
+            <span className="nav-text">More</span>
+          </button>
+        </div>
 
         <div className="sidebar-footer">
           <div className="avatar">
@@ -298,7 +322,82 @@ export function PortalShell({
             <LogOut size={18} />
           </button>
         </div>
-      </aside>
+            </aside>
+
+      {mobileMoreOpen && (
+        <>
+          <button
+            type="button"
+            className="mobile-more-backdrop"
+            aria-label="Close more navigation"
+            onClick={() => setMobileMoreOpen(false)}
+          />
+
+          <section className="mobile-more-sheet" aria-label="More navigation">
+            <div className="mobile-more-head">
+              <div>
+                <strong>More actions</strong>
+                <span>
+                  {role === "CLIENT"
+                    ? "Client workspace"
+                    : role === "SUPER_ADMIN"
+                      ? "Admin workspace"
+                      : "Staff workspace"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setMobileMoreOpen(false)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mobile-more-grid">
+              <Link
+                href={createHref}
+                className="mobile-more-cta"
+                onClick={() => setMobileMoreOpen(false)}
+              >
+                <Plus size={18} />
+                <span>{createLabel}</span>
+              </Link>
+
+              {mobileMoreNav.map((item) => {
+                const active = isActiveHref(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={active ? "mobile-more-item active" : "mobile-more-item"}
+                    onClick={() => setMobileMoreOpen(false)}
+                  >
+                    <span>{item.icon}</span>
+                    <strong>{item.label}</strong>
+                    {!!item.badge && <em>{item.badge}</em>}
+                  </Link>
+                );
+              })}
+
+              <button
+                type="button"
+                className="mobile-more-logout"
+                onClick={() => {
+                  setMobileMoreOpen(false);
+                  handleLogout();
+                }}
+              >
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </section>
+        </>
+      )}
 
       <main className="main">
         <header className="topbar">
