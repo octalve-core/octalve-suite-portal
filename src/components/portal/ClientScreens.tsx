@@ -431,7 +431,7 @@ export function ClientProjects() {
                 <div
                   className="project-hero-top"
                   style={{
-                    background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                    background: "#0064E0",
                   }}
                 >
                   <div>
@@ -512,7 +512,7 @@ export function ClientProjectDetail({ projectId }: { projectId: string }) {
       <Card className="project-hero">
         <div
           className="project-hero-top"
-          style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
+          style={{ background: "#0064E0" }}
         >
           <div>
             <Badge className={packageClass(project.packageType)}>
