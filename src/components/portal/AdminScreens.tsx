@@ -770,6 +770,67 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           </Card>
         ))}
       </div>
+
+      <div id="project-team" className="grid-2-even" style={{ marginTop: 24 }}>
+        <Card>
+          <div className="card-title">
+            <h2>Project Team</h2>
+          </div>
+          <div className="card-body stack">
+            <div className="deliverable-row">
+              <div className="deliverable-main">
+                <div className="avatar">
+                  {pm?.name?.[0]?.toUpperCase() ?? "O"}
+                </div>
+                <div>
+                  <strong>{pm?.name ?? "Project Manager not assigned"}</strong>
+                  <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>
+                    Project Manager
+                  </p>
+                </div>
+              </div>
+              <Badge className={pm ? "badge-green" : "badge-orange"}>
+                {pm ? "Assigned" : "Pending"}
+              </Badge>
+            </div>
+
+            {project.phases
+              .filter((phase) => phase.assignedStaffId)
+              .map((phase) => {
+                const staff = state.users.find(
+                  (user) => user.id === phase.assignedStaffId,
+                );
+
+                return (
+                  <div className="deliverable-row" key={phase.id}>
+                    <div>
+                      <strong>{staff?.name ?? "Assigned staff"}</strong>
+                      <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>
+                        {phase.title}
+                      </p>
+                    </div>
+                    <Badge className="badge-blue">
+                      {staff?.specialty ?? staff?.role ?? "Staff"}
+                    </Badge>
+                  </div>
+                );
+              })}
+          </div>
+        </Card>
+
+        <Card id="project-notes">
+          <div className="card-title">
+            <h2>Project Notes</h2>
+          </div>
+          <div className="card-body">
+            <p style={{ color: "var(--muted)", lineHeight: 1.7, marginTop: 0 }}>
+              {project.internalNotes ||
+                project.clientBrief ||
+                "No internal notes have been added for this project yet."}
+            </p>
+          </div>
+        </Card>
+      </div>
       {assigning && (
         <AssignModal
           phase={assigning}
@@ -3033,6 +3094,7 @@ export function AdminSettings() {
     </div>
   );
 }
+
 
 
 
