@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
@@ -37,6 +37,7 @@ import {
   User,
 } from "@/lib/types";
 import { useApp } from "./AppContext";
+import { DeliverableManager } from "./DeliverableManager";
 import {
   BackLink,
   Badge,
@@ -330,7 +331,7 @@ export function AdminOverview() {
               const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
 
               return (
-                <div key={user.id} className="workload-card">
+                <div key={user.id} className="workload-card" role="link" tabIndex={0} title="Open team directory" onClick={() => { window.location.href = "/admin/team"; }} onKeyDown={(event) => { if (event.key === "Enter") window.location.href = "/admin/team"; }}>
                   <div
                     className="avatar"
                     style={{
@@ -586,7 +587,7 @@ export function AdminProjects() {
                       {project.title}
                     </h3>
                     <p style={{ color: "var(--muted)", margin: 0 }}>
-                      {project.businessName} • {project.packageType}
+                      {project.businessName} â€¢ {project.packageType}
                     </p>
                     <div style={{ marginTop: 8 }}>
                       <Badge className={statusClass(project.status)}>
@@ -676,7 +677,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
             </div>
             <h1>{project.title}</h1>
             <p>
-              {project.businessName} • {project.clientEmail}
+              {project.businessName} â€¢ {project.clientEmail}
             </p>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -765,24 +766,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
                 </Link>
               </div>
             </div>
-            {phase.deliverables.map((deliverable) => (
-              <div className="deliverable-row" key={deliverable.id}>
-                <div className="deliverable-main">
-                  <div className="deliverable-icon">{Icons.doc}</div>
-                  <div>
-                    <strong>{deliverable.name}</strong>
-                    {deliverable.link && (
-                      <p style={{ margin: 4, color: "var(--primary)" }}>
-                        {deliverable.link}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Badge className={deliverableBadge(deliverable.status)}>
-                  {statusLabel(deliverable.status)}
-                </Badge>
-              </div>
-            ))}
+            <DeliverableManager phase={phase} />
           </Card>
         ))}
       </div>
@@ -834,7 +818,7 @@ function AssignModal({
           <Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>
             {team.map((u) => (
               <option key={u.id} value={u.id}>
-                {u.name} — {u.specialty ?? u.role}
+                {u.name} â€” {u.specialty ?? u.role}
               </option>
             ))}
           </Select>
@@ -1000,39 +984,7 @@ export function AdminPhaseDetail({
               <h2>Deliverables</h2>
             </div>
             <div className="card-body stack">
-              {phase.deliverables.map((d) => (
-                <div key={d.id} className="deliverable-row">
-                  <div className="deliverable-main">
-                    <div className="deliverable-icon">{Icons.doc}</div>
-                    <div>
-                      <strong>{d.name}</strong>
-                      {d.description && (
-                        <p style={{ color: "var(--muted)", margin: 4 }}>
-                          {d.description}
-                        </p>
-                      )}
-                      {d.link && (
-                        <a
-                          href={d.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            color: "var(--primary)",
-                            display: "inline-flex",
-                            gap: 6,
-                            alignItems: "center",
-                          }}
-                        >
-                          {d.linkType ?? "Link"} <ExternalLink size={14} />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className={deliverableBadge(d.status)}>
-                    {statusLabel(d.status)}
-                  </Badge>
-                </div>
-              ))}
+              <DeliverableManager phase={phase} />
             </div>
           </Card>
           <Card>
@@ -1186,7 +1138,7 @@ export function AdminCreateProject() {
                     <span
                       style={{ marginLeft: "auto", color: "var(--primary)" }}
                     >
-                      ✓
+                      âœ“
                     </span>
                   )}
                 </Card>
@@ -1384,7 +1336,7 @@ export function AdminCreateProject() {
               }
             }}
           >
-            Create Project ✓
+            Create Project âœ“
           </Button>
         )}
       </div>
@@ -1412,7 +1364,7 @@ export function AdminRequests() {
                 </Badge>
                 <h2>{req.projectName}</h2>
                 <p style={{ color: "var(--muted)" }}>
-                  {req.businessName} • {req.projectGoal}
+                  {req.businessName} â€¢ {req.projectGoal}
                 </p>
                 <Badge className={statusClass(req.status as any)}>
                   {statusLabel(req.status as any)}
@@ -1537,7 +1489,7 @@ function RequestReviewModal({
                   fontSize: 16,
                 }}
               >
-                ✨
+                âœ¨
               </div>
               <h3 style={{ margin: 0, fontSize: 16 }}>AI Suggested Phases</h3>
             </div>
@@ -1657,7 +1609,7 @@ function RequestReviewModal({
                 }
               }}
             >
-              Approve & Request Deposit ✓
+              Approve & Request Deposit âœ“
             </Button>
           )}
         </div>
@@ -1696,7 +1648,7 @@ export function AdminClients() {
         <MetricCard
           label="High Value"
           value={highValue}
-          icon="★"
+          icon="â˜…"
           tone="orange"
         />
         <MetricCard
@@ -1921,7 +1873,7 @@ export function AdminTemplates() {
                             fontSize: 13,
                           }}
                         >
-                          {template.phases.length} Phases •{" "}
+                          {template.phases.length} Phases â€¢{" "}
                           <span style={{ color: "var(--primary)" }}>
                             {template.packageType}
                           </span>
@@ -2346,7 +2298,7 @@ export function AdminTeam() {
                           fontSize: 13,
                         }}
                       >
-                        ✉ {member.email}
+                        âœ‰ {member.email}
                       </p>
                     </div>
                     <ActionMenu>
@@ -2390,7 +2342,7 @@ export function AdminTeam() {
                     style={{ marginTop: 20, marginBottom: 12 }}
                   >
                     <span style={{ fontSize: 14 }}>
-                      ▣ {member.assigned} active phases
+                      â–£ {member.assigned} active phases
                     </span>
                     {member.assigned > 5 && (
                       <Badge className="badge-red">High load</Badge>
@@ -2713,7 +2665,7 @@ export function AdminPayments() {
                           fontSize: 13,
                         }}
                       >
-                        {payment.type} • {project.businessName}
+                        {payment.type} â€¢ {project.businessName}
                       </p>
                     </div>
                     <div
@@ -2760,7 +2712,7 @@ export function AdminPayments() {
                             }
                           }}
                         >
-                          Confirm ✓
+                          Confirm âœ“
                         </Button>
                       )}
                     </div>
@@ -2790,10 +2742,10 @@ export function AdminPayments() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: "0 0 2px", fontSize: 16 }}>
-                      {project.title} — {payment.type}
+                      {project.title} â€” {payment.type}
                     </h3>
                     <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
-                      {project.businessName} • Ref: {payment.reference}
+                      {project.businessName} â€¢ Ref: {payment.reference}
                     </p>
                   </div>
                   <div style={{ textAlign: "right", marginRight: 24 }}>
@@ -2837,7 +2789,7 @@ export function AdminPayments() {
                           }
                         }}
                       >
-                        Confirm ✓
+                        Confirm âœ“
                       </Button>
                     </>
                   )}
@@ -2908,7 +2860,7 @@ export function AdminAnalytics() {
             <MetricCard
               label="Active Projects"
               value={active}
-              icon="◎"
+              icon="â—Ž"
               tone="blue"
             />
             <MetricCard
@@ -3005,7 +2957,7 @@ export function AdminReviews() {
         <div className="stack">
           {state.reviews.map((r) => (
             <Card key={r.id} className="card-body">
-              <strong>{"★".repeat(r.rating)}</strong>
+              <strong>{"â˜…".repeat(r.rating)}</strong>
               <p>{r.comment}</p>
             </Card>
           ))}
@@ -3081,3 +3033,6 @@ export function AdminSettings() {
     </div>
   );
 }
+
+
+

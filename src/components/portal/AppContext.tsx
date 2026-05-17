@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   createContext,
@@ -90,6 +90,11 @@ type AppContextValue = {
     phaseId: string,
     payload: Pick<Deliverable, "name" | "description" | "link" | "linkType">,
   ) => Promise<void>;
+  updateDeliverable: (
+    deliverableId: string,
+    payload: Partial<Pick<Deliverable, "name" | "description" | "link" | "linkType" | "visibleToClient" | "status">>,
+  ) => Promise<void>;
+  deleteDeliverable: (deliverableId: string) => Promise<void>;
   requestPhaseApproval: (phaseId: string) => Promise<void>;
   approvePhase: (phaseId: string) => Promise<void>;
   requestChanges: (phaseId: string, message: string) => Promise<void>;
@@ -375,6 +380,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncPortalData();
   }
 
+  async function updateDeliverable(
+    deliverableId: string,
+    payload: Partial<Pick<Deliverable, "name" | "description" | "link" | "linkType" | "visibleToClient" | "status">>,
+  ) {
+    await api.deliverables.update(deliverableId, payload);
+    await syncPortalData();
+  }
+
+  async function deleteDeliverable(deliverableId: string) {
+    await api.deliverables.delete(deliverableId);
+    await syncPortalData();
+  }
+
   async function requestPhaseApproval(phaseId: string) {
     await api.phases.requestApproval(phaseId);
     await syncPortalData();
@@ -431,6 +449,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     rejectPayment,
     assignPhase,
     addDeliverable,
+    updateDeliverable,
+    deleteDeliverable,
     requestPhaseApproval,
     approvePhase,
     requestChanges,
@@ -447,3 +467,6 @@ export function useApp() {
   if (!ctx) throw new Error("useApp must be used within AppProvider");
   return ctx;
 }
+
+
+

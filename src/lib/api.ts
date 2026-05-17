@@ -1,5 +1,5 @@
-/**
- * Typed API service layer — wraps all backend endpoints with typed fetch calls.
+﻿/**
+ * Typed API service layer â€” wraps all backend endpoints with typed fetch calls.
  * Used by AppContext to replace localStorage-based state management.
  */
 import type {
@@ -16,7 +16,7 @@ import type {
   Role,
 } from "@/lib/types";
 
-// ─── Fetch Helpers ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Fetch Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function fetchJson<T>(url: string, init?: RequestInit, retries = 2): Promise<T> {
   try {
@@ -51,13 +51,13 @@ function del<T = { success: boolean }>(url: string): Promise<T> {
   return fetchJson<T>(url, { method: "DELETE" });
 }
 
-// ─── API Object ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ API Object â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const api = {
-  // ── Session ──
+  // â”€â”€ Session â”€â”€
   me: () => fetchJson<User>("/api/me"),
 
-  // ── Templates ──
+  // â”€â”€ Templates â”€â”€
   templates: {
     list: () => fetchJson<ProjectTemplate[]>("/api/templates"),
     create: (data: { name: string; packageType: PackageType; description: string; phases: { title: string; description?: string; deliverables?: string[] }[] }) =>
@@ -67,7 +67,7 @@ export const api = {
     delete: (id: string) => del(`/api/templates/${id}`),
   },
 
-  // ── Project Requests ──
+  // â”€â”€ Project Requests â”€â”€
   projectRequests: {
     list: () => fetchJson<(ProjectRequest & { client?: { id: string; name: string; email: string; company?: string } })[]>("/api/project-requests"),
     create: (data: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">) =>
@@ -76,7 +76,7 @@ export const api = {
       post<Project>(`/api/project-requests/${id}/approve`, data),
   },
 
-  // ── Projects ──
+  // â”€â”€ Projects â”€â”€
   projects: {
     list: () => fetchJson<Project[]>("/api/projects"),
     get: (id: string) => fetchJson<Project>(`/api/projects/${id}`),
@@ -85,14 +85,14 @@ export const api = {
     delete: (id: string) => del(`/api/projects/${id}`),
   },
 
-  // ── Payments ──
+  // â”€â”€ Payments â”€â”€
   payments: {
     markPaid: (id: string) => post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
     confirm: (id: string) => post<{ success: boolean }>(`/api/payments/${id}/confirm`),
     reject: (id: string, note?: string) => post<{ success: boolean }>(`/api/payments/${id}/reject`, { note }),
   },
 
-  // ── Phases ──
+  // â”€â”€ Phases â”€â”€
   phases: {
     get: (id: string) => fetchJson<ProjectPhase>(`/api/phases/${id}`),
     assign: (id: string, staffId: string) => patch<ProjectPhase>(`/api/phases/${id}/assign`, { staffId }),
@@ -103,20 +103,28 @@ export const api = {
     requestChanges: (id: string, message: string) => post<{ success: boolean }>(`/api/phases/${id}/request-changes`, { message }),
   },
 
-  // ── Messages ──
+  // â”€â”€ Messages â”€â”€
+  // Deliverables
+  deliverables: {
+    update: (
+      id: string,
+      data: Partial<Pick<Deliverable, "name" | "description" | "link" | "linkType" | "visibleToClient" | "status">>,
+    ) => patch<Deliverable>(`/api/deliverables/${id}`, data),
+    delete: (id: string) => del(`/api/deliverables/${id}`),
+  },
   messages: {
     list: (phaseId: string) => fetchJson<PhaseMessage[]>(`/api/messages/${phaseId}`),
     send: (phaseId: string, message: string) => post<PhaseMessage>(`/api/messages/${phaseId}`, { message }),
   },
 
-  // ── Reviews ──
+  // â”€â”€ Reviews â”€â”€
   reviews: {
     list: () => fetchJson<Review[]>("/api/reviews"),
     create: (data: { projectId: string; rating: number; comment: string; permissionToPublish: boolean }) =>
       post<Review>("/api/reviews", data),
   },
 
-  // ── Analytics ──
+  // â”€â”€ Analytics â”€â”€
   analytics: {
     get: () => fetchJson<{
       totalProjects: number;
@@ -130,7 +138,7 @@ export const api = {
     }>("/api/analytics"),
   },
 
-  // ── Team ──
+  // â”€â”€ Team â”€â”€
   team: {
     list: () => fetchJson<User[]>("/api/team"),
     create: (data: { name: string; email: string; specialty: string; role: Role }) =>
@@ -140,14 +148,15 @@ export const api = {
     delete: (id: string) => del(`/api/team/${id}`),
   },
 
-  // ── Clients ──
+  // â”€â”€ Clients â”€â”€
   clients: {
     list: () => fetchJson<(User & { _count: { clientProjects: number }; clientProjects: { id: string; status: string; packageType: string }[] })[]>("/api/clients"),
   },
 
-  // ── Notifications ──
+  // â”€â”€ Notifications â”€â”€
   notifications: {
     list: () => fetchJson<NotificationItem[]>("/api/notifications"),
     markRead: (id: string) => patch<{ success: boolean }>(`/api/notifications/${id}`, { read: true }),
   },
 };
+

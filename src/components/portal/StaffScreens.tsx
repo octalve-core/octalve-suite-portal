@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { generateProjectSummary } from "@/lib/ai";
 import { ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
+import { DeliverableManager } from "./DeliverableManager";
 import {
   BackLink,
   Badge,
@@ -99,7 +100,7 @@ export function StaffDashboard() {
                 <div>
                   <strong>{phase.title}</strong>
                   <p style={{ color: "var(--muted)", margin: 4 }}>
-                    {project.title} • {project.businessName}
+                    {project.title} â€¢ {project.businessName}
                   </p>
                 </div>
                 <Badge className={statusClass(phase.status)}>
@@ -213,7 +214,7 @@ export function StaffPhases() {
                   </Badge>
                   <h2>{phase.title}</h2>
                   <p style={{ color: "var(--muted)" }}>
-                    {project.title} • {project.businessName}
+                    {project.title} â€¢ {project.businessName}
                   </p>
                   <p style={{ color: "var(--muted)" }}>
                     {phase.deliverables.length} deliverables
@@ -328,7 +329,7 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
         <div>
           <h1>{phase.title}</h1>
           <p>
-            {project.title} • {project.businessName}
+            {project.title} â€¢ {project.businessName}
           </p>
           <Badge className={statusClass(phase.status)}>
             {statusLabel(phase.status)}
@@ -377,34 +378,7 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
               <h2>Deliverables</h2>
             </div>
             <div className="card-body stack">
-              {phase.deliverables.map((d) => (
-                <div key={d.id} className="deliverable-row">
-                  <div className="deliverable-main">
-                    <div className="deliverable-icon">{Icons.doc}</div>
-                    <div>
-                      <strong>{d.name}</strong>
-                      {d.link && (
-                        <p style={{ color: "var(--primary)", margin: 4 }}>
-                          {d.link}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Badge
-                    className={
-                      d.status === "DRAFT"
-                        ? "badge-slate"
-                        : d.status === "READY_FOR_REVIEW"
-                          ? "badge-purple"
-                          : d.status === "APPROVED"
-                            ? "badge-green"
-                            : "badge-red"
-                    }
-                  >
-                    {statusLabel(d.status as any)}
-                  </Badge>
-                </div>
-              ))}
+              <DeliverableManager phase={phase} />
             </div>
           </Card>
           <Card>
@@ -467,7 +441,7 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
                 }
               }}
             >
-              ➤
+              âž¤
             </Button>
           </div>
         </Card>
@@ -671,3 +645,5 @@ export function StaffSettings() {
     </div>
   );
 }
+
+

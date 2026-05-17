@@ -1,10 +1,13 @@
-import { PortalShell } from "@/components/portal/PortalShell";
-import { AdminSettings } from "@/components/portal/AdminScreens";
+﻿import { PortalShell } from "@/components/portal/PortalShell";
+import { ProfileSettings } from "@/components/portal/ProfileSettings";
 
 export default function Page() {
   return (
     <PortalShell role="CLIENT">
-      <AdminSettings />
+      <ProfileSettings
+        title="Settings"
+        subtitle="Manage your client profile and workspace preferences"
+      />
     </PortalShell>
   );
 }
