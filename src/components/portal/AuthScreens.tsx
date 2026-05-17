@@ -24,18 +24,11 @@ function AuthBrand() {
       <div>
         <h1>One workspace for projects, payments, approvals and delivery.</h1>
         <p>
-          Give clients a premium self-service experience while your team manages
-          phases, deliverables, payments, reviews and accountability from one
-          clean workspace.
+          A secure workspace for clients and teams to manage projects, approvals,
+          payments, deliverables, and delivery conversations with clarity.
         </p>
-        <div className="auth-chips">
-          <span>Client portal</span>
-          <span>Admin control</span>
-          <span>Staff delivery</span>
-          <span>AI-assisted workflow</span>
-        </div>
       </div>
-      <p>Premium project operations for Octalve.</p>
+      <p>Structured project delivery, powered by Octalve.</p>
     </section>
   );
 }
@@ -434,3 +427,4 @@ export function ForgotPasswordScreen() {
     </main>
   );
 }
+
