@@ -4,8 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Octalve Suite Portal",
-  description: "Client project portal for Octalve Suite"
+  title: "Octalve Workspace Portal",
+  description: "Client project portal for Octalve Workspace"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

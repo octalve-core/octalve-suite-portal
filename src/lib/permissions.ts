@@ -2,7 +2,7 @@ import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 
 /**
- * Octalve Suite RBAC – shared between server (auth.ts) and client (auth-client.ts).
+ * Octalve Workspace RBAC – shared between server (auth.ts) and client (auth-client.ts).
  *
  * Roles:
  *  CLIENT          – can create projects, view own data, mark payments, approve phases

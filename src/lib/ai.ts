@@ -50,5 +50,5 @@ export function assistantReply(prompt: string) {
   if (text.includes("brief") || text.includes("package")) {
     return "Use the AI brief assistant during project creation. It can structure rough client text, recommend a suite, and suggest questions before admin approval.";
   }
-  return "I can help with project briefs, package recommendation, phase planning, payment status, approvals, and delivery summaries inside Octalve Suite.";
+  return "I can help with project briefs, package recommendation, phase planning, payment status, approvals, and delivery summaries inside Octalve Workspace.";
 }

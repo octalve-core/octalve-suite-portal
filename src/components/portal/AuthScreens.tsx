@@ -19,10 +19,10 @@ function AuthBrand() {
     <section className="auth-brand">
       <div className="auth-logo">
         <img src="/octalve-logo.svg" alt="Octalve" className="brand-logo" />
-        <span>Octalve Suite</span>
+        <span>Octalve Workspace</span>
       </div>
       <div>
-        <h1>One platform for projects, payments, approvals and delivery.</h1>
+        <h1>One workspace for projects, payments, approvals and delivery.</h1>
         <p>
           Give clients a premium self-service experience while your team manages
           phases, deliverables, payments, reviews and accountability from one
@@ -154,8 +154,8 @@ export function LoginScreen() {
       <AuthBrand />
       <section className="auth-panel">
         <div className="auth-card">
-          <h2>Welcome back</h2>
-          <p>Sign in to continue to your Octalve Suite workspace.</p>
+          <h2>Login to Octalve Workspace</h2>
+          <p>Manage projects, approvals, payments, and delivery conversations in one secure workspace.</p>
           <div className="stack">
             <AuthError message={error} />
             <button
@@ -273,11 +273,8 @@ export function SignupScreen() {
       <AuthBrand />
       <section className="auth-panel">
         <div className="auth-card">
-          <h2>Create your account</h2>
-          <p>
-            Client accounts can request projects, track phases, approve
-            deliverables and manage payments.
-          </p>
+          <h2>Create your Octalve Workspace account</h2>
+          <p>Request projects, track phases, approve deliverables, and manage payments from one secure workspace.</p>
           <div className="stack">
             <AuthError message={error} />
             <button
