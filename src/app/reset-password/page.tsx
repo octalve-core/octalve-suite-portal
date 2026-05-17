@@ -190,17 +190,7 @@ function ResetPasswordForm() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(0,100,224,0.24),transparent_32%),radial-gradient(circle_at_90%_72%,rgba(41,190,62,0.16),transparent_30%)]" />
 
           <div className="relative z-10 flex items-center justify-between">
-            <Link
-              href="/"
-              className="inline-flex items-center rounded-[26px] bg-white px-5 py-3 shadow-[0_22px_60px_rgba(0,0,0,0.24)]"
-              aria-label="Go to Octalve home"
-            >
-              <img
-                src="/octalve-logo.svg"
-                alt="Octalve"
-                className="h-12 w-auto object-contain"
-              />
-            </Link>
+            <Link href="/" className="inline-flex items-center" aria-label="Octalve"><img src="/octalve-logo.svg" alt="Octalve" className="h-16 w-16 object-contain" /></Link>
 
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-white/70 backdrop-blur">
               <ShieldCheck size={15} />
@@ -258,16 +248,7 @@ function ResetPasswordForm() {
         <section className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(0,100,224,0.08),transparent_34%),linear-gradient(180deg,#ffffff,#fbfdff)] px-5 py-10 sm:px-8">
           <div className="w-full max-w-[560px]">
             <div className="mb-9 flex justify-center lg:hidden">
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-[24px] border border-slate-200 bg-white px-5 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.06)]"
-              >
-                <img
-                  src="/octalve-logo.svg"
-                  alt="Octalve"
-                  className="h-11 w-auto object-contain"
-                />
-              </Link>
+              <Link href="/" className="inline-flex items-center" aria-label="Octalve"><img src="/octalve-logo.svg" alt="Octalve" className="h-16 w-16 object-contain" /></Link>
             </div>
 
             <div className="mx-auto mb-7 grid h-[86px] w-[86px] place-items-center rounded-[28px] bg-[#EAF3FF] text-[#0064E0] shadow-[0_20px_55px_rgba(0,100,224,0.12)]">
@@ -358,3 +339,5 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
+
+

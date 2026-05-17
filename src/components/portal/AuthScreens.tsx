@@ -9,19 +9,15 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
-  Check,
   CheckCircle2,
   Eye,
   EyeOff,
-  Globe2,
   LockKeyhole,
   Mail,
   Phone,
   ShieldCheck,
-  Sparkles,
   UserRound,
   UserRoundPlus,
-  WalletCards,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import type { Role } from "@/lib/types";
@@ -34,22 +30,31 @@ const ROLE_PATHS: Record<Role, string> = {
 };
 
 /**
- * Online image option:
- * This uses a remote premium workspace/business image through normal <img>, so it does not need next/image config.
+ * Logo note:
+ * Current logo path: /octalve-logo.svg
  *
- * Local image option:
- * Put your preferred image in:
- * public/images/auth-workspace.jpg
+ * For a better full logo later, place it in:
+ * public/images/octalve-wordmark.svg
  *
- * Then replace the value below with:
- * const AUTH_VISUAL_IMAGE = "/images/auth-workspace.jpg";
+ * Then change LOGO_SRC below to:
+ * const LOGO_SRC = "/images/octalve-wordmark.svg";
  */
-const AUTH_VISUAL_IMAGE =
-  "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1400&q=85";
+const LOGO_SRC = "/octalve-logo.svg";
 
+function BrandLockup({ dark = false }: { dark?: boolean }) {
+  const logoClass = dark
+    ? "block h-16 w-16 object-contain"
+    : "block h-16 w-16 object-contain";
+
+  return (
+    <Link href="/" className="inline-flex items-center" aria-label="Octalve">
+      <img src={LOGO_SRC} alt="Octalve" className={logoClass} />
+    </Link>
+  );
+}
 function GoogleIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"
         fill="#4285F4"
@@ -96,7 +101,6 @@ function FieldInput({
   label,
   icon,
   right,
-  className = "",
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -104,15 +108,15 @@ function FieldInput({
   right?: React.ReactNode;
 }) {
   return (
-    <label className="grid gap-2 text-[15px] font-medium text-slate-950">
+    <label className="grid gap-2 text-[14px] font-medium text-slate-950">
       <span>{label}</span>
-      <div className="group flex h-14 items-center gap-3 rounded-[22px] border border-slate-200 bg-white px-5 shadow-[0_18px_45px_rgba(15,23,42,0.035)] transition focus-within:border-[#0064E0] focus-within:shadow-[0_0_0_4px_rgba(0,100,224,0.08),0_18px_45px_rgba(15,23,42,0.05)]">
+      <div className="group flex h-14 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-4 transition focus-within:border-[#0064E0] focus-within:shadow-[0_0_0_4px_rgba(0,100,224,0.08)]">
         <span className="grid place-items-center text-slate-400 transition group-focus-within:text-[#0064E0]">
           {icon}
         </span>
         <input
           {...props}
-          className={`min-w-0 flex-1 border-0 bg-transparent text-[15px] font-medium text-slate-950 outline-none placeholder:text-slate-400 ${className}`}
+          className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-medium text-slate-950 outline-none placeholder:text-slate-400"
         />
         {right}
       </div>
@@ -140,7 +144,7 @@ function PasswordInput({
   return (
     <FieldInput
       label={label}
-      icon={<LockKeyhole size={19} strokeWidth={2.1} />}
+      icon={<LockKeyhole size={18} strokeWidth={2} />}
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -155,9 +159,9 @@ function PasswordInput({
           aria-label={visible ? "Hide password" : "Show password"}
         >
           {visible ? (
-            <EyeOff size={18} strokeWidth={2.1} />
+            <EyeOff size={18} strokeWidth={2} />
           ) : (
-            <Eye size={18} strokeWidth={2.1} />
+            <Eye size={18} strokeWidth={2} />
           )}
         </button>
       }
@@ -176,12 +180,12 @@ function PrimaryButton({
     <button
       {...props}
       disabled={loading || props.disabled}
-      className="group flex h-14 w-full items-center justify-center gap-3 rounded-[22px] bg-[#0064E0] px-6 text-[15px] font-medium text-white shadow-[0_22px_45px_rgba(0,100,224,0.22)] transition hover:-translate-y-0.5 hover:bg-[#0052B8] hover:shadow-[0_26px_55px_rgba(0,100,224,0.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+      className="group flex h-14 w-full items-center justify-center gap-3 rounded-[18px] bg-[#0064E0] px-6 text-[15px] font-medium text-white shadow-[0_18px_36px_rgba(0,100,224,0.18)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span>{children}</span>
       <ArrowRight
-        size={19}
-        strokeWidth={2.2}
+        size={18}
+        strokeWidth={2.1}
         className="transition group-hover:translate-x-0.5"
       />
     </button>
@@ -198,7 +202,7 @@ function SecondaryLinkButton({
   return (
     <Link
       href={href}
-      className="flex h-14 w-full items-center justify-center rounded-[22px] border border-slate-200 bg-white px-6 text-[15px] font-medium text-[#0064E0] shadow-[0_18px_45px_rgba(15,23,42,0.025)] transition hover:border-[#0064E0] hover:bg-[#F6FAFF]"
+      className="flex h-14 w-full items-center justify-center rounded-[18px] border border-slate-200 bg-white px-6 text-[15px] font-medium text-[#0064E0] transition hover:border-[#0064E0] hover:bg-[#F6FAFF]"
     >
       {children}
     </Link>
@@ -219,11 +223,21 @@ function GoogleButton({
       type="button"
       disabled={loading}
       onClick={onClick}
-      className="flex h-13 w-full items-center justify-center gap-3 rounded-[20px] border border-slate-200 bg-white px-5 text-[14px] font-medium text-slate-700 shadow-[0_18px_45px_rgba(15,23,42,0.025)] transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-12 w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 text-[14px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
       <span>{children}</span>
     </button>
+  );
+}
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-4 py-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+      <span className="h-px flex-1 bg-slate-200" />
+      <span>{label}</span>
+      <span className="h-px flex-1 bg-slate-200" />
+    </div>
   );
 }
 
@@ -242,128 +256,62 @@ function AuthShell({
 }) {
   const leftTitle =
     mode === "signup"
-      ? "Create your Octalve Workspace with structure."
-      : "Manage projects, approvals and delivery with clarity.";
+      ? "Create your workspace with structure."
+      : mode === "forgot"
+        ? "Recover access to your workspace."
+        : "Manage projects with clarity.";
 
   const leftBody =
     mode === "signup"
-      ? "Start with one secure workspace for project requests, team delivery, client approvals and manual payment tracking."
-      : "A premium client and team portal for project phases, approvals, payments, deliverables and delivery conversations.";
+      ? "Set up a secure client account to request projects, track progress and approve deliverables."
+      : mode === "forgot"
+        ? "Reset your password and continue managing your project delivery securely."
+        : "Sign in to manage project phases, approvals, payments and delivery conversations.";
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      <div className="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="relative hidden overflow-hidden bg-[#000A16] px-12 py-12 text-white lg:flex lg:flex-col">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(0,100,224,0.24),transparent_32%),radial-gradient(circle_at_90%_72%,rgba(41,190,62,0.16),transparent_30%)]" />
-          <div className="relative z-10 flex items-center justify-between">
-            <Link
-              href="/"
-              className="inline-flex items-center rounded-[26px] bg-white px-5 py-3 shadow-[0_22px_60px_rgba(0,0,0,0.24)]"
-              aria-label="Go to Octalve home"
-            >
-              <img
-                src="/octalve-logo.svg"
-                alt="Octalve"
-                className="h-12 w-auto object-contain"
-              />
-            </Link>
+      <div className="grid min-h-screen lg:grid-cols-[0.82fr_1.18fr]">
+        <section className="relative hidden bg-[#000A16] px-12 py-12 text-white lg:flex lg:flex-col xl:px-16">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(0,100,224,0.22),transparent_34%),radial-gradient(circle_at_90%_88%,rgba(41,190,62,0.12),transparent_30%)]" />
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.22em] text-white/70 backdrop-blur">
-              <ShieldCheck size={15} />
-              Secure
-            </div>
+          <div className="relative z-10">
+            <BrandLockup dark />
           </div>
 
-          <div className="relative z-10 mt-24 max-w-[600px]">
-            <p className="mb-6 text-xs font-medium uppercase tracking-[0.34em] text-white/60">
+          <div className="relative z-10 my-auto max-w-[560px] py-16">
+            <p className="mb-7 text-xs font-medium uppercase tracking-[0.32em] text-white/45">
               Octalve Workspace
             </p>
-            <h1 className="text-[54px] font-medium leading-[0.98] tracking-[-0.055em] text-white xl:text-[68px]">
+            <h1 className="text-[52px] font-medium leading-[1.02] tracking-[-0.055em] text-white xl:text-[64px]">
               {leftTitle}
             </h1>
-            <p className="mt-7 max-w-[520px] text-[19px] font-medium leading-8 text-white/68">
+            <p className="mt-7 max-w-[490px] text-[18px] font-medium leading-8 text-white/62">
               {leftBody}
             </p>
           </div>
 
-          <div className="relative z-10 mt-auto grid gap-6">
-            <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-white/8 p-3 shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur">
-              <img
-                src={AUTH_VISUAL_IMAGE}
-                alt="Professional workspace preview"
-                className="h-[260px] w-full rounded-[26px] object-cover opacity-90"
-              />
-
-              <div className="absolute left-8 top-8 rounded-2xl border border-white/15 bg-white/90 px-4 py-3 text-slate-950 shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#EAF3FF] text-[#0064E0]">
-                    <Check size={19} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">
-                      Approval flow
-                    </p>
-                    <p className="text-sm font-medium text-slate-950">
-                      Phase ready
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-8 right-8 rounded-2xl border border-white/15 bg-[#0064E0] px-4 py-3 text-white shadow-[0_18px_45px_rgba(0,100,224,0.28)]">
-                <div className="flex items-center gap-3">
-                  <WalletCards size={20} />
-                  <span className="text-sm font-medium">Payment tracked</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-6">
-              {[
-                ["5", "Project phases"],
-                ["24/7", "Workspace access"],
-                ["1", "Delivery source"],
-              ].map(([value, label]) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-white/10 bg-white/7 px-4 py-4 backdrop-blur"
-                >
-                  <p className="text-2xl font-medium tracking-[-0.04em]">
-                    {value}
-                  </p>
-                  <p className="mt-1 text-xs font-medium text-white/55">
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
+          <div className="relative z-10 border-t border-white/10 pt-7">
+            <p className="max-w-[420px] text-sm font-medium leading-6 text-white/45">
+              Structured project delivery, powered by Octalve.
+            </p>
           </div>
         </section>
 
-        <section className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(0,100,224,0.08),transparent_34%),linear-gradient(180deg,#ffffff,#fbfdff)] px-5 py-10 sm:px-8">
-          <div className="w-full max-w-[560px]">
-            <div className="mb-9 flex justify-center lg:hidden">
-              <Link
-                href="/"
-                className="inline-flex items-center rounded-[24px] border border-slate-200 bg-white px-5 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.06)]"
-              >
-                <img
-                  src="/octalve-logo.svg"
-                  alt="Octalve"
-                  className="h-11 w-auto object-contain"
-                />
-              </Link>
+        <section className="flex min-h-screen items-center justify-center bg-white px-5 py-10 sm:px-8">
+          <div className="w-full max-w-[540px]">
+            <div className="mb-10 flex justify-center lg:hidden">
+              <BrandLockup />
             </div>
 
-            <div className="mx-auto mb-7 grid h-[86px] w-[86px] place-items-center rounded-[28px] bg-[#EAF3FF] text-[#0064E0] shadow-[0_20px_55px_rgba(0,100,224,0.12)]">
+            <div className="mx-auto mb-7 grid h-[74px] w-[74px] place-items-center rounded-[24px] bg-[#EAF3FF] text-[#0064E0]">
               {icon}
             </div>
 
             <div className="text-center">
-              <h2 className="text-[38px] font-medium leading-tight tracking-[-0.055em] text-[#06142E] sm:text-[46px]">
+              <h2 className="text-[36px] font-medium leading-tight tracking-[-0.05em] text-[#06142E] sm:text-[44px]">
                 {title}
               </h2>
-              <p className="mt-4 text-[17px] font-medium leading-7 text-slate-500">
+              <p className="mt-4 text-[16px] font-medium leading-7 text-slate-500">
                 {subtitle}
               </p>
             </div>
@@ -373,16 +321,6 @@ function AuthShell({
         </section>
       </div>
     </main>
-  );
-}
-
-function Divider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-4 py-1 text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
-      <span className="h-px flex-1 bg-slate-200" />
-      <span>{label}</span>
-      <span className="h-px flex-1 bg-slate-200" />
-    </div>
   );
 }
 
@@ -457,7 +395,7 @@ export function LoginScreen() {
   return (
     <AuthShell
       mode="login"
-      icon={<LockKeyhole size={34} strokeWidth={2} />}
+      icon={<LockKeyhole size={30} strokeWidth={2} />}
       title="Welcome back"
       subtitle="Sign in to continue to Octalve Workspace."
     >
@@ -472,7 +410,7 @@ export function LoginScreen() {
 
         <FieldInput
           label="Email address"
-          icon={<Mail size={19} strokeWidth={2.1} />}
+          icon={<Mail size={18} strokeWidth={2} />}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@company.com"
@@ -512,7 +450,7 @@ export function LoginScreen() {
           {loading ? "Signing in..." : "Login"}
         </PrimaryButton>
 
-        <div className="grid gap-4 pt-4 text-center">
+        <div className="grid gap-4 pt-3 text-center">
           <p className="text-[15px] font-medium text-slate-400">
             Don&apos;t have an account?
           </p>
@@ -605,9 +543,9 @@ export function SignupScreen() {
   return (
     <AuthShell
       mode="signup"
-      icon={<UserRoundPlus size={34} strokeWidth={2} />}
+      icon={<UserRoundPlus size={30} strokeWidth={2} />}
       title="Create your account"
-      subtitle="Start managing projects, approvals and delivery securely."
+      subtitle="Start managing projects and approvals securely."
     >
       <div className="grid gap-5">
         <AuthError message={error} />
@@ -620,7 +558,7 @@ export function SignupScreen() {
 
         <FieldInput
           label="Full name"
-          icon={<UserRound size={19} strokeWidth={2.1} />}
+          icon={<UserRound size={18} strokeWidth={2} />}
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
           placeholder="Your full name"
@@ -629,7 +567,7 @@ export function SignupScreen() {
 
         <FieldInput
           label="Email address"
-          icon={<Mail size={19} strokeWidth={2.1} />}
+          icon={<Mail size={18} strokeWidth={2} />}
           value={form.email}
           onChange={(event) => setForm({ ...form, email: event.target.value })}
           placeholder="you@company.com"
@@ -637,10 +575,10 @@ export function SignupScreen() {
           autoComplete="email"
         />
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           <FieldInput
             label="Phone number"
-            icon={<Phone size={19} strokeWidth={2.1} />}
+            icon={<Phone size={18} strokeWidth={2} />}
             value={form.phone}
             onChange={(event) =>
               setForm({ ...form, phone: event.target.value })
@@ -651,7 +589,7 @@ export function SignupScreen() {
 
           <FieldInput
             label="Company / Brand"
-            icon={<Building2 size={19} strokeWidth={2.1} />}
+            icon={<Building2 size={18} strokeWidth={2} />}
             value={form.company}
             onChange={(event) =>
               setForm({ ...form, company: event.target.value })
@@ -661,7 +599,7 @@ export function SignupScreen() {
           />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           <PasswordInput
             label="Password"
             value={form.password}
@@ -684,7 +622,7 @@ export function SignupScreen() {
           />
         </div>
 
-        <label className="flex items-start gap-3 text-[15px] font-medium leading-6 text-slate-600">
+        <label className="flex items-start gap-3 text-[14px] font-medium leading-6 text-slate-600">
           <input
             type="checkbox"
             checked={agreed}
@@ -692,7 +630,7 @@ export function SignupScreen() {
             className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 accent-[#0064E0]"
           />
           <span>
-            I agree to the Octalve Workspace terms and secure project delivery process.
+            I agree to the Octalve Workspace project delivery process.
           </span>
         </label>
 
@@ -700,7 +638,7 @@ export function SignupScreen() {
           {loading ? "Creating account..." : "Create account"}
         </PrimaryButton>
 
-        <div className="grid gap-4 pt-4 text-center">
+        <div className="grid gap-4 pt-3 text-center">
           <p className="text-[15px] font-medium text-slate-400">
             Already have an account?
           </p>
@@ -753,9 +691,9 @@ export function ForgotPasswordScreen() {
   return (
     <AuthShell
       mode="forgot"
-      icon={<ShieldCheck size={34} strokeWidth={2} />}
+      icon={<ShieldCheck size={30} strokeWidth={2} />}
       title="Reset password"
-      subtitle="Enter your email and we will send a secure reset link."
+      subtitle="Enter your email to receive a secure reset link."
     >
       <div className="grid gap-5">
         <AuthError message={error} />
@@ -763,7 +701,7 @@ export function ForgotPasswordScreen() {
 
         <FieldInput
           label="Email address"
-          icon={<Mail size={19} strokeWidth={2.1} />}
+          icon={<Mail size={18} strokeWidth={2} />}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@company.com"
@@ -783,21 +721,9 @@ export function ForgotPasswordScreen() {
           <ArrowLeft size={16} />
           Back to login
         </Link>
-
-        <div className="mt-5 rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.025)]">
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#EAF3FF] text-[#0064E0]">
-              <Sparkles size={18} />
-            </span>
-            <div>
-              <p className="font-medium text-slate-950">Security note</p>
-              <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-                Reset links are time-sensitive. Use the latest link from your inbox.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </AuthShell>
   );
 }
+
+
