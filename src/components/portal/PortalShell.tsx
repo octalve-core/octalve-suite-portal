@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type React from "react";
 import Link from "next/link";
@@ -9,169 +9,261 @@ import {
   Bell,
   BriefcaseBusiness,
   CheckSquare,
+  ClipboardCheck,
   CreditCard,
   FileText,
   FolderKanban,
-  HelpCircle,
-  LayoutDashboard,
+  Gauge,
+  Inbox,
+  Layers3,
+  ListChecks,
   LogOut,
+  MessageSquareText,
+  MessagesSquare,
   MoreHorizontal,
   Plus,
+  Rocket,
   Search,
-  Settings,
-  Users,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Star,
   UserRoundCog,
-  Layers3,
-  MessageSquareText,
-  ListChecks,
+  UsersRound,
+  WalletCards,
   X,
 } from "lucide-react";
-import { useApp } from "./AppContext";
-import { AIAssistant } from "./AIAssistant";
-import { Button, PageLoading } from "./UI";
 import { Role } from "@/lib/types";
+import { AIAssistant } from "./AIAssistant";
+import { useApp } from "./AppContext";
+import { Button, PageLoading } from "./UI";
 
 type NavItem = {
   label: string;
+  shortLabel?: string;
   href: string;
   icon: React.ReactNode;
   badge?: number;
 };
-const iconSize = 20;
 
-function navForRole(
-  role: Role,
-  counts: { approvals: number; payments: number; requests: number },
-): NavItem[] {
+type CountState = {
+  approvals: number;
+  payments: number;
+  requests: number;
+};
+
+const iconSize = 20;
+const iconStroke = 2.2;
+
+function navIcon(Icon: React.ComponentType<{ size?: number; strokeWidth?: number }>) {
+  return <Icon size={iconSize} strokeWidth={iconStroke} />;
+}
+
+function navForRole(role: Role, counts: CountState): NavItem[] {
   if (role === "CLIENT") {
     return [
       {
         label: "Dashboard",
+        shortLabel: "Home",
         href: "/client",
-        icon: <LayoutDashboard size={iconSize} />,
+        icon: navIcon(Gauge),
       },
       {
         label: "Projects",
+        shortLabel: "Projects",
         href: "/client/projects",
-        icon: <FolderKanban size={iconSize} />,
+        icon: navIcon(FolderKanban),
       },
       {
         label: "Phases",
+        shortLabel: "Phases",
         href: "/client/phases",
-        icon: <Layers3 size={iconSize} />,
+        icon: navIcon(Layers3),
       },
       {
         label: "Approvals",
+        shortLabel: "Approve",
         href: "/client/approvals",
-        icon: <CheckSquare size={iconSize} />,
+        icon: navIcon(ClipboardCheck),
         badge: counts.approvals,
       },
       {
         label: "Payments",
+        shortLabel: "Pay",
         href: "/client/payments",
-        icon: <CreditCard size={iconSize} />,
+        icon: navIcon(WalletCards),
         badge: counts.payments,
       },
       {
         label: "Support",
+        shortLabel: "Help",
         href: "/client/support",
-        icon: <HelpCircle size={iconSize} />,
+        icon: navIcon(MessagesSquare),
       },
       {
         label: "Settings",
+        shortLabel: "Settings",
         href: "/client/settings",
-        icon: <Settings size={iconSize} />,
+        icon: navIcon(Settings2),
       },
     ];
   }
+
   if (role === "STAFF" || role === "PROJECT_MANAGER") {
     return [
       {
         label: "Dashboard",
+        shortLabel: "Home",
         href: "/staff",
-        icon: <LayoutDashboard size={iconSize} />,
+        icon: navIcon(Gauge),
       },
       {
         label: "Projects",
+        shortLabel: "Projects",
         href: "/staff/projects",
-        icon: <BriefcaseBusiness size={iconSize} />,
+        icon: navIcon(BriefcaseBusiness),
       },
       {
         label: "Phases",
+        shortLabel: "Phases",
         href: "/staff/phases",
-        icon: <Layers3 size={iconSize} />,
+        icon: navIcon(Layers3),
       },
       {
         label: "Messages",
+        shortLabel: "Chats",
         href: "/staff/messages",
-        icon: <MessageSquareText size={iconSize} />,
+        icon: navIcon(MessageSquareText),
       },
       {
         label: "Workload",
+        shortLabel: "Work",
         href: "/staff/workload",
-        icon: <ListChecks size={iconSize} />,
+        icon: navIcon(ListChecks),
       },
       {
         label: "Settings",
+        shortLabel: "Settings",
         href: "/staff/settings",
-        icon: <Settings size={iconSize} />,
+        icon: navIcon(Settings2),
       },
     ];
   }
+
   return [
     {
       label: "Overview",
+      shortLabel: "Home",
       href: "/admin",
-      icon: <LayoutDashboard size={iconSize} />,
+      icon: navIcon(Gauge),
     },
     {
       label: "Projects",
+      shortLabel: "Projects",
       href: "/admin/projects",
-      icon: <FolderKanban size={iconSize} />,
+      icon: navIcon(FolderKanban),
     },
     {
       label: "Requests",
+      shortLabel: "Requests",
       href: "/admin/project-requests",
-      icon: <CheckSquare size={iconSize} />,
+      icon: navIcon(Inbox),
       badge: counts.requests,
     },
     {
       label: "Clients",
+      shortLabel: "Clients",
       href: "/admin/clients",
-      icon: <Users size={iconSize} />,
+      icon: navIcon(UsersRound),
     },
     {
       label: "Templates",
+      shortLabel: "Templates",
       href: "/admin/templates",
-      icon: <FileText size={iconSize} />,
+      icon: navIcon(FileText),
     },
     {
       label: "Team",
+      shortLabel: "Team",
       href: "/admin/team",
-      icon: <UserRoundCog size={iconSize} />,
+      icon: navIcon(UserRoundCog),
     },
     {
       label: "Payments",
+      shortLabel: "Payments",
       href: "/admin/payments",
-      icon: <CreditCard size={iconSize} />,
+      icon: navIcon(CreditCard),
       badge: counts.payments,
     },
     {
       label: "Analytics",
+      shortLabel: "Data",
       href: "/admin/analytics",
-      icon: <BarChart3 size={iconSize} />,
+      icon: navIcon(BarChart3),
     },
     {
       label: "Reviews",
+      shortLabel: "Reviews",
       href: "/admin/reviews",
-      icon: <CheckSquare size={iconSize} />,
+      icon: navIcon(Star),
     },
     {
       label: "Settings",
+      shortLabel: "Settings",
       href: "/admin/settings",
-      icon: <Settings size={iconSize} />,
+      icon: navIcon(Settings2),
     },
   ];
+}
+
+function roleHome(role: Role) {
+  if (role === "CLIENT") return "/client";
+  if (role === "SUPER_ADMIN") return "/admin";
+  return "/staff";
+}
+
+function roleLabel(role: Role) {
+  if (role === "CLIENT") return "Client Workspace";
+  if (role === "SUPER_ADMIN") return "Command Workspace";
+  if (role === "PROJECT_MANAGER") return "Project Manager";
+  return "Delivery Workspace";
+}
+
+function roleEyebrow(role: Role) {
+  if (role === "CLIENT") return "Client Portal";
+  if (role === "SUPER_ADMIN") return "Admin Console";
+  if (role === "PROJECT_MANAGER") return "PM Desk";
+  return "Staff Desk";
+}
+
+function getCreateAction(role: Role) {
+  if (role === "CLIENT") {
+    return {
+      href: "/client/projects/new",
+      label: "Create Project",
+      icon: <Rocket size={18} strokeWidth={2.2} />,
+    };
+  }
+
+  if (role === "SUPER_ADMIN") {
+    return {
+      href: "/admin/projects/new",
+      label: "New Project",
+      icon: <Plus size={18} strokeWidth={2.2} />,
+    };
+  }
+
+  return {
+    href: "/staff/phases",
+    label: "My Phases",
+    icon: <Layers3 size={18} strokeWidth={2.2} />,
+  };
+}
+
+function UserAvatar({ name }: { name?: string }) {
+  const initial = name?.trim()?.[0]?.toUpperCase() ?? "O";
+
+  return <div className="avatar">{initial}</div>;
 }
 
 export function PortalShell({
@@ -182,27 +274,41 @@ export function PortalShell({
   role: Role;
 }) {
   const pathname = usePathname();
-  const { currentUser, logout, state, clientProjects, sessionLoading, dataLoading } = useApp();
+  const {
+    currentUser,
+    logout,
+    state,
+    clientProjects,
+    sessionLoading,
+    dataLoading,
+  } = useApp();
+
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   const counts = useMemo(() => {
     const projects = role === "CLIENT" ? clientProjects : state.projects;
+
     const approvals = projects
-      .flatMap((p) => p.phases)
+      .flatMap((project) => project.phases)
       .filter((phase) => phase.status === "AWAITING_APPROVAL").length;
+
     const payments = projects
-      .flatMap((p) => p.payments)
+      .flatMap((project) => project.payments)
       .filter(
-        (pay) =>
-          pay.status === "PENDING_CONFIRMATION" || pay.status === "UNPAID",
+        (payment) =>
+          payment.status === "PENDING_CONFIRMATION" ||
+          payment.status === "UNPAID",
       ).length;
+
     const requests = state.requests.filter(
       (request) => request.status === "PENDING_REVIEW",
     ).length;
+
     return { approvals, payments, requests };
   }, [clientProjects, role, state.projects, state.requests]);
 
   const nav = navForRole(role, counts);
-    const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const createAction = getCreateAction(role);
 
   const isActiveHref = (href: string) =>
     pathname === href ||
@@ -214,22 +320,13 @@ export function PortalShell({
   const mobileMoreNav = nav.slice(3);
   const mobileMoreActive =
     mobileMoreOpen || mobileMoreNav.some((item) => isActiveHref(item.href));
-const createHref =
-    role === "CLIENT"
-      ? "/client/projects/new"
-      : role === "SUPER_ADMIN"
-        ? "/admin/projects/new"
-        : "/staff/phases";
-  const createLabel =
-    role === "CLIENT"
-      ? "Create Project"
-      : role === "SUPER_ADMIN"
-        ? "Create Project"
-        : "My Phases";
+
+  const pendingTotal = counts.approvals + counts.requests;
+  const userName = currentUser?.name ?? "Octalve";
+  const workspaceLabel = roleLabel(role);
 
   const handleLogout = async () => {
     await logout();
-    // Force a hard reload to clear bfcache and ensure fresh state
     window.location.reload();
   };
 
@@ -240,89 +337,75 @@ const createHref =
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link
-          className="sidebar-brand"
-          href={
-            role === "CLIENT"
-              ? "/client"
-              : role === "SUPER_ADMIN"
-                ? "/admin"
-                : "/staff"
-          }
-        >
-          {/* Replace with your real logo when ready. Example: <img src="/octalve-logo.svg" alt="Octalve" className="brand-logo" /> */}
-          {/* <div className="logo-mark">O</div> */}
+        <Link className="sidebar-brand" href={roleHome(role)}>
           <img src="/octalve-logo.svg" alt="Octalve" className="brand-logo" />
           <span>Octalve</span>
         </Link>
 
         <div className="create-btn-wrap">
-          <Link href={createHref}>
+          <Link href={createAction.href}>
             <Button className="create-btn">
-              <Plus size={18} /> <span>{createLabel}</span>
+              {createAction.icon}
+              <span>{createAction.label}</span>
             </Button>
           </Link>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label={`${workspaceLabel} navigation`}>
           {nav.map((item) => {
             const active = isActiveHref(item.href);
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={active ? "nav-link active" : "nav-link"}
+                aria-current={active ? "page" : undefined}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-text">{item.label}</span>
-                {!!item.badge && (
-                  <span className="nav-badge">{item.badge}</span>
-                )}
+                {!!item.badge && <span className="nav-badge">{item.badge}</span>}
               </Link>
             );
           })}
-                </nav>
+        </nav>
 
         <div className="mobile-more-wrap">
           <button
             type="button"
-            className={mobileMoreActive ? "nav-link mobile-more-trigger active" : "nav-link mobile-more-trigger"}
+            className={
+              mobileMoreActive
+                ? "nav-link mobile-more-trigger active"
+                : "nav-link mobile-more-trigger"
+            }
             onClick={() => setMobileMoreOpen((value) => !value)}
             aria-expanded={mobileMoreOpen}
             aria-label="Open more navigation"
           >
             <span className="nav-icon">
-              <MoreHorizontal size={20} />
+              <MoreHorizontal size={20} strokeWidth={2.25} />
             </span>
             <span className="nav-text">More</span>
           </button>
         </div>
 
         <div className="sidebar-footer">
-          <div className="avatar">
-            {currentUser?.name?.[0]?.toLowerCase() ?? "o"}
-          </div>
+          <UserAvatar name={userName} />
           <div>
-            <strong>{currentUser?.name ?? "Octalve"}</strong>
-            <span>
-              {role === "CLIENT"
-                ? "Client"
-                : role === "SUPER_ADMIN"
-                  ? "Octalve Team"
-                  : role === "PROJECT_MANAGER"
-                    ? "Project Manager"
-                    : "Staff"}
-            </span>
+            <strong>{userName}</strong>
+            <span>{roleEyebrow(role)}</span>
           </div>
           <button
             className="icon-btn logout-btn"
             onClick={handleLogout}
             title="Logout"
+            type="button"
+            aria-label="Logout"
           >
-            <LogOut size={18} />
+            <LogOut size={18} strokeWidth={2.2} />
           </button>
         </div>
-            </aside>
+      </aside>
 
       {mobileMoreOpen && (
         <>
@@ -337,13 +420,7 @@ const createHref =
             <div className="mobile-more-head">
               <div>
                 <strong>More actions</strong>
-                <span>
-                  {role === "CLIENT"
-                    ? "Client workspace"
-                    : role === "SUPER_ADMIN"
-                      ? "Admin workspace"
-                      : "Staff workspace"}
-                </span>
+                <span>{workspaceLabel}</span>
               </div>
 
               <button
@@ -352,18 +429,18 @@ const createHref =
                 onClick={() => setMobileMoreOpen(false)}
                 aria-label="Close"
               >
-                <X size={18} />
+                <X size={18} strokeWidth={2.25} />
               </button>
             </div>
 
             <div className="mobile-more-grid">
               <Link
-                href={createHref}
+                href={createAction.href}
                 className="mobile-more-cta"
                 onClick={() => setMobileMoreOpen(false)}
               >
-                <Plus size={18} />
-                <span>{createLabel}</span>
+                {createAction.icon}
+                <span>{createAction.label}</span>
               </Link>
 
               {mobileMoreNav.map((item) => {
@@ -373,7 +450,9 @@ const createHref =
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={active ? "mobile-more-item active" : "mobile-more-item"}
+                    className={
+                      active ? "mobile-more-item active" : "mobile-more-item"
+                    }
                     onClick={() => setMobileMoreOpen(false)}
                   >
                     <span>{item.icon}</span>
@@ -391,7 +470,7 @@ const createHref =
                   handleLogout();
                 }}
               >
-                <LogOut size={18} />
+                <LogOut size={18} strokeWidth={2.2} />
                 <span>Logout</span>
               </button>
             </div>
@@ -401,31 +480,82 @@ const createHref =
 
       <main className="main">
         <header className="topbar">
-          <div className="search">
-            <Search size={18} /> <input placeholder="Search..." />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              minWidth: 0,
+            }}
+          >
+            <div className="search">
+              <Search size={18} strokeWidth={2.2} />
+              <input placeholder="Search workspace..." aria-label="Search workspace" />
+            </div>
+
+            <div
+              style={{
+                minWidth: 0,
+                display: "none",
+              }}
+              className="topbar-context"
+            >
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  lineHeight: 1,
+                  color: "var(--muted)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                }}
+              >
+                {roleEyebrow(role)}
+              </span>
+              <strong
+                style={{
+                  display: "block",
+                  marginTop: 4,
+                  fontSize: 14,
+                  color: "var(--text)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {workspaceLabel}
+              </strong>
+            </div>
           </div>
+
           <div className="top-actions">
-            {counts.approvals > 0 &&
-              (role === "CLIENT" || role === "SUPER_ADMIN") && (
-                <Link
-                  href={
-                    role === "CLIENT" ? "/client/approvals" : "/admin/projects"
-                  }
-                  className="notification-btn"
-                >
-                  <CheckSquare size={16} /> {counts.approvals} Pending Approval
-                  {counts.approvals > 1 ? "s" : ""}
-                </Link>
-              )}
-            {counts.requests > 0 && role === "SUPER_ADMIN" && (
-              <Link href="/admin/project-requests" className="notification-btn">
-                <Bell size={16} /> {counts.requests} Request
-                {counts.requests > 1 ? "s" : ""}
+            {pendingTotal > 0 && (
+              <Link
+                href={
+                  role === "SUPER_ADMIN"
+                    ? counts.requests > 0
+                      ? "/admin/project-requests"
+                      : "/admin/projects"
+                    : role === "CLIENT"
+                      ? "/client/approvals"
+                      : "/staff/phases"
+                }
+                className="notification-btn"
+              >
+                <Bell size={16} strokeWidth={2.25} />
+                {pendingTotal} Pending
               </Link>
             )}
+
+            {counts.payments > 0 && role === "SUPER_ADMIN" && (
+              <Link href="/admin/payments" className="notification-btn">
+                <CreditCard size={16} strokeWidth={2.25} />
+                {counts.payments} Payment{counts.payments > 1 ? "s" : ""}
+              </Link>
+            )}
+
             <Link
               href={
-                role === "STAFF"
+                role === "STAFF" || role === "PROJECT_MANAGER"
                   ? "/staff/settings"
                   : role === "SUPER_ADMIN"
                     ? "/admin/settings"
@@ -433,12 +563,74 @@ const createHref =
               }
               className="notification-btn"
             >
-              <Settings size={16} /> Settings
+              <Settings2 size={16} strokeWidth={2.25} />
+              Settings
             </Link>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                paddingLeft: 4,
+              }}
+            >
+              <UserAvatar name={userName} />
+              <div
+                style={{
+                  display: "grid",
+                  gap: 2,
+                  minWidth: 0,
+                }}
+              >
+                <strong
+                  style={{
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: 140,
+                  }}
+                >
+                  {userName}
+                </strong>
+                <span
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 12,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {roleEyebrow(role)}
+                </span>
+              </div>
+            </div>
           </div>
         </header>
-        {children}
+
+        <div
+          style={{
+            position: "relative",
+          }}
+        >
+          <div
+            aria-hidden
+            style={{
+              position: "fixed",
+              top: 78,
+              right: 0,
+              width: 420,
+              height: 420,
+              pointerEvents: "none",
+              background:
+                "radial-gradient(circle, rgba(0,100,224,0.08), transparent 62%)",
+              zIndex: 0,
+            }}
+          />
+          <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+        </div>
       </main>
+
       <AIAssistant />
     </div>
   );
