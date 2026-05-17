@@ -1514,7 +1514,7 @@ function RequestReviewModal({
 
           <Card
             className="card-body"
-            style={{ background: "#f5f3ff", borderColor: "#ede9fe" }}
+            style={{ background: "#F6FAFF", borderColor: "#BFD9FF" }}
           >
             <div
               style={{
@@ -1529,7 +1529,7 @@ function RequestReviewModal({
                   width: 32,
                   height: 32,
                   borderRadius: 8,
-                  background: "var(--purple)",
+                  background: "var(--primary)",
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -1552,7 +1552,7 @@ function RequestReviewModal({
                     background: "#fff",
                     padding: "8px 8px",
                     borderRadius: 8,
-                    border: "1px solid #ede9fe",
+                    border: "1px solid #BFD9FF",
                   }}
                 >
                   <span
@@ -2883,7 +2883,7 @@ export function AdminAnalytics() {
       state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
         ?.length || 0,
   }));
-  const COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6"];
+  const COLORS = ["#0064E0", "#f59e0b", "#10b981", "#0064E0"];
   return (
     <div className="content">
       <PageHeader
@@ -2972,7 +2972,7 @@ export function AdminAnalytics() {
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="status" />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                  <Bar dataKey="count" fill="#0064E0" radius={[0, 8, 8, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

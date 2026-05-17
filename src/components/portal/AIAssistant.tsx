@@ -27,7 +27,7 @@ export function AIAssistant() {
             <button className="icon-btn" onClick={() => setOpen(false)} style={{ color: "#fff" }}>×</button>
           </div>
           <div className="ai-body">
-            {messages.map((message, index) => <div key={index} className="ai-message" style={message.from === "me" ? { background: "#f3ebff", color: "#5b21b6" } : undefined}>{message.text}</div>)}
+            {messages.map((message, index) => <div key={index} className="ai-message" style={message.from === "me" ? { background: "#EAF3FF", color: "#0064E0" } : undefined}>{message.text}</div>)}
           </div>
           <div className="ai-input">
             <Input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") send(); }} placeholder="Ask about this project..." />
