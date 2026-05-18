@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -195,7 +195,7 @@ export function ProfileSettings({
   title?: string;
   subtitle?: string;
 }) {
-  const { currentUser, selectedProject } = useApp();
+  const { currentUser, selectedProject, refresh } = useApp();
 
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -246,8 +246,9 @@ export function ProfileSettings({
         return;
       }
 
-      setNotice("Profile updated successfully. Refreshing workspace...");
-      setTimeout(() => window.location.reload(), 900);
+      await refresh();
+      setNotice("Profile updated successfully.");
+      setSaving(false);
     } catch {
       setError("Could not update profile. Please try again.");
       setSaving(false);

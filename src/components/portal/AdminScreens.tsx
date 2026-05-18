@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminPaymentsManager } from "./AdminPaymentsManager";
+
 import {
   WorkspaceActionCard,
   WorkspaceEmptyPanel,
@@ -1033,6 +1035,7 @@ export function AdminCreateProject() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [packageType, setPackageType] = useState<PackageType>("Launch");
+  const [createError, setCreateError] = useState("");
 
   if (state.templates.length === 0) {
     if (dataLoading) return <PageLoading />;
@@ -2284,182 +2287,9 @@ export function AdminAnalytics() {
   );
 }
 export function AdminPayments() {
-  const { state, confirmPayment, rejectPayment } = useApp();
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  const rows = state.projects.flatMap((project) =>
-    project.payments.map((payment) => ({ project, payment })),
-  );
-
-  const pending = rows.filter(
-    (row) => row.payment.status === "PENDING_CONFIRMATION",
-  );
-  const unpaid = rows.filter((row) => row.payment.status === "UNPAID");
-  const confirmed = rows.filter((row) => row.payment.status === "CONFIRMED");
-  const rejected = rows.filter((row) => row.payment.status === "REJECTED");
-
-  const pendingAmount = pending.reduce(
-    (total, row) => total + row.payment.amount,
-    0,
-  );
-
-  const unpaidAmount = unpaid.reduce(
-    (total, row) => total + row.payment.amount,
-    0,
-  );
-
-  const confirmedAmount = confirmed.reduce(
-    (total, row) => total + row.payment.amount,
-    0,
-  );
-
-  const sortedRows = [...pending, ...unpaid, ...confirmed, ...rejected];
-
-  async function handleConfirm(paymentId: string) {
-    setPendingAction(`confirm-${paymentId}`);
-
-    try {
-      await confirmPayment(paymentId);
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  async function handleReject(paymentId: string) {
-    if (!confirm("Reject this payment confirmation?")) return;
-
-    setPendingAction(`reject-${paymentId}`);
-
-    try {
-      await rejectPayment(paymentId);
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  return (
-    <div className="content">
-      <PageHeader
-        title="Payments"
-        subtitle="Confirm manual deposits, balance payments, and pending transfer claims."
-      />
-
-      <div className="metric-grid">
-        <MetricCard
-          label="Requires Confirmation"
-          value={formatNaira(pendingAmount)}
-          icon={Icons.clock}
-          tone="orange"
-        />
-
-        <MetricCard
-          label="Confirmed Revenue"
-          value={formatNaira(confirmedAmount)}
-          icon={Icons.payments}
-          tone="green"
-        />
-
-        <MetricCard
-          label="Awaiting Payment"
-          value={formatNaira(unpaidAmount)}
-          icon={Icons.phases}
-          tone="blue"
-        />
-      </div>
-
-      {sortedRows.length ? (
-        <div className="grid-2-even" style={{ marginTop: 24 }}>
-          {sortedRows.map(({ project, payment }) => (
-            <Card
-              key={payment.id}
-              className="workspace-card workspace-payment-card"
-            >
-              <div className="workspace-card-top">
-                <span className="workspace-card-icon tone-blue">
-                  {Icons.payments}
-                </span>
-
-                <Badge className={statusClass(payment.status)}>
-                  {statusLabel(payment.status)}
-                </Badge>
-              </div>
-
-              <div className="workspace-card-main">
-                <h3>
-                  {payment.type === "DEPOSIT"
-                    ? "First Deposit"
-                    : "Balance Payment"}
-                </h3>
-                <p>{project.title}</p>
-              </div>
-
-              <div className="workspace-payment-amount">
-                {formatNaira(payment.amount)}
-              </div>
-
-              <div className="workspace-card-context">
-                <strong>{project.businessName}</strong>
-                <span>{payment.reference}</span>
-              </div>
-
-              <div className="workspace-card-footer">
-                <span>
-                  {payment.status === "CONFIRMED"
-                    ? "Payment confirmed"
-                    : payment.status === "PENDING_CONFIRMATION"
-                      ? "Client says payment has been made"
-                      : payment.status === "REJECTED"
-                        ? "Payment was rejected"
-                        : "Waiting for client payment"}
-                </span>
-
-                {payment.status === "PENDING_CONFIRMATION" ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <Button
-                      variant="danger"
-                      loading={pendingAction === `reject-${payment.id}`}
-                      onClick={() => handleReject(payment.id)}
-                    >
-                      Reject
-                    </Button>
-
-                    <Button
-                      loading={pendingAction === `confirm-${payment.id}`}
-                      onClick={() => handleConfirm(payment.id)}
-                    >
-                      Confirm
-                    </Button>
-                  </div>
-                ) : (
-                  <Link
-                    href={`/admin/projects/${project.id}`}
-                    className="btn btn-secondary"
-                  >
-                    Open Project
-                  </Link>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div style={{ marginTop: 24 }}>
-          <EmptyState
-            title="No transactions yet"
-            body="Project payment records will appear here once deposits or balances are created."
-          />
-        </div>
-      )}
-    </div>
-  );
+  return <AdminPaymentsManager />;
 }
+
 export function AdminReviews() {
   const { state } = useApp();
 
