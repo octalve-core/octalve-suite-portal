@@ -1,5 +1,13 @@
-﻿"use client";
+"use client";
 
+import {
+  DetailIcons,
+  DetailMetricGrid,
+  DetailPanel,
+  MessagePreviewList,
+  ProjectDetailHero,
+  ProjectPhaseTimeline,
+} from "./WorkspaceDetailUI";
 import {
   ProjectSummaryCard,
   TeamMemberSummaryCard,
@@ -530,148 +538,218 @@ export function AdminProjects() {
   );
 }
 export function AdminProjectDetail({ projectId }: { projectId: string }) {
-  const { state, assignPhase, addDeliverable, requestPhaseApproval } = useApp();
-  const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
-  const [adding, setAdding] = useState<ProjectPhase | null>(null);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const project = state.projects.find((p) => p.id === projectId);
-  if (!project)
+  const { state } = useApp();
+
+  const project = state.projects.find((item) => item.id === projectId);
+
+  if (!project) {
     return (
-      <div className="content">
-        <EmptyState
+      <div className="content narrow">
+        <WorkspaceEmptyCard
           title="Project not found"
-          body="The selected project could not be found."
+          body="This project may have been deleted or you may not have access to it."
+          icon={DashboardIcons.project}
         />
       </div>
     );
-  const pm = state.users.find((user) => user.id === project.projectManagerId);
-  return (
-    <div className="content narrow">
-      <BackLink href="/admin/projects" label="Back to Projects" />
-      <Card className="project-hero">
-        <div className="project-hero-top">
-          <div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <Badge className={packageClass(project.packageType)}>
-                {project.packageType}
-              </Badge>
-              <Badge className={statusClass(project.status)}>
-                {statusLabel(project.status)}
-              </Badge>
-            </div>
-            <h1>{project.title}</h1>
-            <p>
-              {project.businessName} Ã¢â‚¬Â¢ {project.clientEmail}
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div style={{ width: 120 }}>
-              <ProgressBar value={projectProgress(project)} />
-            </div>
-            <Button variant="secondary">Contact Client</Button>
-          </div>
-        </div>
-        <div className="project-hero-bottom">
-          <div className="kv">
-            <span>Phases</span>
-            <strong>
-              {project.phases.filter((p) => p.status === "APPROVED").length} /{" "}
-              {project.phases.length} complete
-            </strong>
-          </div>
-          <div className="kv">
-            <span>Target Date</span>
-            <strong>{project.targetDate ?? "Not set"}</strong>
-          </div>
-          <div className="kv">
-            <span>Project Code</span>
-            <strong>{project.projectCode}</strong>
-          </div>
-          <div className="kv">
-            <span>PM</span>
-            <strong>{pm?.name ?? "Unassigned"}</strong>
-          </div>
-        </div>
-      </Card>
-      <ProjectWorkspaceTabs project={project} users={state.users}>
-        <div className="stack">
-        {project.phases.map((phase) => (
-          <Card
-            key={phase.id}
-            className={`phase-card ${toneForPhase(phase.status)}`}
-          >
-            <div className="phase-head">
-              <div className="phase-title">
-                <div className="phase-number">
-                  {phase.status === "APPROVED"
-                    ? Icons.check
-                    : phase.phaseNumber}
-                </div>
-                <div>
-                  <h2 style={{ margin: 0 }}>{phase.title}</h2>
-                  <Badge className={statusClass(phase.status)}>
-                    {statusLabel(phase.status)}
-                  </Badge>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <Button variant="ghost" onClick={() => setAssigning(phase)}>
-                  <UserPlus size={16} /> Assign
-                </Button>
-                <Button variant="ghost" onClick={() => setAdding(phase)}>
-                  <Plus size={16} /> Add Deliverable
-                </Button>
-                <Button
-                  variant="primary"
-                  loading={pendingAction === `approve-${phase.id}`}
-                  onClick={async () => {
-                    setPendingAction(`approve-${phase.id}`);
-                    try {
-                      await requestPhaseApproval(phase.id);
-                    } finally {
-                      setPendingAction(null);
-                    }
-                  }}
-                  disabled={
-                    phase.status === "APPROVED" || phase.status === "LOCKED"
-                  }
-                >
-                  Request Approval
-                </Button>
-                <Link
-                  href={`/admin/projects/${project.id}/phases/${phase.id}`}
-                  className="btn btn-ghost"
-                >
-                  View Details
-                </Link>
-              </div>
-            </div>
-            <DeliverableManager phase={phase} />
-          </Card>
-        ))}
-      </div>
-      </ProjectWorkspaceTabs>
+  }
 
-      {assigning && (
-        <AssignModal
-          phase={assigning}
-          onClose={() => setAssigning(null)}
-          onAssign={(staffId) => {
-            assignPhase(assigning.id, staffId);
-            setAssigning(null);
-          }}
-        />
-      )}
-      {adding && (
-        <AddDeliverableModal
-          phase={adding}
-          onClose={() => setAdding(null)}
-          onSubmit={(payload) => {
-            addDeliverable(adding.id, payload);
-            setAdding(null);
-          }}
-        />
-      )}
+  const projectManager = state.users.find(
+    (user) => user.id === project.projectManagerId,
+  );
+
+  const client = state.users.find((user) => user.id === project.clientId);
+
+  const allMessages = project.phases.flatMap((phase) =>
+    phase.messages.map((message) => ({
+      ...message,
+      author: state.users.find((user) => user.id === message.senderId) ?? null,
+    })),
+  );
+
+  const approvedPhases = project.phases.filter(
+    (phase) => phase.status === "APPROVED",
+  ).length;
+
+  const visibleDeliverables = project.phases.flatMap((phase) =>
+    phase.deliverables.filter((deliverable) => deliverable.visibleToClient),
+  ).length;
+
+  const confirmedPayments = project.payments.filter(
+    (payment) => payment.status === "CONFIRMED",
+  );
+
+  const pendingPayments = project.payments.filter(
+    (payment) =>
+      payment.status === "UNPAID" ||
+      payment.status === "PENDING_CONFIRMATION",
+  );
+
+  const firstPhase = project.phases[0];
+
+  return (
+    <div className="content">
+      <ProjectDetailHero
+        project={project}
+        backHref="/admin/projects"
+        backLabel="Back to projects"
+        action={
+          firstPhase ? (
+            <Link href={`/admin/projects/${project.id}/phases/${firstPhase.id}`}>
+              <Button>Open First Phase</Button>
+            </Link>
+          ) : null
+        }
+      />
+
+      <DetailMetricGrid
+        items={[
+          {
+            label: "Client",
+            value: client?.name ?? project.businessName,
+            icon: DetailIcons.user,
+          },
+          {
+            label: "Project Manager",
+            value: projectManager?.name ?? "Not assigned",
+            icon: DetailIcons.user,
+          },
+          {
+            label: "Approved Phases",
+            value: `${approvedPhases}/${project.phases.length}`,
+            icon: DetailIcons.layers,
+          },
+          {
+            label: "Visible Deliverables",
+            value: visibleDeliverables,
+            icon: DetailIcons.files,
+          },
+        ]}
+      />
+
+      <div className="grid-2" style={{ marginTop: 24 }}>
+        <DetailPanel
+          title="Phase Timeline"
+          subtitle="Track every delivery stage and open phase details."
+          icon={DetailIcons.layers}
+        >
+          <ProjectPhaseTimeline
+            project={project}
+            baseHref={`/admin/projects/${project.id}/phases`}
+          />
+        </DetailPanel>
+
+        <div className="stack">
+          <DetailPanel
+            title="Project Team"
+            subtitle="Client, project manager, and assigned delivery staff."
+            icon={DetailIcons.user}
+          >
+            <div className="stack">
+              <div className="workspace-assignee-block">
+                <span className="workspace-assignee-avatar">
+                  {client?.name?.[0]?.toUpperCase() ?? "C"}
+                </span>
+                <div>
+                  <strong>{client?.name ?? project.businessName}</strong>
+                  <p>Client</p>
+                </div>
+              </div>
+
+              <div className="workspace-assignee-block">
+                <span className="workspace-assignee-avatar">
+                  {projectManager?.name?.[0]?.toUpperCase() ?? "P"}
+                </span>
+                <div>
+                  <strong>{projectManager?.name ?? "Not assigned"}</strong>
+                  <p>Project Manager</p>
+                </div>
+              </div>
+
+              {project.phases
+                .filter((phase) => phase.assignedStaffId)
+                .map((phase) => {
+                  const staff = state.users.find(
+                    (user) => user.id === phase.assignedStaffId,
+                  );
+
+                  return (
+                    <div className="workspace-assignee-block" key={phase.id}>
+                      <span className="workspace-assignee-avatar">
+                        {staff?.name?.[0]?.toUpperCase() ?? "S"}
+                      </span>
+                      <div>
+                        <strong>{staff?.name ?? "Assigned Staff"}</strong>
+                        <p>{phase.title}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </DetailPanel>
+
+          <DetailPanel
+            title="Payment Status"
+            subtitle="Deposit and balance movement for this project."
+            icon={Icons.payments}
+          >
+            <div className="stack">
+              <div className="workspace-detail-metric">
+                <span className="workspace-detail-metric-icon">
+                  {Icons.payments}
+                </span>
+                <div>
+                  <span>Confirmed</span>
+                  <strong>{confirmedPayments.length}</strong>
+                </div>
+              </div>
+
+              <div className="workspace-detail-metric">
+                <span className="workspace-detail-metric-icon">
+                  {Icons.clock}
+                </span>
+                <div>
+                  <span>Pending / Unpaid</span>
+                  <strong>{pendingPayments.length}</strong>
+                </div>
+              </div>
+
+              <Link
+                href="/admin/payments"
+                className="btn btn-secondary"
+                style={{ width: "100%" }}
+              >
+                Open Payments
+              </Link>
+            </div>
+          </DetailPanel>
+        </div>
+      </div>
+
+      <div className="grid-2" style={{ marginTop: 24 }}>
+        <DetailPanel
+          title="Recent Messages"
+          subtitle="Latest communication across project phases."
+          icon={DetailIcons.messages}
+        >
+          <MessagePreviewList messages={allMessages} />
+        </DetailPanel>
+
+        <DetailPanel
+          title="Project Brief"
+          subtitle="Internal delivery context and client notes."
+          icon={DetailIcons.files}
+        >
+          <div className="workspace-card-context">
+            <strong>Brief</strong>
+            <span>
+              {project.internalNotes ||
+                project.clientBrief ||
+                "No project brief has been added yet."}
+            </span>
+          </div>
+        </DetailPanel>
+      </div>
     </div>
   );
 }
