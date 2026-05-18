@@ -1,6 +1,15 @@
 "use client";
 
 import {
+  WorkspaceActionCard,
+  WorkspaceEmptyPanel,
+  WorkspaceListIcons,
+  WorkspaceListPanel,
+  WorkspaceSectionHero,
+  WorkspaceStatStrip
+} from "./WorkspaceLists";
+
+import {
   AssigneeBlock,
   DetailIcons,
   DetailMetricGrid,
@@ -360,7 +369,7 @@ export function AdminOverview() {
                   <DashboardListItem
                     key={request.id}
                     href="/admin/project-requests"
-                    title={request.projectName}
+                    title={(request as any).projectName}
                     subtitle={`${request.businessName} â€¢ ${request.packageType} Suite`}
                     icon={DashboardIcons.clock}
                     badge={<Badge className="badge-orange">New</Badge>}
@@ -1385,7 +1394,7 @@ function RequestReviewModal({
   });
   return (
     <Modal
-      title={`Review ${request.projectName}`}
+      title={`Review ${(request as any).projectName}`}
       onClose={onClose}
       width="820px"
     >
@@ -1587,452 +1596,211 @@ function RequestReviewModal({
 export function AdminClients() {
   const { state } = useApp();
 
-  const totalClients = state.users.filter((u) => u.role === "CLIENT").length;
-  const highValue = state.users.filter(
-    (u) =>
-      u.role === "CLIENT" &&
-      state.projects.filter((p) => p.clientId === u.id).length >= 2,
-  ).length;
-  const activeProjects = state.projects.filter(
-    (p) => p.status === "ACTIVE",
-  ).length;
+  const clients = state.users.filter((user) => user.role === "CLIENT");
+
+  const activeClients = clients.filter((client) =>
+    state.projects.some((project) => project.clientId === client.id),
+  );
+
+  const clientsWithoutProject = clients.filter(
+    (client) => !state.projects.some((project) => project.clientId === client.id),
+  );
 
   return (
     <div className="content">
-      <PageHeader
+      <WorkspaceSectionHero
+        eyebrow="Client Accounts"
         title="Clients"
-        subtitle={`${totalClients} registered clients`}
-      />
-
-      <div className="metric-grid">
-        <MetricCard
-          label="Total Clients"
-          value={totalClients}
-          icon={Icons.clients}
-          tone="blue"
-        />
-        <MetricCard
-          label="High Value"
-          value={highValue}
-          icon="Ã¢Ëœâ€¦"
-          tone="orange"
-        />
-        <MetricCard
-          label="Active Projects"
-          value={activeProjects}
-          icon={Icons.projects}
-          tone="purple"
-        />
-      </div>
-
-      <div className="grid-1" style={{ marginTop: 24 }}>
-        <DataList
-          title={<h2>Client Directory</h2>}
-          data={state.users.filter((u) => u.role === "CLIENT")}
-          defaultView="grid2"
-          allowedViews={["grid2", "list"]}
-          filterFn={(u, q) =>
-            `${u.name} ${u.email} ${u.company}`
-              .toLowerCase()
-              .includes(q.toLowerCase())
-          }
-          renderItem={(client, view) => {
-            const projects = state.projects.filter(
-              (p) => p.clientId === client.id,
-            );
-
-            if (view === "list") {
-              return (
-                <div
-                  key={client.id}
-                  className="deliverable-row"
-                  style={{
-                    padding: "16px 0",
-                    borderBottom: "1px solid var(--line)",
-                  }}
-                >
-                  <div className="deliverable-main">
-                    <div className="avatar">{client.name[0]}</div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: 16 }}>
-                        {client.company ?? client.name}
-                      </h3>
-                      <p style={{ color: "var(--muted)", margin: 0 }}>
-                        {client.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    style={{ display: "flex", gap: 32, alignItems: "center" }}
-                  >
-                    <div style={{ textAlign: "right" }}>
-                      <strong>{projects.length}</strong>
-                      <p
-                        style={{
-                          color: "var(--muted)",
-                          margin: 0,
-                          fontSize: 12,
-                        }}
-                      >
-                        Projects
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {[...new Set(projects.map((p) => p.packageType))].map(
-                        (p) => (
-                          <Badge key={p} className={packageClass(p)}>
-                            {p[0]}
-                          </Badge>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <Card key={client.id} className="card-body">
-                <div className="deliverable-main" style={{ marginBottom: 20 }}>
-                  <div className="avatar" style={{ width: 48, height: 48 }}>
-                    {client.name[0]}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0 }}>
-                      {client.company ?? client.name}
-                    </h3>
-                    <p style={{ color: "var(--muted)", margin: 4 }}>
-                      {client.email}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid-3" style={{ margin: "22px 0" }}>
-                  <div>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Active
-                    </span>
-                    <strong style={{ display: "block", fontSize: 18 }}>
-                      {projects.filter((p) => p.status === "ACTIVE").length}
-                    </strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Done
-                    </span>
-                    <strong style={{ display: "block", fontSize: 18 }}>
-                      {projects.filter((p) => p.status === "COMPLETED").length}
-                    </strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Total
-                    </span>
-                    <strong style={{ display: "block", fontSize: 18 }}>
-                      {projects.length}
-                    </strong>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {[...new Set(projects.map((p) => p.packageType))].map((p) => (
-                    <Badge key={p} className={packageClass(p)}>
-                      {p}
-                    </Badge>
-                  ))}
-                </div>
-              </Card>
-            );
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-export function AdminTemplates() {
-  const { state, createTemplate, updateTemplate, deleteTemplate } = useApp();
-  const [modal, setModal] = useState<ProjectTemplate | "new" | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  const avgPhases = Math.round(
-    state.templates.reduce((acc, t) => acc + t.phases.length, 0) /
-      state.templates.length || 0,
-  );
-
-  return (
-    <div className="content">
-      <PageHeader
-        title="Templates"
-        subtitle="Manage standardized project structures"
-        action={
-          <Button onClick={() => setModal("new")}>
-            <Plus size={18} /> Create Template
-          </Button>
+        subtitle="View client accounts, connected projects, company details, and workspace records."
+        meta={
+          <>
+            <Badge className="badge-blue">{clients.length} Clients</Badge>
+            <Badge className="badge-green">{activeClients.length} Active</Badge>
+            <Badge className="badge-slate">{clientsWithoutProject.length} No Project</Badge>
+          </>
         }
       />
 
-      <div className="metric-grid">
-        <MetricCard
-          label="Total Templates"
-          value={state.templates.length}
-          icon={Icons.templates}
-          tone="purple"
-        />
-        <MetricCard
-          label="Avg. Phases"
-          value={avgPhases}
-          icon={Icons.phases}
-          tone="blue"
-        />
-        <MetricCard
-          label="Ready Packages"
-          value={new Set(state.templates.map((t) => t.packageType)).size}
-          icon={Icons.check}
-          tone="green"
-        />
-      </div>
+      <WorkspaceStatStrip
+        items={[
+          {
+            label: "Total Clients",
+            value: clients.length,
+            tone: "blue",
+            icon: WorkspaceListIcons.client,
+          },
+          {
+            label: "With Projects",
+            value: activeClients.length,
+            tone: "green",
+            icon: WorkspaceListIcons.check,
+          },
+          {
+            label: "Without Projects",
+            value: clientsWithoutProject.length,
+            tone: clientsWithoutProject.length ? "orange" : "slate",
+            icon: WorkspaceListIcons.clock,
+          },
+          {
+            label: "Projects",
+            value: state.projects.length,
+            tone: "purple",
+            icon: WorkspaceListIcons.document,
+          },
+        ]}
+      />
 
-      <div className="grid-1" style={{ marginTop: 24 }}>
-        <DataList
-          title={<h2>Standard Packages</h2>}
-          data={state.templates}
-          defaultView="grid"
-          allowedViews={["grid", "list"]}
-          filterFn={(t, q) =>
-            `${t.name} ${t.packageType} ${t.description}`
-              .toLowerCase()
-              .includes(q.toLowerCase())
-          }
-          renderItem={(template, view) => {
-            if (view === "list") {
-              const isOpen = open[template.id];
-
-              return (
-                <div key={template.id} className="template-list-item">
-                  <div
-                    className="deliverable-row"
-                    style={{ padding: "16px 0" }}
-                  >
-                    <div className="deliverable-main">
-                      <div
-                        className="package-icon"
-                        style={{
-                          width: 44,
-                          height: 44,
-                          fontSize: 18,
-                          borderRadius: 14,
-                        }}
-                      >
-                        {template.packageType[0]}
-                      </div>
-
-                      <div>
-                        <h3
-                          style={{ margin: 0, fontSize: 16, fontWeight: 800 }}
-                        >
-                          {template.name}
-                        </h3>
-                        <p
-                          style={{
-                            color: "var(--muted)",
-                            margin: "2px 0 0",
-                            fontSize: 13,
-                          }}
-                        >
-                          {template.phases.length} Phases Ã¢â‚¬Â¢{" "}
-                          <span style={{ color: "var(--primary)" }}>
-                            {template.packageType}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{ display: "flex", gap: 12, alignItems: "center" }}
-                    >
-                      <Button
-                        variant="secondary"
-                        onClick={() => setModal(template)}
-                        style={{ height: 32, padding: "0 14px", fontSize: 13 }}
-                      >
-                        Edit
-                      </Button>
-                      <button
-                        className="icon-btn"
-                        style={{
-                          background: isOpen ? "var(--primary-soft)" : "",
-                          color: isOpen ? "var(--primary)" : "",
-                        }}
-                        onClick={() =>
-                          setOpen((prev) => ({
-                            ...prev,
-                            [template.id]: !prev[template.id],
-                          }))
-                        }
-                      >
-                        {isOpen ? (
-                          <ChevronUp size={18} />
-                        ) : (
-                          <ChevronDown size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  {isOpen && (
-                    <div className="phase-list-nested">
-                      {template.phases.map((p, i) => (
-                        <div key={p.id} className="phase-row-compact">
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 12,
-                              alignItems: "center",
-                            }}
-                          >
-                            <span className="badge badge-slate">{i + 1}</span>
-                            <strong style={{ fontWeight: 600 }}>
-                              {p.title}
-                            </strong>
-                          </div>
-                          <span
-                            style={{
-                              color: "var(--muted)",
-                              fontSize: 12,
-                              background: "#f1f5f9",
-                              padding: "2px 8px",
-                              borderRadius: 6,
-                            }}
-                          >
-                            {p.deliverables.length} deliverables
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
+      <WorkspaceListPanel
+        title="Client Directory"
+        subtitle="Client profiles and connected project records."
+      >
+        {clients.length ? (
+          clients.map((client) => {
+            const projects = state.projects.filter(
+              (project) => project.clientId === client.id,
+            );
 
             return (
-              <Card key={template.id} className="card-body">
-                <div className="deliverable-main">
-                  <div className="package-icon">{template.packageType[0]}</div>
-                  <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: 0, fontSize: 18 }}>{template.name}</h2>
-                    <Badge className={packageClass(template.packageType)}>
-                      {template.packageType}
-                    </Badge>
-                  </div>
-
-                  <ActionMenu>
-                    <button onClick={() => setModal(template)}>
-                      <Edit3 size={15} /> Edit template
-                    </button>
-
-                    <Button
-                      variant="ghost"
-                      className="danger"
-                      style={{
-                        color: "var(--danger)",
-                        width: "100%",
-                        justifyContent: "flex-start",
-                        height: 32,
-                        padding: "0 8px",
-                      }}
-                      loading={pendingAction === `delete-${template.id}`}
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            `Are you sure you want to delete ${template.packageType} template?`,
-                          )
-                        ) {
-                          setPendingAction(`delete-${template.id}`);
-                          try {
-                            await deleteTemplate(template.id);
-                          } finally {
-                            setPendingAction(null);
-                          }
-                        }
-                      }}
-                    >
-                      <Trash2 size={15} /> Delete template
-                    </Button>
-                  </ActionMenu>
-                </div>
-
-                <p
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 14,
-                    margin: "12px 0 20px",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {template.description}
-                </p>
-
-                <div className="template-phase-header">
-                  <strong>{template.phases.length} Phases</strong>
-                  <Button
-                    variant="ghost"
-                    onClick={() =>
-                      setOpen((prev) => ({
-                        ...prev,
-                        [template.id]: !prev[template.id],
-                      }))
-                    }
-                    style={{ fontSize: 13 }}
-                  >
-                    {open[template.id] ? (
-                      <ChevronUp size={14} />
-                    ) : (
-                      <ChevronDown size={14} />
-                    )}{" "}
-                    {open[template.id] ? "Collapse" : "Expand"}
-                  </Button>
-                </div>
-
-                {open[template.id] && (
-                  <div className="stack" style={{ marginTop: 18 }}>
-                    {template.phases.map((p, i) => (
-                      <div className="template-phase-row" key={p.id}>
-                        <div className="deliverable-main">
-                          <span
-                            className="badge badge-slate"
-                            style={{ minWidth: 24, justifyContent: "center" }}
-                          >
-                            {i + 1}
-                          </span>
-                          <strong style={{ fontSize: 14 }}>{p.title}</strong>
-                        </div>
-                        <span style={{ color: "var(--muted)", fontSize: 12 }}>
-                          {p.deliverables.length} deliverables
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
+              <WorkspaceActionCard
+                key={client.id}
+                title={client.name}
+                subtitle={client.company || client.email}
+                icon={WorkspaceListIcons.client}
+                tone={projects.length ? "blue" : "slate"}
+                badge={
+                  <Badge className={projects.length ? "badge-green" : "badge-slate"}>
+                    {projects.length ? `${projects.length} Project${projects.length > 1 ? "s" : ""}` : "No Project"}
+                  </Badge>
+                }
+                meta={
+                  <>
+                    <span>{client.email}</span>
+                    {client.phone && <span>{client.phone}</span>}
+                    {client.company && <span>{client.company}</span>}
+                  </>
+                }
+                href={projects[0] ? `/admin/projects/${projects[0].id}` : undefined}
+              />
             );
-          }}
-        />
-      </div>
-
-      {modal && (
-        <TemplateModal
-          template={modal === "new" ? undefined : modal}
-          onClose={() => setModal(null)}
-          onSave={async (payload) => {
-            modal === "new"
-              ? await createTemplate(payload)
-              : await updateTemplate((modal as ProjectTemplate).id, payload);
-            setModal(null);
-          }}
-        />
-      )}
+          })
+        ) : (
+          <WorkspaceEmptyPanel
+            title="No clients yet"
+            body="Client accounts will appear here after signup or project creation."
+            icon={WorkspaceListIcons.client}
+          />
+        )}
+      </WorkspaceListPanel>
     </div>
   );
 }
+
+
+export function AdminTemplates() {
+  const { state } = useApp();
+
+  const templates = ((state.templates ?? []) as any[]);
+
+  const activeTemplates = templates.filter(
+    (template) => (template as any).isActive !== false && template.status !== "INACTIVE",
+  );
+
+  const inactiveTemplates = templates.filter(
+    (template) => (template as any).isActive === false || template.status === "INACTIVE",
+  );
+
+  const totalPhases = templates.reduce(
+    (total, template) => total + ((template.phases ?? (template as any).phaseTemplates ?? []).length || 0),
+    0,
+  );
+
+  return (
+    <div className="content">
+      <WorkspaceSectionHero
+        eyebrow="Delivery Systems"
+        title="Templates"
+        subtitle="Manage project templates, phase structures, and reusable delivery frameworks."
+        meta={
+          <>
+            <Badge className="badge-blue">{templates.length} Total</Badge>
+            <Badge className="badge-green">{activeTemplates.length} Active</Badge>
+            <Badge className="badge-slate">{inactiveTemplates.length} Inactive</Badge>
+          </>
+        }
+      />
+
+      <WorkspaceStatStrip
+        items={[
+          {
+            label: "Templates",
+            value: templates.length,
+            tone: "blue",
+            icon: WorkspaceListIcons.template,
+          },
+          {
+            label: "Active",
+            value: activeTemplates.length,
+            tone: "green",
+            icon: WorkspaceListIcons.check,
+          },
+          {
+            label: "Inactive",
+            value: inactiveTemplates.length,
+            tone: "slate",
+            icon: WorkspaceListIcons.document,
+          },
+          {
+            label: "Reusable Phases",
+            value: totalPhases,
+            tone: "purple",
+            icon: WorkspaceListIcons.template,
+          },
+        ]}
+      />
+
+      <WorkspaceListPanel
+        title="Template Library"
+        subtitle="Reusable structures for Suite delivery projects."
+      >
+        {templates.length ? (
+          templates.map((template) => {
+            const phaseCount = (template.phases ?? (template as any).phaseTemplates ?? []).length || 0;
+            const isInactive = (template as any).isActive === false || template.status === "INACTIVE";
+
+            return (
+              <WorkspaceActionCard
+                key={template.id}
+                title={template.name ?? template.title ?? "Project Template"}
+                subtitle={template.description || "Reusable Octalve delivery template"}
+                icon={WorkspaceListIcons.template}
+                tone={isInactive ? "slate" : "blue"}
+                badge={
+                  <Badge className={isInactive ? "badge-slate" : "badge-green"}>
+                    {isInactive ? "Inactive" : "Active"}
+                  </Badge>
+                }
+                meta={
+                  <>
+                    <span>{phaseCount} phases</span>
+                    <span>{template.packageType ?? template.type ?? "General"} Suite</span>
+                  </>
+                }
+              />
+            );
+          })
+        ) : (
+          <WorkspaceEmptyPanel
+            title="No templates yet"
+            body="Template records will appear here when they are created."
+            icon={WorkspaceListIcons.template}
+          />
+        )}
+      </WorkspaceListPanel>
+    </div>
+  );
+}
+
+
 
 function TemplateModal({
   template,

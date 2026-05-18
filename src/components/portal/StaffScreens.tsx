@@ -1,6 +1,16 @@
 "use client";
 
 import {
+  WorkspaceActionCard,
+  WorkspaceEmptyPanel,
+  WorkspaceListIcons,
+  WorkspaceListPanel,
+  WorkspaceMessageCard,
+  WorkspaceSectionHero,
+  WorkspaceStatStrip
+} from "./WorkspaceLists";
+
+import {
   AssigneeBlock,
   DetailIcons,
   DetailMetricGrid,
@@ -507,117 +517,216 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
 
 
 export function StaffMessages() {
+  const { state, currentUser } = useApp();
+
+  const assigned = state.projects.flatMap((project) =>
+    project.phases
+      .filter(
+        (phase) =>
+          phase.assignedStaffId === currentUser?.id ||
+          project.projectManagerId === currentUser?.id ||
+          currentUser?.role === "SUPER_ADMIN",
+      )
+      .map((phase) => ({ project, phase })),
+  );
+
+  const messages = assigned.flatMap(({ project, phase }) =>
+    phase.messages.map((message) => ({
+      ...message,
+      project,
+      phase,
+      author: state.users.find((user) => user.id === message.senderId),
+    })),
+  );
+
+  const recentMessages = messages
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
   return (
-    <div className="content narrow">
-      <PageHeader
+    <div className="content">
+      <WorkspaceSectionHero
+        eyebrow="Team Communication"
         title="Messages"
-        subtitle="Client and internal project communication"
+        subtitle="Track recent communication across assigned phases and managed project work."
+        meta={
+          <>
+            <Badge className="badge-blue">{messages.length} Messages</Badge>
+            <Badge className="badge-purple">{assigned.length} Phase Threads</Badge>
+          </>
+        }
       />
-      <EmptyState
-        title="Messages are grouped inside phases"
-        body="Open any assigned phase to view or send messages."
+
+      <WorkspaceStatStrip
+        items={[
+          {
+            label: "Messages",
+            value: messages.length,
+            tone: "purple",
+            icon: WorkspaceListIcons.message,
+          },
+          {
+            label: "Phase Threads",
+            value: assigned.length,
+            tone: "blue",
+            icon: WorkspaceListIcons.template,
+          },
+          {
+            label: "Assigned Projects",
+            value: new Set(assigned.map(({ project }) => project.id)).size,
+            tone: "green",
+            icon: WorkspaceListIcons.check,
+          },
+          {
+            label: "Latest Activity",
+            value: recentMessages[0]
+              ? new Date(recentMessages[0].createdAt).toLocaleDateString("en-NG")
+              : "None",
+            tone: "orange",
+            icon: WorkspaceListIcons.clock,
+          },
+        ]}
       />
+
+      <WorkspaceListPanel
+        title="Recent Messages"
+        subtitle="Open the phase to continue the conversation."
+      >
+        {recentMessages.length ? (
+          recentMessages.map((message) => (
+            <WorkspaceMessageCard
+              key={message.id}
+              href={`/staff/phases/${message.phase.id}`}
+              title={`${message.author?.name ?? "Workspace User"} • ${message.phase.title}`}
+              message={message.message}
+              meta={`${message.project.title} • ${new Date(message.createdAt).toLocaleString("en-NG")}`}
+              badge={<Badge className={statusClass(message.phase.status)}>{statusLabel(message.phase.status)}</Badge>}
+            />
+          ))
+        ) : (
+          <WorkspaceEmptyPanel
+            title="No messages yet"
+            body="Messages from assigned phase threads will appear here."
+            icon={WorkspaceListIcons.message}
+          />
+        )}
+      </WorkspaceListPanel>
     </div>
   );
 }
 
+
 export function StaffWorkload() {
   const { state } = useApp();
+
   const team = state.users.filter(
-    (u) => u.role === "STAFF" || u.role === "PROJECT_MANAGER",
+    (user) => user.role === "STAFF" || user.role === "PROJECT_MANAGER",
+  );
+
+  const allPhases = state.projects.flatMap((project) => project.phases);
+  const assignedPhases = allPhases.filter((phase) => phase.assignedStaffId);
+  const unassignedPhases = allPhases.filter(
+    (phase) => !phase.assignedStaffId && phase.status !== "LOCKED",
   );
 
   return (
     <div className="content">
-      <PageHeader
+      <WorkspaceSectionHero
+        eyebrow="Delivery Capacity"
         title="Workload"
-        subtitle="Team capacity and assignment overview"
+        subtitle="Review team assignments, current delivery load, and unassigned work across project phases."
+        meta={
+          <>
+            <Badge className="badge-blue">{team.length} Team Members</Badge>
+            <Badge className="badge-green">{assignedPhases.length} Assigned</Badge>
+            <Badge className="badge-orange">{unassignedPhases.length} Unassigned</Badge>
+          </>
+        }
       />
-      {team.length > 0 ? (
-        <div className="grid-3">
-          {team.map((member) => {
-            const count = state.projects
-              .flatMap((p) => p.phases)
-              .filter(
-                (phase) =>
-                  phase.assignedStaffId === member.id ||
-                  state.projects.find((p) => p.id === phase.projectId)
-                    ?.projectManagerId === member.id,
-              ).length;
+
+      <WorkspaceStatStrip
+        items={[
+          {
+            label: "Team Members",
+            value: team.length,
+            tone: "blue",
+            icon: WorkspaceListIcons.client,
+          },
+          {
+            label: "Assigned Phases",
+            value: assignedPhases.length,
+            tone: "green",
+            icon: WorkspaceListIcons.check,
+          },
+          {
+            label: "Unassigned Phases",
+            value: unassignedPhases.length,
+            tone: unassignedPhases.length ? "orange" : "slate",
+            icon: WorkspaceListIcons.clock,
+          },
+          {
+            label: "Total Phases",
+            value: allPhases.length,
+            tone: "purple",
+            icon: WorkspaceListIcons.template,
+          },
+        ]}
+      />
+
+      <WorkspaceListPanel
+        title="Team Load"
+        subtitle="Current assignments by staff member."
+      >
+        {team.length ? (
+          team.map((member) => {
+            const phases = allPhases.filter(
+              (phase) => phase.assignedStaffId === member.id,
+            );
+
+            const managedProjects = state.projects.filter(
+              (project) => project.projectManagerId === member.id,
+            );
+
+            const load = phases.length + managedProjects.length;
 
             return (
-              <Card key={member.id} className="card-body">
-                <div className="deliverable-main">
-                  <div
-                    className="avatar"
-                    style={{ width: 44, height: 44, fontSize: 18 }}
-                  >
-                    {member.name[0]}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: 16 }}>{member.name}</h3>
-                    <div style={{ marginTop: 6, display: "inline-block" }}>
-                      <Badge className="badge-purple">
-                        {member.specialty ?? statusLabel(member.role)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    marginTop: 24,
-                    padding: "16px 0 0",
-                    borderTop: "1px solid var(--line)",
-                  }}
-                >
-                  <div className="timeline-row">
-                    <span style={{ color: "var(--muted)" }}>
-                      Active assignments
-                    </span>
-                    <strong>{count} phases</strong>
-                  </div>
-                  <div style={{ marginTop: 12 }}>
-                    <ProgressBar value={Math.min(100, count * 16)} />
-                  </div>
-                  {count > 5 && (
-                    <p
-                      style={{
-                        color: "var(--red)",
-                        fontSize: 13,
-                        margin: "12px 0 0",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <span
-                        style={{
-                          background: "#fee2e2",
-                          color: "#ef4444",
-                          padding: "2px 6px",
-                          borderRadius: 4,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Overbooked
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </Card>
+              <WorkspaceActionCard
+                key={member.id}
+                title={member.name}
+                subtitle={member.specialty ?? statusLabel(member.role)}
+                icon={WorkspaceListIcons.client}
+                tone={load > 7 ? "red" : load > 4 ? "orange" : "blue"}
+                badge={
+                  <Badge className={load > 7 ? "badge-red" : load > 4 ? "badge-orange" : "badge-blue"}>
+                    {load > 7 ? "High Load" : load > 4 ? "Busy" : "Optimal"}
+                  </Badge>
+                }
+                meta={
+                  <>
+                    <span>{phases.length} assigned phases</span>
+                    <span>{managedProjects.length} managed projects</span>
+                    <span>{member.email}</span>
+                  </>
+                }
+                href="/staff/phases"
+              />
             );
-          })}
-        </div>
-      ) : (
-        <EmptyState
-          icon={Icons.team}
-          title="Team workload is private"
-          body="As a staff member, you cannot view the workload of other team members. Project managers and administrators can access full capacity planning."
-        />
-      )}
+          })
+        ) : (
+          <WorkspaceEmptyPanel
+            title="No team workload yet"
+            body="Staff workload will appear when phases are assigned."
+            icon={WorkspaceListIcons.client}
+          />
+        )}
+      </WorkspaceListPanel>
     </div>
   );
 }
+
 
 export function StaffSettings() {
   const { currentUser } = useApp();

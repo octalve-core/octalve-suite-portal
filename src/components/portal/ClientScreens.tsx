@@ -1,6 +1,15 @@
 "use client";
 
 import {
+  WorkspaceActionCard,
+  WorkspaceEmptyPanel,
+  WorkspaceListIcons,
+  WorkspaceListPanel,
+  WorkspaceSectionHero,
+  WorkspaceStatStrip
+} from "./WorkspaceLists";
+
+import {
   DetailIcons,
   DetailMetricGrid,
   DetailPanel,
@@ -1180,61 +1189,106 @@ function RequestChangeModal({
 }
 
 export function ClientApprovals() {
-  const { selectedProject } = useApp();
-  const pending =
-    selectedProject?.phases.filter(
-      (phase) => phase.status === "AWAITING_APPROVAL",
-    ) ?? [];
+  const { clientProjects } = useApp();
+
+  const phases = clientProjects.flatMap((project) =>
+    project.phases.map((phase) => ({ project, phase })),
+  );
+
+  const awaiting = phases.filter(({ phase }) => phase.status === "AWAITING_APPROVAL");
+  const approved = phases.filter(({ phase }) => phase.status === "APPROVED");
+  const changes = phases.filter(({ phase }) => phase.status === "CHANGES_REQUESTED");
+
   return (
     <div className="content narrow">
-      <PageHeader
+      <WorkspaceSectionHero
+        eyebrow="Client Review"
         title="Approvals"
-        subtitle="Review and approve project phases"
+        subtitle="Review submitted phases, approve completed work, or request changes from the delivery team."
+        meta={
+          <>
+            <Badge className="badge-orange">{awaiting.length} Awaiting Review</Badge>
+            <Badge className="badge-green">{approved.length} Approved</Badge>
+            <Badge className="badge-red">{changes.length} Changes Requested</Badge>
+          </>
+        }
       />
-      <ProjectSwitcher />
-      <h2 style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <span style={{ color: "var(--warning)" }}>{Icons.clock}</span> Pending (
-        {pending.length})
-      </h2>
-      {pending.length ? (
-        <div className="stack">
-          {pending.map((phase) => (
-            <Link key={phase.id} href={`/client/phases/${phase.id}`}>
-              <Card
-                className="payment-card"
-                style={{ borderLeft: "6px solid var(--warning)" }}
-              >
-                <div>
-                  <h3>{phase.title}</h3>
-                  <Badge className="badge-orange">Awaiting Approval</Badge>{" "}
-                  <span style={{ color: "var(--muted)", marginLeft: 10 }}>
-                    Requested{" "}
-                    {phase.approvalRequestedAt
-                      ? new Date(phase.approvalRequestedAt).toLocaleDateString()
-                      : "recently"}
-                  </span>
-                </div>
-                <Button>Review & Approve {Icons.arrow}</Button>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <>
-          <EmptyState
-            title="All caught up!"
-            body="No pending approvals at the moment."
-            icon={Icons.check}
+
+      <WorkspaceStatStrip
+        items={[
+          {
+            label: "Awaiting Review",
+            value: awaiting.length,
+            tone: awaiting.length ? "orange" : "slate",
+            icon: WorkspaceListIcons.clock,
+          },
+          {
+            label: "Approved",
+            value: approved.length,
+            tone: "green",
+            icon: WorkspaceListIcons.check,
+          },
+          {
+            label: "Changes Requested",
+            value: changes.length,
+            tone: changes.length ? "red" : "slate",
+            icon: WorkspaceListIcons.document,
+          },
+          {
+            label: "Total Phases",
+            value: phases.length,
+            tone: "blue",
+            icon: WorkspaceListIcons.template,
+          },
+        ]}
+      />
+
+      <WorkspaceListPanel
+        title="Approval Queue"
+        subtitle="Open any phase to review its deliverables and messages."
+      >
+        {phases.length ? (
+          phases.map(({ project, phase }) => (
+            <WorkspaceActionCard
+              key={phase.id}
+              href={`/client/phases/${phase.id}`}
+              title={phase.title}
+              subtitle={project.title}
+              icon={WorkspaceListIcons.check}
+              tone={
+                phase.status === "APPROVED"
+                  ? "green"
+                  : phase.status === "CHANGES_REQUESTED"
+                    ? "red"
+                    : phase.status === "AWAITING_APPROVAL"
+                      ? "orange"
+                      : "slate"
+              }
+              badge={
+                <Badge className={statusClass(phase.status)}>
+                  {statusLabel(phase.status)}
+                </Badge>
+              }
+              meta={
+                <>
+                  <span>{phase.deliverables.length} deliverables</span>
+                  <span>{phase.messages.length} messages</span>
+                </>
+              }
+            />
+          ))
+        ) : (
+          <WorkspaceEmptyPanel
+            title="No approvals yet"
+            body="Submitted phases will appear here when your delivery team requests approval."
+            icon={WorkspaceListIcons.check}
           />
-          <EmptyState
-            title="No Approvals Yet"
-            body="Approval requests will appear here as phases are ready for review."
-          />
-        </>
-      )}
+        )}
+      </WorkspaceListPanel>
     </div>
   );
 }
+
 
 export function ClientPayments() {
   const { selectedProject } = useApp();
