@@ -1,3 +1,10 @@
-import { PortalShell } from "@/components/portal/PortalShell";
-import { AdminTemplates } from "@/components/portal/AdminScreens";
-export default function Page() { return <PortalShell role="SUPER_ADMIN"><AdminTemplates /></PortalShell>; }
+﻿import { PortalShell } from "@/components/portal/PortalShell";
+import { AdminTemplatesManager } from "@/components/portal/AdminTemplatesManager";
+
+export default function Page() {
+  return (
+    <PortalShell role="SUPER_ADMIN">
+      <AdminTemplatesManager />
+    </PortalShell>
+  );
+}
