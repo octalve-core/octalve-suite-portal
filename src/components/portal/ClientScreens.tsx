@@ -1225,7 +1225,7 @@ export function ClientApprovals() {
   return (
     <div className="content narrow">
       <WorkspaceSectionHero
-        eyebrow="Client Review"
+        eyebrow="Approvals"
         title="Approvals"
         subtitle="Review submitted phases by project, approve completed work, or request changes from the delivery team."
         meta={

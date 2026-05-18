@@ -5066,3 +5066,213 @@ strong,
   color: #0064E0 !important;
   border-color: transparent !important;
 }
+
+/* Phase 5C client UI polish */
+.package-select-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.package-select-head h2 {
+  margin-bottom: 6px;
+}
+
+.package-select-head p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.package-layout-switcher {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.package-layout-switcher button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: transparent;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.package-layout-switcher button.active {
+  background: #0064E0;
+  color: #ffffff;
+}
+
+.package-option-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.package-option-grid-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.package-option-grid-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.package-option-grid-list {
+  grid-template-columns: 1fr;
+}
+
+.package-option-grid-list .premium-suite-card {
+  min-height: 116px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+}
+
+.package-option-grid-compact .premium-suite-card {
+  min-height: 142px;
+}
+
+.premium-suite-card {
+  position: relative;
+  min-height: 156px;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid color-mix(in srgb, var(--suite-color) 28%, #e2e8f0) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+}
+
+.premium-suite-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--suite-color) 14%, rgba(15, 23, 42, 0.12));
+}
+
+.premium-suite-card h3 {
+  color: #0f172a !important;
+}
+
+.premium-suite-card p {
+  color: #475569 !important;
+  opacity: 1;
+}
+
+.premium-suite-card.selected {
+  border-color: var(--suite-color) !important;
+  outline: 4px solid color-mix(in srgb, var(--suite-color) 14%, transparent);
+}
+
+.premium-suite-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--suite-color) 12%, #ffffff) !important;
+  color: var(--suite-color) !important;
+}
+
+.suite-selected-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--suite-color) 12%, #ffffff);
+  color: var(--suite-color) !important;
+}
+
+.package-card-category {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--suite-color) 12%, #ffffff);
+  color: var(--suite-color);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Reduce oversized dashboard welcome hero across roles */
+.dashboard-hero,
+.workspace-dashboard-hero,
+.role-dashboard-hero,
+.portal-dashboard-hero,
+[class*="dashboard-hero"],
+[class*="welcome-hero"] {
+  min-height: 300px !important;
+  padding: clamp(34px, 5vw, 58px) !important;
+  border-radius: 34px !important;
+}
+
+.dashboard-hero h1,
+.workspace-dashboard-hero h1,
+.role-dashboard-hero h1,
+.portal-dashboard-hero h1,
+[class*="dashboard-hero"] h1,
+[class*="welcome-hero"] h1 {
+  max-width: 820px;
+  font-size: clamp(42px, 5vw, 76px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.07em !important;
+}
+
+.dashboard-hero p,
+.workspace-dashboard-hero p,
+.role-dashboard-hero p,
+.portal-dashboard-hero p,
+[class*="dashboard-hero"] p,
+[class*="welcome-hero"] p {
+  max-width: 720px;
+  font-size: clamp(15px, 1.6vw, 22px) !important;
+  line-height: 1.55 !important;
+}
+
+@media (max-width: 900px) {
+  .package-select-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .package-option-grid-grid,
+  .package-option-grid-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero,
+  .workspace-dashboard-hero,
+  .role-dashboard-hero,
+  .portal-dashboard-hero,
+  [class*="dashboard-hero"],
+  [class*="welcome-hero"] {
+    min-height: 260px !important;
+    padding: 30px !important;
+  }
+
+  .dashboard-hero h1,
+  .workspace-dashboard-hero h1,
+  .role-dashboard-hero h1,
+  .portal-dashboard-hero h1,
+  [class*="dashboard-hero"] h1,
+  [class*="welcome-hero"] h1 {
+    font-size: clamp(34px, 10vw, 54px) !important;
+  }
+}

@@ -248,6 +248,7 @@ export function ClientCreateProjectExpanded() {
   const [packageType, setPackageType] = useState<PackageType>("Launch");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [layoutMode, setLayoutMode] = useState<"grid" | "compact" | "list">("grid");
 
   const [form, setForm] = useState({
     projectName: "",
@@ -262,6 +263,28 @@ export function ClientCreateProjectExpanded() {
     state.templates.find((template) => template.packageType === packageType) ??
     state.templates.find((template) => template.packageType === "Launch") ??
     state.templates[0];
+
+  const packageOptionsWithTemplates = useMemo(() => {
+    const optionMap = new Map<string, PackageOption>();
+
+    for (const option of packageOptions) {
+      optionMap.set(option.type, option);
+    }
+
+    for (const template of state.templates) {
+      const current = optionMap.get(template.packageType);
+
+      if (current) {
+        optionMap.set(template.packageType, {
+          ...current,
+          title: template.name || current.title,
+          description: template.description || current.description,
+        });
+      }
+    }
+
+    return Array.from(optionMap.values());
+  }, [state.templates]);
 
   const aiPackage = useMemo(
     () => recommendPackageLocal(`${form.projectGoal} ${form.projectDescription}`),
@@ -366,10 +389,28 @@ export function ClientCreateProjectExpanded() {
 
         {step === 1 && (
           <>
-            <h2>Select Package / Suite</h2>
+            <div className="package-select-head">
+              <div>
+                <h2>Select Package / Suite</h2>
+                <p>Choose a delivery structure. Templates created from admin can appear here with their phases and deliverables.</p>
+              </div>
 
-            <div className="grid-2-even">
-              {packageOptions.map((option) => (
+              <div className="package-layout-switcher" aria-label="Package layout switcher">
+                {(["grid", "compact", "list"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={layoutMode === mode ? "active" : ""}
+                    onClick={() => setLayoutMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={`package-option-grid package-option-grid-${layoutMode}`}>
+              {packageOptionsWithTemplates.map((option) => (
                 <Card
                   key={option.type}
                   onClick={() => {
