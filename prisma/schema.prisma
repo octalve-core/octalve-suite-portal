@@ -342,3 +342,4 @@ model Notification {
   @@index([userId])
   @@index([role])
 }
+
