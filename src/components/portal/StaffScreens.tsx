@@ -7,6 +7,14 @@ import { ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { DeliverableManager } from "./DeliverableManager";
 import {
+  DashboardHero,
+  DashboardIcons,
+  DashboardListItem,
+  DashboardPanel,
+  DashboardProgressCard,
+  DashboardStats,
+} from "./DashboardUI";
+import {
   BackLink,
   Badge,
   Button,
@@ -36,103 +44,146 @@ function assignedPhases(userId?: string) {
 
 export function StaffDashboard() {
   const { currentUser, state } = useApp();
+
   const assigned = assignedPhases(currentUser?.id);
+
   const needsReview = assigned.filter(
     ({ phase }) =>
       phase.status === "IN_PROGRESS" || phase.status === "CHANGES_REQUESTED",
   ).length;
+
   const awaitingClient = assigned.filter(
     ({ phase }) => phase.status === "AWAITING_APPROVAL",
   ).length;
+
   const clientFeedback = assigned.filter(
     ({ phase }) => phase.status === "CHANGES_REQUESTED",
   ).length;
+
   const managedProjects = state.projects.filter(
-    (p) => p.projectManagerId === currentUser?.id,
+    (project) => project.projectManagerId === currentUser?.id,
   );
+
+  const completedAssigned = assigned.filter(
+    ({ phase }) => phase.status === "APPROVED",
+  ).length;
+
+  const progress =
+    assigned.length > 0 ? Math.round((completedAssigned / assigned.length) * 100) : 0;
 
   return (
     <div className="content">
-      <PageHeader
+      <DashboardHero
+        eyebrow="Staff Workspace"
         title="Staff Dashboard"
-        subtitle={`Welcome back, ${currentUser?.name ?? "Team"}`}
+        subtitle={`Welcome back, ${currentUser?.name ?? "Team"}. Track assigned phases, approvals, and delivery movement.`}
+        meta={
+          <>
+            <Badge className="badge-blue">{assigned.length} Assigned</Badge>
+            <Badge className="badge-orange">{needsReview} In Progress</Badge>
+            <Badge className="badge-green">{completedAssigned} Approved</Badge>
+          </>
+        }
       />
-      <div className="metric-grid">
-        <MetricCard
-          label="Assigned Phases"
-          value={assigned.length}
-          icon={Icons.phases}
-        />
-        <MetricCard
-          label="Due This Week"
-          value={needsReview}
-          icon={Icons.clock}
-          tone="orange"
-        />
-        <MetricCard
-          label="Awaiting Client"
-          value={awaitingClient}
-          icon={Icons.approvals}
-          tone="blue"
-        />
-        <MetricCard
-          label="Client Feedback"
-          value={clientFeedback}
-          icon="!"
-          tone="red"
-        />
-      </div>
+
+      <DashboardStats
+        items={[
+          {
+            label: "Assigned Phases",
+            value: assigned.length,
+            tone: "blue",
+            icon: DashboardIcons.phase,
+            helper: "Your active workload",
+          },
+          {
+            label: "Due / In Progress",
+            value: needsReview,
+            tone: "orange",
+            icon: DashboardIcons.clock,
+            helper: "Requires delivery focus",
+          },
+          {
+            label: "Awaiting Client",
+            value: awaitingClient,
+            tone: "purple",
+            icon: Icons.approvals,
+            helper: "Submitted for review",
+          },
+          {
+            label: "Client Feedback",
+            value: clientFeedback,
+            tone: clientFeedback > 0 ? "red" : "green",
+            icon: clientFeedback > 0 ? "!" : DashboardIcons.check,
+            helper: "Changes requested",
+          },
+        ]}
+      />
+
       <div className="grid-2">
-        <Card>
-          <div className="card-title">
-            <h2>Assigned Work</h2>
+        <DashboardPanel
+          title="Assigned Work"
+          action={
             <Link href="/staff/phases" className="btn btn-ghost">
               View All {Icons.arrow}
             </Link>
-          </div>
-          <div className="card-body stack">
-            {assigned.slice(0, 5).map(({ project, phase }) => (
-              <Link
-                href={`/staff/phases/${phase.id}`}
-                className="deliverable-row"
-                key={phase.id}
-              >
-                <div>
-                  <strong>{phase.title}</strong>
-                  <p style={{ color: "var(--muted)", margin: 4 }}>
-                    {project.title} â€¢ {project.businessName}
-                  </p>
-                </div>
-                <Badge className={statusClass(phase.status)}>
-                  {statusLabel(phase.status)}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <div className="card-title">
-            <h2>{Icons.ai} AI Project Briefs</h2>
-          </div>
-          <div className="card-body stack">
-            {managedProjects.length ? (
-              managedProjects
-                .slice(0, 3)
-                .map((project) => (
-                  <p key={project.id}>{generateProjectSummary(project)}</p>
-                ))
+          }
+        >
+          <div className="stack" style={{ gap: 8 }}>
+            {assigned.length ? (
+              assigned.slice(0, 6).map(({ project, phase }) => (
+                <DashboardListItem
+                  key={phase.id}
+                  href={`/staff/phases/${phase.id}`}
+                  title={phase.title}
+                  subtitle={`${project.title} • ${project.businessName}`}
+                  icon={DashboardIcons.phase}
+                  badge={
+                    <Badge className={statusClass(phase.status)}>
+                      {statusLabel(phase.status)}
+                    </Badge>
+                  }
+                />
+              ))
             ) : (
-              <p style={{ color: "var(--muted)" }}>
-                Project summaries will appear here when you manage projects.
-              </p>
+              <EmptyState
+                title="No assigned work"
+                body="Assigned phases will appear here."
+              />
             )}
           </div>
-        </Card>
+        </DashboardPanel>
+
+        <div className="stack">
+          <DashboardProgressCard
+            label="Your Delivery Progress"
+            title={`${completedAssigned}/${assigned.length || 0} assignments approved`}
+            value={progress}
+            tone={progress >= 70 ? "green" : progress >= 35 ? "blue" : "orange"}
+            helper="Based on phases currently connected to your account."
+          />
+
+          <DashboardPanel title="AI Project Briefs">
+            <div className="stack">
+              {managedProjects.length ? (
+                managedProjects
+                  .slice(0, 3)
+                  .map((project) => (
+                    <p key={project.id} style={{ color: "var(--muted)", lineHeight: 1.7, margin: 0 }}>
+                      {generateProjectSummary(project)}
+                    </p>
+                  ))
+              ) : (
+                <p style={{ color: "var(--muted)", margin: 0 }}>
+                  Project summaries will appear here when you manage projects.
+                </p>
+              )}
+            </div>
+          </DashboardPanel>
+        </div>
       </div>
     </div>
   );
 }
-
 export function StaffProjects() {
   const { currentUser, state } = useApp();
   const projects = state.projects.filter(
@@ -645,5 +696,8 @@ export function StaffSettings() {
     </div>
   );
 }
+
+
+
 
 

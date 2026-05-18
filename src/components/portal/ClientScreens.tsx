@@ -7,6 +7,14 @@ import { PackageType, Project, ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { ProjectDateCountdown } from "./ProjectDateCountdown";
 import {
+  DashboardHero,
+  DashboardIcons,
+  DashboardListItem,
+  DashboardPanel,
+  DashboardProgressCard,
+  DashboardStats,
+} from "./DashboardUI";
+import {
   BackLink,
   Badge,
   Button,
@@ -171,16 +179,24 @@ function ManualPaymentModal({
 export function ClientDashboard() {
   const { currentUser, clientProjects, selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  if (!clientProjects.length)
+
+  if (!clientProjects.length) {
     return (
       <div className="content narrow">
-        <PageHeader
+        <DashboardHero
+          eyebrow="Client Workspace"
           title="Welcome back"
-          subtitle={currentUser?.company ?? currentUser?.name}
+          subtitle={currentUser?.company ?? currentUser?.name ?? "Your Octalve project workspace is ready."}
+          action={
+            <Link href="/client/projects/new">
+              <Button>{Icons.plus} Create Project</Button>
+            </Link>
+          }
         />
+
         <EmptyState
           title="No Active Project Yet"
-          body="Create a project request and our team will review it."
+          body="Create a project request and the Octalve team will review it."
           action={
             <Link href="/client/projects/new">
               <Button>{Icons.plus} Create Project</Button>
@@ -189,8 +205,11 @@ export function ClientDashboard() {
         />
       </div>
     );
+  }
+
   const project = selectedProject ?? clientProjects[0];
   const block = paymentBlock(project);
+
   const active =
     project.phases.find((phase) =>
       ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(
@@ -199,15 +218,36 @@ export function ClientDashboard() {
     ) ??
     project.phases.find((phase) => phase.status !== "LOCKED") ??
     project.phases[0];
+
+  const progress = projectProgress(project);
+  const approvedPhases = project.phases.filter(
+    (phase) => phase.status === "APPROVED",
+  ).length;
+
   const pendingApprovals = project.phases.filter(
     (phase) => phase.status === "AWAITING_APPROVAL",
   ).length;
+
   const links = project.phases.flatMap((phase) =>
-    phase.deliverables.filter((d) => d.visibleToClient && d.link),
+    phase.deliverables.filter((deliverable) => deliverable.visibleToClient && deliverable.link),
   );
+
+  const nextHref = block
+    ? "/client/payments"
+    : pendingApprovals
+      ? "/client/approvals"
+      : "/client/phases";
+
+  const nextLabel = block
+    ? "Open Payments"
+    : pendingApprovals
+      ? "Review Now"
+      : "View Phases";
+
   return (
     <div className="content narrow">
-      <PageHeader
+      <DashboardHero
+        eyebrow="Client Workspace"
         title="Welcome back"
         subtitle={project.title}
         action={
@@ -215,8 +255,21 @@ export function ClientDashboard() {
             <Button>{Icons.plus} Create Project</Button>
           </Link>
         }
+        meta={
+          <>
+            <Badge className={packageClass(project.packageType)}>
+              {project.packageType} Suite
+            </Badge>
+            <Badge className={statusClass(project.status)}>
+              {statusLabel(project.status)}
+            </Badge>
+            <ProjectDateCountdown targetDate={project.targetDate} compact />
+          </>
+        }
       />
+
       <ProjectSwitcher />
+
       {block ? (
         <Card className="payment-card" style={{ marginBottom: 24 }}>
           <div>
@@ -226,6 +279,7 @@ export function ClientDashboard() {
             <h2>{block.title}</h2>
             <p style={{ color: "var(--muted)" }}>{block.body}</p>
           </div>
+
           {block.payment.status === "UNPAID" ? (
             <Button onClick={() => setPaymentId(block.payment.id)}>
               Make Payment
@@ -235,173 +289,146 @@ export function ClientDashboard() {
           )}
         </Card>
       ) : null}
-      <div className="client-dash-grid">
-        <Card className="client-progress-card">
-          <div className="client-progress-left">
-            <ProgressCircle value={projectProgress(project)} />
+
+      <DashboardStats
+        items={[
+          {
+            label: "Project Progress",
+            value: `${progress}%`,
+            tone: progress >= 80 ? "green" : progress >= 40 ? "blue" : "orange",
+            icon: DashboardIcons.project,
+            helper: "Overall delivery movement",
+          },
+          {
+            label: "Approved Phases",
+            value: `${approvedPhases}/${project.phases.length}`,
+            tone: "green",
+            icon: DashboardIcons.check,
+            helper: "Completed approvals",
+          },
+          {
+            label: "Pending Approvals",
+            value: pendingApprovals,
+            tone: pendingApprovals > 0 ? "orange" : "slate",
+            icon: DashboardIcons.clock,
+            helper: "Needs your review",
+          },
+          {
+            label: "Deliverable Links",
+            value: links.length,
+            tone: "purple",
+            icon: Icons.doc,
+            helper: "Visible resources",
+          },
+        ]}
+      />
+
+      <div className="grid-2">
+        <DashboardProgressCard
+          label="Active Phase"
+          title={active?.title ?? "No active phase"}
+          value={progress}
+          tone={progress >= 80 ? "green" : progress >= 40 ? "blue" : "orange"}
+          helper={active?.description ?? "Your active project movement appears here."}
+        />
+
+        <DashboardPanel title="Next Action">
+          <div className="next-action clean-next-action">
+            <span className="metric-icon tone-blue">{Icons.clock}</span>
             <div>
-              <span
-                style={{
-                  color: "var(--muted)",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
-                Project Progress
-              </span>
-              <h2>{active?.title ?? "No active phase"}</h2>
-              <Badge className={statusClass(active?.status ?? "NOT_STARTED")}>
-                {statusLabel(active?.status ?? "NOT_STARTED")}
-              </Badge>
-              <hr
-                style={{
-                  border: 0,
-                  borderTop: "1px solid var(--line)",
-                  margin: "28px 0",
-                }}
-              />
-              <p style={{ color: "var(--muted)" }}>
-                â–£ Target: {project.targetDate ?? "Not set"}
-              </p>
+              <p>Recommended action</p>
+              <h2>
+                {block
+                  ? block.title
+                  : pendingApprovals
+                    ? `Review and approve ${project.phases.find((phase) => phase.status === "AWAITING_APPROVAL")?.title}`
+                    : "No urgent action needed right now"}
+              </h2>
             </div>
+            <Link href={nextHref} className="btn btn-secondary">
+              {nextLabel} {Icons.arrow}
+            </Link>
           </div>
-          <div className="client-progress-right">
-            <div>
-              <strong style={{ fontSize: 34, color: "var(--primary)" }}>
-                {project.phases.filter((p) => p.status === "APPROVED").length}
-              </strong>
-              <p>of {project.phases.length} phases approved</p>
-            </div>
-            <div>
-              <strong style={{ fontSize: 34, color: "var(--primary)" }}>
-                {pendingApprovals}
-              </strong>
-              <p>awaiting your action</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="next-action">
-          <span className="metric-icon tone-blue">{Icons.clock}</span>
-          <div>
-            <p>Next Action</p>
-            <h2>
-              {block
-                ? block.title
-                : pendingApprovals
-                  ? `Review and approve ${project.phases.find((p) => p.status === "AWAITING_APPROVAL")?.title}`
-                  : "No actions needed right now"}
-            </h2>
-          </div>
-          <Link
-            href={
-              block
-                ? "/client/payments"
-                : pendingApprovals
-                  ? "/client/approvals"
-                  : "/client/phases"
-            }
-            className="btn btn-secondary"
-          >
-            {block
-              ? "Open Payments"
-              : pendingApprovals
-                ? "Review Now"
-                : "View Phases"}{" "}
-            {Icons.arrow}
-          </Link>
-        </Card>
+        </DashboardPanel>
       </div>
+
       <div className="grid-2" style={{ marginTop: 24 }}>
-        <Card>
-          <div className="card-title">
-            <h2>Phase Timeline</h2>
+        <DashboardPanel
+          title="Phase Timeline"
+          action={
             <Link className="btn btn-ghost" href="/client/phases">
               View All {Icons.arrow}
             </Link>
-          </div>
-          <div className="card-body timeline-list">
+          }
+        >
+          <div className="stack" style={{ gap: 8 }}>
             {project.phases.map((phase) => (
-              <div key={phase.id} className="timeline-row">
-                <div className="timeline-left">
-                  <div
-                    className="phase-number"
-                    style={{ width: 36, height: 36 }}
-                  >
-                    {phase.status === "APPROVED"
-                      ? Icons.check
-                      : phase.phaseNumber}
-                  </div>
-                  <strong
-                    style={{
-                      color: phase.status === "LOCKED" ? "#94a3b8" : undefined,
-                    }}
-                  >
-                    {phase.title}
-                  </strong>
-                </div>
-                <Badge className={statusClass(phase.status)}>
-                  {statusLabel(phase.status)}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <div className="card-title">
-            <h2>Key Links</h2>
-          </div>
-          <div className="card-body">
-            {links.length ? (
-              <div className="stack">
-                {links.map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="deliverable-row"
-                  >
-                    <div className="deliverable-main">
-                      <div className="deliverable-icon">{Icons.doc}</div>
-                      <strong>{link.name}</strong>
-                    </div>
-                    <Badge className="badge-purple">{link.linkType}</Badge>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title=""
-                body="Links will appear here as deliverables are ready"
-                icon={Icons.phases}
+              <DashboardListItem
+                key={phase.id}
+                href={`/client/phases/${phase.id}`}
+                title={phase.title}
+                subtitle={
+                  phase.status === "LOCKED"
+                    ? "Complete previous phase first to unlock"
+                    : phase.description
+                }
+                icon={DashboardIcons.phase}
+                badge={
+                  <Badge className={statusClass(phase.status)}>
+                    {statusLabel(phase.status)}
+                  </Badge>
+                }
               />
-            )}
-          </div>
-        </Card>
-      </div>
-      <Card style={{ marginTop: 24 }}>
-        <div className="card-title">
-          <h2>Recent Activity</h2>
-        </div>
-        <div className="card-body stack">
-          {project.phases
-            .flatMap((p) => p.messages)
-            .slice(-4)
-            .map((message) => (
-              <div key={message.id}
-                  className="deliverable-row">
-                <span style={{ color: "var(--primary)" }}>â€¢</span>
-                <div>
-                  <strong>{message.message}</strong>
-                  <p style={{ margin: 4, color: "var(--muted)" }}>
-                    {new Date(message.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
             ))}
+          </div>
+        </DashboardPanel>
+
+        <DashboardPanel title="Key Links">
+          {links.length ? (
+            <div className="stack" style={{ gap: 8 }}>
+              {links.map((link) => (
+                <DashboardListItem
+                  key={link.id}
+                  href={link.link}
+                  title={link.name}
+                  subtitle="Client-visible deliverable"
+                  icon={Icons.doc}
+                  badge={<Badge className="badge-purple">{link.linkType}</Badge>}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="No links yet"
+              body="Deliverable links will appear here when the delivery team makes them visible."
+              icon={Icons.phases}
+            />
+          )}
+        </DashboardPanel>
+      </div>
+
+      <DashboardPanel title="Recent Activity" className="mt-24">
+        <div className="stack" style={{ gap: 8 }}>
+          {project.phases.flatMap((phase) => phase.messages).slice(-4).length ? (
+            project.phases
+              .flatMap((phase) => phase.messages)
+              .slice(-4)
+              .map((message) => (
+                <DashboardListItem
+                  key={message.id}
+                  title={message.message}
+                  subtitle={new Date(message.createdAt).toLocaleString()}
+                  icon={Icons.bell}
+                />
+              ))
+          ) : (
+            <p style={{ color: "var(--muted)", margin: 0 }}>
+              No recent project activity yet.
+            </p>
+          )}
         </div>
-      </Card>
+      </DashboardPanel>
+
       {paymentId && (
         <ManualPaymentModal
           project={project}
@@ -412,7 +439,6 @@ export function ClientDashboard() {
     </div>
   );
 }
-
 export function ClientProjects() {
   const { clientProjects } = useApp();
   return (
@@ -1428,6 +1454,9 @@ export function ClientSupport() {
     </div>
   );
 }
+
+
+
 
 
 

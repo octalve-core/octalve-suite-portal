@@ -40,6 +40,14 @@ import { useApp } from "./AppContext";
 import { DeliverableManager } from "./DeliverableManager";
 import { ProjectWorkspaceTabs } from "./ProjectTeamNotes";
 import {
+  DashboardHero,
+  DashboardIcons,
+  DashboardListItem,
+  DashboardPanel,
+  DashboardProgressCard,
+  DashboardStats,
+} from "./DashboardUI";
+import {
   BackLink,
   Badge,
   Button,
@@ -184,29 +192,50 @@ function RecentProjects() {
 
 export function AdminOverview() {
   const { state } = useApp();
-  const active = state.projects.filter((p) =>
-    ["ACTIVE", "AWAITING_BALANCE"].includes(p.status),
+
+  const active = state.projects.filter((project) =>
+    ["ACTIVE", "AWAITING_BALANCE"].includes(project.status),
   ).length;
+
   const awaiting = state.requests.filter(
-    (r) => r.status === "PENDING_REVIEW",
+    (request) => request.status === "PENDING_REVIEW",
   ).length;
+
   const overdue = state.projects
-    .flatMap((p) => p.phases)
-    .filter((p) => p.status === "CHANGES_REQUESTED").length;
+    .flatMap((project) => project.phases)
+    .filter((phase) => phase.status === "CHANGES_REQUESTED").length;
+
   const completed = state.projects.filter(
-    (p) => p.status === "COMPLETED",
+    (project) => project.status === "COMPLETED",
   ).length;
-  const packageCounts = (
-    ["Launch", "Impact", "Growth", "Partner"] as PackageType[]
-  ).map((pkg) => ({
-    pkg,
-    count: state.projects.filter((p) => p.packageType === pkg).length,
-  }));
+
+  const pendingPayments = state.projects
+    .flatMap((project) => project.payments)
+    .filter((payment) => payment.status === "PENDING_CONFIRMATION").length;
+
+  const totalPhases = state.projects.flatMap((project) => project.phases).length;
+  const approvedPhases = state.projects
+    .flatMap((project) => project.phases)
+    .filter((phase) => phase.status === "APPROVED").length;
+
+  const deliveryHealth =
+    totalPhases > 0 ? Math.round((approvedPhases / totalPhases) * 100) : 0;
+
+  const recentProjects = state.projects.slice(0, 6);
+  const pendingRequests = state.requests
+    .filter((request) => request.status === "PENDING_REVIEW")
+    .slice(0, 4);
+
+  const team = state.users.filter(
+    (user) => user.role !== "CLIENT" && user.role !== "SUPER_ADMIN",
+  );
+
   return (
     <div className="content">
-      <PageHeader
+      <DashboardHero
+        eyebrow="Admin Command Center"
         title="Overview"
-        subtitle="Monitor your projects and team"
+        subtitle="Monitor project movement, pending requests, payments, and team workload from one clean workspace."
         action={
           <Link href="/admin/projects/new">
             <Button>
@@ -214,175 +243,191 @@ export function AdminOverview() {
             </Button>
           </Link>
         }
+        meta={
+          <>
+            <Badge className="badge-blue">{state.projects.length} Projects</Badge>
+            <Badge className="badge-orange">{awaiting} Requests</Badge>
+            <Badge className="badge-green">{completed} Completed</Badge>
+          </>
+        }
       />
 
-      <div className="metric-grid">
-        <MetricCard
-          label="Active Projects"
-          value={active}
-          icon={Icons.projects}
-          tone="blue"
-        />
-        <MetricCard
-          label="Awaiting Approval"
-          value={awaiting}
-          icon={Icons.clock}
-          tone="orange"
-        />
-        <MetricCard
-          label="Overdue Phases"
-          value={overdue}
-          icon="!"
-          tone="red"
-        />
-        <MetricCard
-          label="Completed"
-          value={completed}
-          icon={Icons.check}
-          tone="green"
-        />
-      </div>
+      <DashboardStats
+        items={[
+          {
+            label: "Active Projects",
+            value: active,
+            tone: "blue",
+            icon: DashboardIcons.project,
+            helper: "Projects currently moving",
+          },
+          {
+            label: "Pending Requests",
+            value: awaiting,
+            tone: "orange",
+            icon: DashboardIcons.clock,
+            helper: "Awaiting admin review",
+          },
+          {
+            label: "Payment Checks",
+            value: pendingPayments,
+            tone: "purple",
+            icon: Icons.payments,
+            helper: "Transfers to confirm",
+          },
+          {
+            label: "Completed",
+            value: completed,
+            tone: "green",
+            icon: DashboardIcons.check,
+            helper: "Closed project work",
+          },
+        ]}
+      />
 
       <div className="grid-2">
-        <RecentProjects />
+        <DashboardPanel
+          title="Recent Projects"
+          action={
+            <Link href="/admin/projects" className="btn btn-ghost">
+              View all {Icons.arrow}
+            </Link>
+          }
+        >
+          <div className="stack" style={{ gap: 8 }}>
+            {recentProjects.length ? (
+              recentProjects.map((project) => (
+                <DashboardListItem
+                  key={project.id}
+                  href={`/admin/projects/${project.id}`}
+                  title={project.title}
+                  subtitle={`${project.businessName} • ${project.packageType} Suite`}
+                  icon={DashboardIcons.project}
+                  badge={
+                    <Badge className={statusClass(project.status)}>
+                      {statusLabel(project.status)}
+                    </Badge>
+                  }
+                  meta={<strong>{projectProgress(project)}%</strong>}
+                />
+              ))
+            ) : (
+              <EmptyState
+                title="No projects yet"
+                body="Created projects will appear here."
+              />
+            )}
+          </div>
+        </DashboardPanel>
 
         <div className="stack">
-          <Card>
-            <div className="card-title">
-              <h2>{Icons.clock} Pending Requests</h2>
-            </div>
-            <div className="card-body stack">
-              {state.requests
-                .filter((r) => r.status === "PENDING_REVIEW")
-                .slice(0, 3)
-                .map((request) => (
-                  <Link
+          <DashboardProgressCard
+            label="Delivery Health"
+            title={`${approvedPhases}/${totalPhases || 0} phases approved`}
+            value={deliveryHealth}
+            tone={deliveryHealth >= 70 ? "green" : deliveryHealth >= 35 ? "orange" : "blue"}
+            helper="Based on approved phases across all active projects."
+          />
+
+          <DashboardPanel
+            title="Pending Requests"
+            action={
+              <Link href="/admin/project-requests" className="btn btn-ghost">
+                Review {Icons.arrow}
+              </Link>
+            }
+          >
+            <div className="stack" style={{ gap: 8 }}>
+              {pendingRequests.length ? (
+                pendingRequests.map((request) => (
+                  <DashboardListItem
                     key={request.id}
                     href="/admin/project-requests"
-                    className="payment-card"
-                    style={{
-                      background: "#fffbeb",
-                      border: "1px solid #fde68a",
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div>
-                      <strong>{request.projectName}</strong>
-                      <p style={{ margin: 4, color: "var(--muted)" }}>
-                        {request.businessName}
-                      </p>
-                    </div>
-                    <Badge className="badge-orange">new</Badge>
-                  </Link>
-                ))}
-              {!state.requests.filter((r) => r.status === "PENDING_REVIEW")
-                .length && (
-                <p style={{ color: "var(--muted)" }}>No pending requests.</p>
+                    title={request.projectName}
+                    subtitle={`${request.businessName} • ${request.packageType} Suite`}
+                    icon={DashboardIcons.clock}
+                    badge={<Badge className="badge-orange">New</Badge>}
+                  />
+                ))
+              ) : (
+                <p style={{ color: "var(--muted)", margin: 0 }}>
+                  No pending project requests.
+                </p>
               )}
             </div>
-          </Card>
-
-          <Card>
-            <div className="card-title">
-              <h2>By Package</h2>
-            </div>
-            <div className="card-body stack" style={{ gap: 20 }}>
-              {packageCounts.map((item) => (
-                <div key={item.pkg}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <Badge className={packageClass(item.pkg)} style={{ fontWeight: 700 }}>{item.pkg}</Badge>
-                    <div style={{ textAlign: "right" }}>
-                      <strong style={{ fontSize: 16 }}>{item.count}</strong>
-                      <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 4 }}>projects</span>
-                    </div>
-                  </div>
-                  <ProgressBar
-                    value={Math.max(5, (item.count / Math.max(1, state.projects.length)) * 100)}
-                    style={{ height: 6, background: '#f1f5f9' }}
-                  />
-                </div>
-              ))}
-            </div>
-          </Card>
+          </DashboardPanel>
         </div>
       </div>
 
-      <Card style={{ marginTop: 24 }}>
-        <div className="card-title">
-          <h2>Team Workload</h2>
+      <DashboardPanel
+        title="Team Workload"
+        action={
           <Link href="/admin/team" className="btn btn-ghost">
             Manage Team {Icons.arrow}
           </Link>
-        </div>
-        <div className="card-body workload-grid">
-          {state.users
-            .filter((u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN")
-            .map((user) => {
-              const phases = state.projects
-                .flatMap((project) => project.phases)
-                .filter((phase) => phase.assignedStaffId === user.id).length;
-              const loadPercent = Math.min(100, (phases / 10) * 100);
-              const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
+        }
+        className="mt-24"
+      >
+        <div className="workload-grid">
+          {team.map((user) => {
+            const phases = state.projects
+              .flatMap((project) => project.phases)
+              .filter((phase) => phase.assignedStaffId === user.id).length;
 
-              return (
-                <div key={user.id} className="workload-card" role="link" tabIndex={0} title="Open team directory" onClick={() => { window.location.href = "/admin/team"; }} onKeyDown={(event) => { if (event.key === "Enter") window.location.href = "/admin/team"; }}>
-                  <div
-                    className="avatar"
-                    style={{
-                      width: 52,
-                      height: 52,
-                      fontSize: 18,
-                      background: `var(--${loadTone}-soft)`,
-                      color: `var(--${loadTone})`,
-                    }}
-                  >
-                    {user.name[0]}
-                  </div>
-                  <div className="workload-info">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <strong>{user.name}</strong>
-                      <Badge className={`badge-${loadTone}`} style={{ fontSize: 10 }}>
-                        {phases > 7 ? "High" : "Optimal"}
-                      </Badge>
-                    </div>
-                    <p>{user.specialty ?? user.role}</p>
-                    <div className="workload-stat">
-                      <span style={{ color: `var(--${loadTone})` }}>
-                        {phases} active phases
-                      </span>
-                      <span>{Math.round(loadPercent)}%</span>
-                    </div>
-                    <ProgressBar
-                      value={loadPercent}
-                      style={{
-                        height: 6,
-                        background: "#e2e8f0",
-                        "--progress-fill": `var(--${loadTone})`,
-                      } as any}
-                    />
-                  </div>
+            const loadPercent = Math.min(100, (phases / 10) * 100);
+            const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
+
+            return (
+              <Link href="/admin/team" key={user.id} className="workload-card">
+                <div
+                  className="avatar"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    fontSize: 18,
+                    background: `var(--${loadTone}-soft)`,
+                    color: `var(--${loadTone})`,
+                  }}
+                >
+                  {user.name[0]}
                 </div>
-              );
-            })}
+
+                <div className="workload-info">
+                  <div className="timeline-row" style={{ alignItems: "flex-start" }}>
+                    <div>
+                      <strong>{user.name}</strong>
+                      <p>{user.specialty ?? statusLabel(user.role)}</p>
+                    </div>
+                    <Badge className={`badge-${loadTone}`}>
+                      {phases > 7 ? "High" : phases > 4 ? "Busy" : "Optimal"}
+                    </Badge>
+                  </div>
+
+                  <div className="workload-stat">
+                    <span>{phases} active phases</span>
+                    <span>{Math.round(loadPercent)}%</span>
+                  </div>
+
+                  <ProgressBar
+                    value={loadPercent}
+                    style={{
+                      "--progress-fill":
+                        loadTone === "red"
+                          ? "#ef4444"
+                          : loadTone === "orange"
+                            ? "#f59e0b"
+                            : "#0064E0",
+                    } as React.CSSProperties}
+                  />
+                </div>
+              </Link>
+            );
+          })}
         </div>
-      </Card>
+      </DashboardPanel>
     </div>
   );
 }
-
 export function AdminProjects() {
   const { state, deleteProject } = useApp();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -3034,6 +3079,9 @@ export function AdminSettings() {
     </div>
   );
 }
+
+
+
 
 
 
