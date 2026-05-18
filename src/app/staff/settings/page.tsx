@@ -5,8 +5,8 @@ export default function Page() {
   return (
     <PortalShell role="STAFF">
       <ProfileSettings
-        title="Settings"
-        subtitle="Manage your staff profile and workspace preferences"
+        title="Staff Settings"
+        subtitle="Manage your staff profile, delivery identity, and account security"
       />
     </PortalShell>
   );

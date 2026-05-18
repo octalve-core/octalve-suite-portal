@@ -5,8 +5,8 @@ export default function Page() {
   return (
     <PortalShell role="SUPER_ADMIN">
       <ProfileSettings
-        title="Settings"
-        subtitle="Manage your admin profile and workspace preferences"
+        title="Admin Settings"
+        subtitle="Manage your admin profile, security, and workspace preferences"
       />
     </PortalShell>
   );

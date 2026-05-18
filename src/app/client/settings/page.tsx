@@ -5,8 +5,8 @@ export default function Page() {
   return (
     <PortalShell role="CLIENT">
       <ProfileSettings
-        title="Settings"
-        subtitle="Manage your client profile and workspace preferences"
+        title="Client Settings"
+        subtitle="Manage your client profile, project countdown, and account security"
       />
     </PortalShell>
   );
