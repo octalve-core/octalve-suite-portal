@@ -1,18 +1,22 @@
 "use client";
 
 import {
+  AssigneeBlock,
   DetailIcons,
   DetailMetricGrid,
   DetailPanel,
   MessagePreviewList,
+  PhaseDetailHero,
   ProjectDetailHero,
-  ProjectPhaseTimeline,
+  ProjectPhaseTimeline
 } from "./WorkspaceDetailUI";
+
 import {
   ProjectSummaryCard,
   TeamMemberSummaryCard,
-  WorkspaceEmptyCard,
+  WorkspaceEmptyCard
 } from "./WorkspaceCards";
+
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -2831,5 +2835,170 @@ export function AdminReviews() {
     </div>
   );
 }
+export function AdminProjectPhaseDetail({
+  projectId,
+  phaseId,
+}: {
+  projectId: string;
+  phaseId: string;
+}) {
+  const {
+    state,
+    assignPhase,
+    addDeliverable,
+    requestPhaseApproval,
+  } = useApp();
 
+  const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
+  const [adding, setAdding] = useState<ProjectPhase | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+  const project = state.projects.find((item) => item.id === projectId);
+  const phase = project?.phases.find((item) => item.id === phaseId);
+
+  if (!project || !phase) {
+    return (
+      <div className="content narrow">
+        <WorkspaceEmptyCard
+          title="Phase not found"
+          body="This phase may have been deleted or you may not have access to it."
+          icon={DetailIcons.layers}
+        />
+      </div>
+    );
+  }
+
+  const assignee = state.users.find((user) => user.id === phase.assignedStaffId);
+
+  const messages = phase.messages.map((message) => ({
+    ...message,
+    author: state.users.find((user) => user.id === message.senderId) ?? null,
+  }));
+
+  async function handleRequestApproval() {
+    setPendingAction("request-approval");
+
+    try {
+      await requestPhaseApproval(phaseId);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  return (
+    <div className="content">
+      <PhaseDetailHero
+        phase={phase}
+        project={project}
+        assignee={assignee}
+        backHref={`/admin/projects/${project.id}`}
+        backLabel="Back to project"
+        action={
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Button variant="secondary" onClick={() => setAssigning(phase)}>
+              Assign Staff
+            </Button>
+
+            {phase.status !== "APPROVED" && (
+              <Button variant="secondary" onClick={() => setAdding(phase)}>
+                Add Deliverable
+              </Button>
+            )}
+
+            {phase.status === "IN_PROGRESS" ||
+            phase.status === "CHANGES_REQUESTED" ? (
+              <Button
+                loading={pendingAction === "request-approval"}
+                onClick={handleRequestApproval}
+              >
+                Request Approval
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
+
+      <DetailMetricGrid
+        items={[
+          {
+            label: "Project",
+            value: project.title,
+            icon: DetailIcons.layers,
+          },
+          {
+            label: "Assigned Staff",
+            value: assignee?.name ?? "Not assigned",
+            icon: DetailIcons.user,
+          },
+          {
+            label: "Deliverables",
+            value: phase.deliverables.length,
+            icon: DetailIcons.files,
+          },
+          {
+            label: "Messages",
+            value: phase.messages.length,
+            icon: DetailIcons.messages,
+          },
+        ]}
+      />
+
+      <div className="grid-2" style={{ marginTop: 24 }}>
+        <DetailPanel
+          title="Deliverables"
+          subtitle="Edit or delete unapproved deliverables before client approval."
+          icon={DetailIcons.files}
+          action={
+            phase.status !== "APPROVED" ? (
+              <Button variant="secondary" onClick={() => setAdding(phase)}>
+                Add Deliverable
+              </Button>
+            ) : null
+          }
+        >
+          <DeliverableManager phase={phase} />
+        </DetailPanel>
+
+        <div className="stack">
+          <DetailPanel
+            title="Assigned Team"
+            subtitle="Staff responsible for this phase."
+            icon={DetailIcons.user}
+          >
+            <AssigneeBlock user={assignee} />
+          </DetailPanel>
+
+          <DetailPanel
+            title="Recent Messages"
+            subtitle="Latest conversation for this phase."
+            icon={DetailIcons.messages}
+          >
+            <MessagePreviewList messages={messages} />
+          </DetailPanel>
+        </div>
+      </div>
+
+      {assigning && (
+        <AssignModal
+          phase={assigning}
+          onClose={() => setAssigning(null)}
+          onAssign={async (staffId) => {
+            await assignPhase(assigning.id, staffId);
+            setAssigning(null);
+          }}
+        />
+      )}
+
+      {adding && (
+        <AddDeliverableModal
+          phase={adding}
+          onClose={() => setAdding(null)}
+          onSubmit={async (payload) => {
+            await addDeliverable(adding.id, payload);
+            setAdding(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}

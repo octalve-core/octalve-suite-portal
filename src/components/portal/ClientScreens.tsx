@@ -1,10 +1,20 @@
 "use client";
 
 import {
+  DetailIcons,
+  DetailMetricGrid,
+  DetailPanel,
+  MessagePreviewList,
+  PhaseDetailHero
+} from "./WorkspaceDetailUI";
+
+import {
   PaymentSummaryCard,
   PhaseSummaryCard,
   ProjectSummaryCard,
+  WorkspaceEmptyCard
 } from "./WorkspaceCards";
+
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { improveBrief, recommendPackage } from "@/lib/ai";
@@ -903,62 +913,141 @@ export function ClientPhases() {
 }
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
   const { state, approvePhase, requestChanges, sendPhaseMessage } = useApp();
-  const [approve, setApprove] = useState(false);
-  const [approveLoading, setApproveLoading] = useState(false);
-  const [change, setChange] = useState(false);
+
   const [msg, setMsg] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
   const phase = state.projects
-    .flatMap((p) => p.phases)
-    .find((p) => p.id === phaseId);
-  const project = state.projects.find((p) => p.id === phase?.projectId);
-  if (!phase || !project)
+    .flatMap((project) => project.phases)
+    .find((item) => item.id === phaseId);
+
+  const project = state.projects.find((item) => item.id === phase?.projectId);
+
+  if (!phase || !project) {
     return (
-      <div className="content">
-        <EmptyState
+      <div className="content narrow">
+        <WorkspaceEmptyCard
           title="Phase not found"
           body="This phase could not be found."
+          icon={DetailIcons.layers}
         />
       </div>
     );
-  const visible = phase.deliverables.filter(
-    (d) => d.visibleToClient || phase.status !== "LOCKED",
+  }
+
+  const messages = phase.messages.map((message) => ({
+    ...message,
+    author: state.users.find((user) => user.id === message.senderId) ?? null,
+  }));
+
+  const visibleDeliverables = phase.deliverables.filter(
+    (deliverable) => deliverable.visibleToClient,
   );
+
+  async function handleApprove() {
+    if (!confirm("Approve this phase?")) return;
+
+    setPendingAction("approve");
+
+    try {
+      await approvePhase(phaseId);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleRequestChanges() {
+    const note = msg.trim() || "Please review this phase and make the requested changes.";
+
+    setPendingAction("changes");
+
+    try {
+      await requestChanges(phaseId, note);
+      setMsg("");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleSendMessage() {
+    if (!msg.trim()) return;
+
+    setPendingAction("message");
+
+    try {
+      await sendPhaseMessage(phaseId, msg.trim());
+      setMsg("");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <div className="content narrow">
-      <BackLink href="/client/phases" />
-      <div className="page-header">
-        <div>
-          <h1>{phase.title}</h1>
-          <p>{phase.description}</p>
-          <Badge className={statusClass(phase.status)}>
-            {statusLabel(phase.status)}
-          </Badge>
-        </div>
-        {phase.status === "AWAITING_APPROVAL" && (
-          <div style={{ display: "flex", gap: 12 }}>
-            <Button variant="secondary" onClick={() => setChange(true)}>
-              Request Changes
-            </Button>
-            <Button variant="success" onClick={() => setApprove(true)}>
-              âœ“ Approve Phase
-            </Button>
-          </div>
-        )}
-      </div>
-      <div className="grid-2">
-        <div className="stack">
-          <Card>
-            <div className="card-title">
-              <h2>Deliverables</h2>
+      <PhaseDetailHero
+        phase={phase}
+        project={project}
+        backHref="/client/phases"
+        backLabel="Back to phases"
+        action={
+          phase.status === "AWAITING_APPROVAL" ? (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Button
+                variant="secondary"
+                loading={pendingAction === "changes"}
+                onClick={handleRequestChanges}
+              >
+                Request Changes
+              </Button>
+
+              <Button loading={pendingAction === "approve"} onClick={handleApprove}>
+                Approve Phase
+              </Button>
             </div>
-            <div className="card-body stack">
-              {visible.map((d) => {
-                const hasLink = Boolean(d.link?.trim());
+          ) : null
+        }
+      />
+
+      <DetailMetricGrid
+        items={[
+          {
+            label: "Project",
+            value: project.title,
+            icon: DetailIcons.layers,
+          },
+          {
+            label: "Status",
+            value: statusLabel(phase.status),
+            icon: DetailIcons.calendar,
+          },
+          {
+            label: "Deliverables",
+            value: visibleDeliverables.length,
+            icon: DetailIcons.files,
+          },
+          {
+            label: "Messages",
+            value: phase.messages.length,
+            icon: DetailIcons.messages,
+          },
+        ]}
+      />
+
+      <div className="grid-2" style={{ marginTop: 24 }}>
+        <DetailPanel
+          title="Deliverables"
+          subtitle="Open client-visible deliverable links added by the delivery team."
+          icon={DetailIcons.files}
+        >
+          <div className="stack">
+            {visibleDeliverables.length ? (
+              visibleDeliverables.map((deliverable) => {
+                const hasLink = Boolean(deliverable.link?.trim());
 
                 return (
                   <a
-                    key={d.id}
-                    href={hasLink ? d.link! : "#deliverables"}
+                    key={deliverable.id}
+                    href={hasLink ? deliverable.link! : "#deliverables"}
                     target={hasLink ? "_blank" : undefined}
                     rel={hasLink ? "noreferrer" : undefined}
                     aria-disabled={!hasLink}
@@ -974,158 +1063,72 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
                     <div className="deliverable-main">
                       <div className="deliverable-icon">{Icons.doc}</div>
                       <div>
-                        <strong>{d.name}</strong>
-                        {d.description && (
-                          <p style={{ color: "var(--muted)", margin: 4 }}>
-                            {d.description}
+                        <strong>{deliverable.name}</strong>
+                        {deliverable.description && (
+                          <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>
+                            {deliverable.description}
                           </p>
                         )}
                         {!hasLink && (
-                          <p
-                            style={{
-                              color: "var(--muted)",
-                              margin: "6px 0 0",
-                              fontSize: 13,
-                            }}
-                          >
+                          <p style={{ color: "var(--muted)", margin: "6px 0 0" }}>
                             Link not available yet.
                           </p>
                         )}
                       </div>
                     </div>
-                    <Badge
-                      className={
-                        d.status === "DRAFT"
+
+                    <Badge className={
+                        deliverable.status === "DRAFT"
                           ? "badge-slate"
-                          : d.status === "READY_FOR_REVIEW"
+                          : deliverable.status === "READY_FOR_REVIEW"
                             ? "badge-purple"
-                            : d.status === "APPROVED"
+                            : deliverable.status === "APPROVED"
                               ? "badge-green"
                               : "badge-red"
-                      }
-                    >
-                      {statusLabel(d.status)}
+                      }>
+                      {statusLabel(deliverable.status)}
                     </Badge>
                   </a>
                 );
-              })}
-            </div>
-          </Card>
-          <Card>
-            <div className="card-title">
-              <h2>Approval History</h2>
-            </div>
-            <div className="card-body">
-              {phase.status === "APPROVED" ? (
-                <div
-                  className="deliverable-row">
-                  <Badge className="badge-green">Approved</Badge>
-                  <span>
-                    {phase.approvedAt
-                      ? new Date(phase.approvedAt).toLocaleDateString()
-                      : "Approved"}
-                  </span>
-                </div>
-              ) : (
-                <div
-                  className="deliverable-row">
-                  <Badge className="badge-orange">Pending</Badge>
-                  <span>
-                    {phase.approvalRequestedAt
-                      ? new Date(phase.approvalRequestedAt).toLocaleDateString()
-                      : "Not requested"}
-                  </span>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
-        <Card className="thread">
-          <div className="thread-header">â–± Phase Thread</div>
-          <div className="thread-body">
-            {phase.messages.length ? (
-              phase.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`message ${message.senderRole === "SYSTEM" ? "system" : message.senderRole === "CLIENT" ? "mine" : ""}`}
-                >
-                  <small>{message.senderName}</small>
-                  {message.message}
-                </div>
-              ))
+              })
             ) : (
-              <EmptyState
-                title="No messages yet"
-                body="Use the box below to message the team."
-                icon="â–±"
-              />
+              <div className="workspace-empty-soft">
+                <strong>No deliverables yet</strong>
+                <p>Client-visible deliverables will appear here.</p>
+              </div>
             )}
           </div>
-          <div className="thread-input">
-            <Input
-              placeholder="Type a message..."
+        </DetailPanel>
+
+        <DetailPanel
+          title="Messages"
+          subtitle="Send feedback or ask questions about this phase."
+          icon={DetailIcons.messages}
+        >
+          <div className="stack">
+            <MessagePreviewList messages={messages} />
+
+            <Textarea
               value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && msg.trim()) {
-                  await sendPhaseMessage(phase.id, msg);
-                  setMsg("");
-                }
-              }}
+              onChange={(event) => setMsg(event.target.value)}
+              placeholder="Write a message or approval feedback..."
+              disabled={pendingAction === "message"}
             />
+
             <Button
-              onClick={async () => {
-                if (!msg.trim()) return;
-                await sendPhaseMessage(phase.id, msg);
-                setMsg("");
-              }}
+              loading={pendingAction === "message"}
+              onClick={handleSendMessage}
+              disabled={!msg.trim()}
             >
-              âž¤
+              Send Message
             </Button>
           </div>
-        </Card>
+        </DetailPanel>
       </div>
-      {approve && (
-        <Modal title="Approve Phase" onClose={() => setApprove(false)}>
-          <p style={{ color: "var(--muted)" }}>
-            Are you sure you want to approve â€œ{phase.title}â€? This will unlock
-            the next phase.
-          </p>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-            <Button variant="secondary" onClick={() => setApprove(false)} disabled={approveLoading}>
-              Cancel
-            </Button>
-            <Button
-              variant="success"
-              loading={approveLoading}
-              onClick={async () => {
-                setApproveLoading(true);
-                try {
-                  await approvePhase(phase.id);
-                  setApprove(false);
-                } finally {
-                  setApproveLoading(false);
-                }
-              }}
-            >
-              Confirm Approval
-            </Button>
-          </div>
-        </Modal>
-      )}
-      {change && (
-        <RequestChangeModal
-          phase={phase}
-          onClose={() => setChange(false)}
-          onSubmit={async (text) => {
-            await requestChanges(phase.id, text);
-            setChange(false);
-          }}
-        />
-      )}
     </div>
   );
 }
+
 
 function RequestChangeModal({
   phase,
