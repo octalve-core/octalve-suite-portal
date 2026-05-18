@@ -1,3 +1,10 @@
-import { PortalShell } from "@/components/portal/PortalShell";
-import { AdminPayments } from "@/components/portal/AdminScreens";
-export default function Page() { return <PortalShell role="SUPER_ADMIN"><AdminPayments /></PortalShell>; }
+﻿import { PortalShell } from "@/components/portal/PortalShell";
+import { AdminPaymentsManager } from "@/components/portal/AdminPaymentsManager";
+
+export default function Page() {
+  return (
+    <PortalShell role="SUPER_ADMIN">
+      <AdminPaymentsManager />
+    </PortalShell>
+  );
+}
