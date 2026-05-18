@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+﻿import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
@@ -10,27 +10,53 @@ import {
   superAdminRole,
 } from "@/lib/permissions";
 
+const hasGoogleOAuth =
+  Boolean(process.env.GOOGLE_CLIENT_ID) &&
+  Boolean(process.env.GOOGLE_CLIENT_SECRET);
+
+async function sendVerificationEmail({
+  user,
+  url,
+}: {
+  user: { email: string };
+  url: string;
+}) {
+  if (process.env.NODE_ENV !== "production") {
+    console.info(`[dev-email] Verification link for ${user.email}: ${url}`);
+    return;
+  }
+
+  /**
+   * Production email transport should be connected here.
+   * Recommended options: Resend, Postmark, SendGrid, SMTP/Nodemailer.
+   *
+   * Until then, do not log verification URLs in production.
+   */
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: (process.env.DATABASE_URL ?? "").startsWith("file:") ? "sqlite" : "postgresql",
+    provider: (process.env.DATABASE_URL ?? "").startsWith("file:")
+      ? "sqlite"
+      : "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
-    // Set to true once a real email transport is configured
-    requireEmailVerification: false,
+    requireEmailVerification:
+      process.env.AUTH_REQUIRE_EMAIL_VERIFICATION === "true",
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
-  },
+  socialProviders: hasGoogleOAuth
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        },
+      }
+    : {},
   emailVerification: {
-    sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      // TODO: Replace with real email service (Resend, Nodemailer, etc.)
-      console.log(`📧 Verification email for ${user.email}: ${url}`);
-    },
+    sendOnSignUp:
+      process.env.AUTH_REQUIRE_EMAIL_VERIFICATION === "true",
+    sendVerificationEmail,
   },
   user: {
     additionalFields: {

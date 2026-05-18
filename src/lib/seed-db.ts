@@ -502,6 +502,11 @@ async function seedNotifications() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function seed() {
+  if (process.env.ALLOW_DATABASE_SEED !== "true") {
+    console.error("Database seed blocked. Set ALLOW_DATABASE_SEED=true to run intentionally.");
+    process.exit(1);
+  }
+
   console.log("🌱 Seeding database...\n");
 
   await seedUsers();
