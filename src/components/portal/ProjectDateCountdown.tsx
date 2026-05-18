@@ -1,6 +1,12 @@
 ﻿"use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { CalendarClock } from "lucide-react";
+
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
 export function formatProjectDate(date?: string) {
   if (!date) return "Not set";
@@ -23,13 +29,36 @@ export function getDaysUntil(date?: string) {
 
   const today = new Date();
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const target = new Date(
-    parsed.getFullYear(),
-    parsed.getMonth(),
-    parsed.getDate(),
-  );
+  const target = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 
-  return Math.ceil((target.getTime() - start.getTime()) / 86400000);
+  return Math.ceil((target.getTime() - start.getTime()) / DAY);
+}
+
+function getTargetTime(date?: string) {
+  if (!date) return null;
+
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  parsed.setHours(23, 59, 59, 999);
+  return parsed.getTime();
+}
+
+function getCountdownParts(date?: string, now = Date.now()) {
+  const target = getTargetTime(date);
+
+  if (!target) return null;
+
+  const diff = target - now;
+  const abs = Math.abs(diff);
+
+  return {
+    overdue: diff < 0,
+    days: Math.floor(abs / DAY),
+    hours: Math.floor((abs % DAY) / HOUR),
+    minutes: Math.floor((abs % HOUR) / MINUTE),
+    seconds: Math.floor((abs % MINUTE) / SECOND),
+  };
 }
 
 export function ProjectDateCountdown({
@@ -39,29 +68,33 @@ export function ProjectDateCountdown({
   targetDate?: string;
   compact?: boolean;
 }) {
-  const days = getDaysUntil(targetDate);
+  const [now, setNow] = useState(() => Date.now());
 
-  const text =
-    days === null
-      ? "No deadline"
-      : days < 0
-        ? `${Math.abs(days)} days overdue`
-        : days === 0
-          ? "Due today"
-          : `${days} days left`;
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const parts = useMemo(() => getCountdownParts(targetDate, now), [targetDate, now]);
 
   const tone =
-    days === null
+    !parts
       ? "badge-slate"
-      : days < 0
+      : parts.overdue
         ? "badge-red"
-        : days <= 7
+        : parts.days <= 7
           ? "badge-orange"
           : "badge-green";
 
   if (compact) {
+    const text = !parts
+      ? "No deadline"
+      : parts.overdue
+        ? `${parts.days}d ${parts.hours}h overdue`
+        : `${parts.days}d ${parts.hours}h ${parts.minutes}m`;
+
     return (
-      <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
+      <span className="project-date-compact">
         <strong>{formatProjectDate(targetDate)}</strong>
         <span className={`badge ${tone}`}>
           <CalendarClock size={12} /> {text}
@@ -70,12 +103,40 @@ export function ProjectDateCountdown({
     );
   }
 
+  if (!parts) {
+    return (
+      <div className="premium-countdown empty">
+        <div>
+          <CalendarClock size={18} />
+          <strong>No deadline set</strong>
+          <span>Target date will appear once the project has a delivery date.</span>
+        </div>
+      </div>
+    );
+  }
+
+  const units = [
+    ["Days", parts.days],
+    ["Hours", parts.hours],
+    ["Minutes", parts.minutes],
+    ["Seconds", parts.seconds],
+  ];
+
   return (
-    <div className="date-inline">
-      <strong>{formatProjectDate(targetDate)}</strong>
-      <span className={`badge ${tone}`}>
-        <CalendarClock size={12} /> {text}
-      </span>
+    <div className={parts.overdue ? "premium-countdown is-overdue" : "premium-countdown"}>
+      <div className="premium-countdown-head">
+        <span>{parts.overdue ? "Deadline overdue" : "Time remaining"}</span>
+        <strong>{formatProjectDate(targetDate)}</strong>
+      </div>
+
+      <div className="premium-countdown-grid">
+        {units.map(([label, value]) => (
+          <div key={label}>
+            <strong>{String(value).padStart(2, "0")}</strong>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

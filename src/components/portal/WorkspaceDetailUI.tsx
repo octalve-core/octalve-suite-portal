@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import type React from "react";
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { Project, ProjectPhase, User } from "@/lib/types";
 import { ProjectDateCountdown } from "./ProjectDateCountdown";
+
+const OCTALVE_PHASE_COLORS = ["#0064E0", "#E61525", "#FC7E24", "#29BE3E", "#5300D9"];
 import {
   Badge,
   Button,
@@ -151,9 +153,16 @@ export function PhaseDetailHero({
   action?: React.ReactNode;
 }) {
   const progress = phaseProgress(phase);
+  const phaseIndex = project?.phases.findIndex((item) => item.id === phase.id) ?? 0;
+  const phaseColor = OCTALVE_PHASE_COLORS[
+    Math.max(phaseIndex, 0) % OCTALVE_PHASE_COLORS.length
+  ];
 
   return (
-    <section className="workspace-detail-hero workspace-phase-detail-hero">
+    <section
+      className="workspace-detail-hero workspace-phase-detail-hero"
+      style={{ "--phase-color": phaseColor } as React.CSSProperties}
+    >
       <div className="workspace-detail-hero-main">
         <WorkspaceBackLink href={backHref} label={backLabel} />
 
@@ -175,7 +184,10 @@ export function PhaseDetailHero({
             </div>
 
             <h1>{phase.title}</h1>
-            <p>{phase.description || project?.title || "Project delivery phase"}</p>
+            <p>
+              {phase.description ||
+                "This phase contains the approved scope, deliverables, messages, and review activity for this stage of the project."}
+            </p>
           </div>
         </div>
 
@@ -203,7 +215,7 @@ export function PhaseDetailHero({
 
         <ProgressBar
           value={progress}
-          style={{ "--progress-fill": progressColor(progress) } as React.CSSProperties}
+          style={{ "--progress-fill": phaseColor } as React.CSSProperties}
         />
       </div>
 
@@ -211,6 +223,7 @@ export function PhaseDetailHero({
     </section>
   );
 }
+
 
 export function DetailPanel({
   title,

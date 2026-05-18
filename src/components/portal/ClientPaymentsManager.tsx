@@ -26,10 +26,6 @@ function normalizeStatus(status: unknown) {
   return String(status ?? "UNPAID");
 }
 
-function isConfirmedStatus(status: unknown) {
-  return normalizeStatus(status) === "CONFIRMED";
-}
-
 function paymentTone(status: unknown) {
   const value = normalizeStatus(status);
 
@@ -52,10 +48,12 @@ function paymentPriority(status: unknown) {
 }
 
 export function ClientPaymentsManager() {
-  const { clientProjects, refresh } = useApp();
+  const { clientProjects, selectedProject, refresh } = useApp();
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [projectFilter, setProjectFilter] = useState(selectedProject?.id ?? "active");
+  const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "pending" | "confirmed" | "rejected">("unpaid");
 
   const payments = useMemo(() => {
     return clientProjects
@@ -68,21 +66,34 @@ export function ClientPaymentsManager() {
       .sort((a, b) => paymentPriority(a.payment.status) - paymentPriority(b.payment.status));
   }, [clientProjects]);
 
-  const unpaid = payments.filter(
-    ({ payment }) => normalizeStatus(payment.status) === "UNPAID",
-  );
+  const unpaid = payments.filter(({ payment }) => normalizeStatus(payment.status) === "UNPAID");
+  const pending = payments.filter(({ payment }) => normalizeStatus(payment.status) === "PENDING_CONFIRMATION");
+  const confirmed = payments.filter(({ payment }) => normalizeStatus(payment.status) === "CONFIRMED");
+  const rejected = payments.filter(({ payment }) => normalizeStatus(payment.status) === "REJECTED");
 
-  const pending = payments.filter(
-    ({ payment }) => normalizeStatus(payment.status) === "PENDING_CONFIRMATION",
-  );
+  const filtered = payments.filter(({ payment, project }) => {
+    const status = normalizeStatus(payment.status);
 
-  const confirmed = payments.filter(({ payment }) =>
-    isConfirmedStatus(payment.status),
-  );
+    const matchesProject =
+      projectFilter === "all"
+        ? true
+        : projectFilter === "active"
+          ? !selectedProject || project.id === selectedProject.id
+          : project.id === projectFilter;
 
-  const rejected = payments.filter(
-    ({ payment }) => normalizeStatus(payment.status) === "REJECTED",
-  );
+    const matchesStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "unpaid"
+          ? status === "UNPAID"
+          : statusFilter === "pending"
+            ? status === "PENDING_CONFIRMATION"
+            : statusFilter === "confirmed"
+              ? status === "CONFIRMED"
+              : status === "REJECTED";
+
+    return matchesProject && matchesStatus;
+  });
 
   async function markPaid(paymentId: string) {
     setError("");
@@ -111,7 +122,7 @@ export function ClientPaymentsManager() {
       <WorkspaceSectionHero
         eyebrow="Client Billing"
         title="Payments"
-        subtitle="Track unpaid, submitted, confirmed, and rejected project payment records."
+        subtitle="Track project payments by project and status so every deposit, balance, and confirmation is clear."
         meta={
           <>
             <Badge className="badge-blue">{unpaid.length} Unpaid</Badge>
@@ -156,20 +167,54 @@ export function ClientPaymentsManager() {
         </Card>
       )}
 
+      <div className="client-filter-bar">
+        <label>
+          <span>Project</span>
+          <select
+            className="input"
+            value={projectFilter}
+            onChange={(event) => setProjectFilter(event.target.value)}
+          >
+            <option value="active">Current active project</option>
+            <option value="all">All projects</option>
+            {clientProjects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Payment Status</span>
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+          >
+            <option value="unpaid">Unpaid</option>
+            <option value="all">All statuses</option>
+            <option value="pending">Awaiting confirmation</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </label>
+      </div>
+
       <WorkspaceListPanel
         title="Payment Schedule"
-        subtitle="Submit payment confirmation after making transfer."
+        subtitle="Filtered by project and status to avoid mixing payment records across projects."
       >
-        {payments.length ? (
-          payments.map(({ payment, project }) => {
+        {filtered.length ? (
+          filtered.map(({ payment, project }) => {
             const status = normalizeStatus(payment.status);
             const canMarkPaid = status === "UNPAID" || status === "REJECTED";
 
             return (
               <WorkspaceActionCard
                 key={payment.id}
-                title={`${payment.label ?? "Project Payment"} • ${formatMoney(Number(payment.amount ?? 0))}`}
-                subtitle={project.title}
+                title={`${payment.label ?? payment.type ?? "Project Payment"} • ${formatMoney(Number(payment.amount ?? 0))}`}
+                subtitle={`${project.title} • ${project.projectCode}`}
                 icon={WorkspaceListIcons.document}
                 tone={paymentTone(status) as any}
                 badge={
@@ -179,7 +224,7 @@ export function ClientPaymentsManager() {
                 }
                 meta={
                   <>
-                    <span>{project.projectCode}</span>
+                    <span>{payment.type ?? "Payment"}</span>
                     <span>
                       Due{" "}
                       {payment.dueDate
@@ -212,8 +257,8 @@ export function ClientPaymentsManager() {
           })
         ) : (
           <WorkspaceEmptyPanel
-            title="No payments yet"
-            body="Payment records will appear here when your project is approved."
+            title="No payments match this filter"
+            body="Switch project or payment status to see other records."
             icon={WorkspaceListIcons.document}
           />
         )}

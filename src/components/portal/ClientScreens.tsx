@@ -30,6 +30,7 @@ import { improveBrief, recommendPackage } from "@/lib/ai";
 import { PackageType, Project, ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { ProjectDateCountdown } from "./ProjectDateCountdown";
+import { PhaseMessageThread } from "./PhaseMessageThread";
 import {
   DashboardHero,
   DashboardIcons,
@@ -67,7 +68,7 @@ function ProjectSwitcher() {
   return (
     <div className="project-switcher">
       <button className="switcher-btn" onClick={() => setOpen(!open)}>
-        â–£ {selectedProject.title} <span>âŒ„</span>
+        Project: {selectedProject.title} <span>⌄</span>
       </button>
       {open && (
         <div className="switcher-menu">
@@ -921,7 +922,7 @@ export function ClientPhases() {
   );
 }
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
-  const { state, approvePhase, requestChanges, sendPhaseMessage } = useApp();
+  const { state, currentUser, approvePhase, requestChanges, sendPhaseMessage } = useApp();
 
   const [msg, setMsg] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -1045,7 +1046,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
       <div className="grid-2" style={{ marginTop: 24 }}>
         <DetailPanel
           title="Deliverables"
-          subtitle="Open client-visible deliverable links added by the delivery team."
+          subtitle="Review approved links, previews, documents, and delivery assets shared by the Octalve team for this phase."
           icon={DetailIcons.files}
         >
           <div className="stack">
@@ -1115,7 +1116,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
           icon={DetailIcons.messages}
         >
           <div className="stack">
-            <MessagePreviewList messages={messages} />
+            <PhaseMessageThread messages={messages} currentUserId={currentUser?.id} />
 
             <Textarea
               value={msg}
@@ -1189,22 +1190,44 @@ function RequestChangeModal({
 }
 
 export function ClientApprovals() {
-  const { clientProjects } = useApp();
+  const { clientProjects, selectedProject } = useApp();
+  const [projectFilter, setProjectFilter] = useState(selectedProject?.id ?? "active");
+  const [statusFilter, setStatusFilter] = useState<"all" | "awaiting" | "approved" | "changes">("awaiting");
 
-  const phases = clientProjects.flatMap((project) =>
+  const allPhases = clientProjects.flatMap((project) =>
     project.phases.map((phase) => ({ project, phase })),
   );
 
-  const awaiting = phases.filter(({ phase }) => phase.status === "AWAITING_APPROVAL");
-  const approved = phases.filter(({ phase }) => phase.status === "APPROVED");
-  const changes = phases.filter(({ phase }) => phase.status === "CHANGES_REQUESTED");
+  const awaiting = allPhases.filter(({ phase }) => phase.status === "AWAITING_APPROVAL");
+  const approved = allPhases.filter(({ phase }) => phase.status === "APPROVED");
+  const changes = allPhases.filter(({ phase }) => phase.status === "CHANGES_REQUESTED");
+
+  const filtered = allPhases.filter(({ project, phase }) => {
+    const matchesProject =
+      projectFilter === "all"
+        ? true
+        : projectFilter === "active"
+          ? !selectedProject || project.id === selectedProject.id
+          : project.id === projectFilter;
+
+    const matchesStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "awaiting"
+          ? phase.status === "AWAITING_APPROVAL"
+          : statusFilter === "approved"
+            ? phase.status === "APPROVED"
+            : phase.status === "CHANGES_REQUESTED";
+
+    return matchesProject && matchesStatus;
+  });
 
   return (
     <div className="content narrow">
       <WorkspaceSectionHero
         eyebrow="Client Review"
         title="Approvals"
-        subtitle="Review submitted phases, approve completed work, or request changes from the delivery team."
+        subtitle="Review submitted phases by project, approve completed work, or request changes from the delivery team."
         meta={
           <>
             <Badge className="badge-orange">{awaiting.length} Awaiting Review</Badge>
@@ -1234,26 +1257,53 @@ export function ClientApprovals() {
             tone: changes.length ? "red" : "slate",
             icon: WorkspaceListIcons.document,
           },
-          {
-            label: "Total Phases",
-            value: phases.length,
-            tone: "blue",
-            icon: WorkspaceListIcons.template,
-          },
         ]}
       />
 
+      <div className="client-filter-bar">
+        <label>
+          <span>Project</span>
+          <select
+            className="input"
+            value={projectFilter}
+            onChange={(event) => setProjectFilter(event.target.value)}
+          >
+            <option value="active">Current active project</option>
+            <option value="all">All projects</option>
+            {clientProjects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Status</span>
+          <select
+            className="input"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+          >
+            <option value="awaiting">Awaiting review</option>
+            <option value="all">All statuses</option>
+            <option value="approved">Approved</option>
+            <option value="changes">Changes requested</option>
+          </select>
+        </label>
+      </div>
+
       <WorkspaceListPanel
         title="Approval Queue"
-        subtitle="Open any phase to review its deliverables and messages."
+        subtitle="Filtered by project and approval status so each phase is easy to understand."
       >
-        {phases.length ? (
-          phases.map(({ project, phase }) => (
+        {filtered.length ? (
+          filtered.map(({ project, phase }) => (
             <WorkspaceActionCard
               key={phase.id}
-              href={`/client/phases/${phase.id}`}
               title={phase.title}
-              subtitle={project.title}
+              subtitle={`${project.title} • ${phase.description || "Delivery phase awaiting review activity."}`}
+              href={`/client/phases/${phase.id}`}
               icon={WorkspaceListIcons.check}
               tone={
                 phase.status === "APPROVED"
@@ -1271,6 +1321,7 @@ export function ClientApprovals() {
               }
               meta={
                 <>
+                  <span>{project.projectCode}</span>
                   <span>{phase.deliverables.length} deliverables</span>
                   <span>{phase.messages.length} messages</span>
                 </>
@@ -1279,8 +1330,8 @@ export function ClientApprovals() {
           ))
         ) : (
           <WorkspaceEmptyPanel
-            title="No approvals yet"
-            body="Submitted phases will appear here when your delivery team requests approval."
+            title="No approvals match this filter"
+            body="Switch project or status filter to review other project phases."
             icon={WorkspaceListIcons.check}
           />
         )}
@@ -1288,6 +1339,7 @@ export function ClientApprovals() {
     </div>
   );
 }
+
 
 
 export function ClientPayments() {
