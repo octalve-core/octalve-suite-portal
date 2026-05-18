@@ -1,5 +1,9 @@
-﻿"use client";
+"use client";
 
+import {
+  PhaseSummaryCard,
+  ProjectSummaryCard,
+} from "./WorkspaceCards";
 import Link from "next/link";
 import { useState } from "react";
 import { generateProjectSummary } from "@/lib/ai";
@@ -186,10 +190,11 @@ export function StaffDashboard() {
 }
 export function StaffProjects() {
   const { currentUser, state } = useApp();
+
   const projects = state.projects.filter(
-    (p) =>
-      p.projectManagerId === currentUser?.id ||
-      p.phases.some((phase) => phase.assignedStaffId === currentUser?.id),
+    (project) =>
+      project.projectManagerId === currentUser?.id ||
+      project.phases.some((phase) => phase.assignedStaffId === currentUser?.id),
   );
 
   return (
@@ -198,40 +203,15 @@ export function StaffProjects() {
         title="Projects"
         subtitle="Projects connected to your assigned phases"
       />
+
       {projects.length ? (
         <div className="grid-3">
           {projects.map((project) => (
-            <Link href="/staff/phases" key={project.id}>
-              <Card className="project-card">
-                <Badge className={statusClass(project.status)}>
-                  {statusLabel(project.status)}
-                </Badge>
-                <div>
-                  <h3>{project.title}</h3>
-                  <p>{project.businessName}</p>
-                </div>
-                <div className="project-card-footer">
-                  <div className="timeline-row">
-                    <span>Progress</span>
-                    <strong>
-                      {
-                        project.phases.filter((p) => p.status === "APPROVED")
-                          .length
-                      }
-                      /{project.phases.length}
-                    </strong>
-                  </div>
-                  <ProgressBar
-                    value={
-                      (project.phases.filter((p) => p.status === "APPROVED")
-                        .length /
-                        project.phases.length) *
-                      100
-                    }
-                  />
-                </div>
-              </Card>
-            </Link>
+            <ProjectSummaryCard
+              key={project.id}
+              project={project}
+              href="/staff/phases"
+            />
           ))}
         </div>
       ) : (
@@ -243,7 +223,6 @@ export function StaffProjects() {
     </div>
   );
 }
-
 export function StaffPhases() {
   const { currentUser } = useApp();
   const assigned = assignedPhases(currentUser?.id);
@@ -254,26 +233,17 @@ export function StaffPhases() {
         title="Assigned Phases"
         subtitle="Manage your assigned delivery work"
       />
+
       {assigned.length ? (
         <div className="grid-2-even">
           {assigned.map(({ project, phase }) => (
-            <Link href={`/staff/phases/${phase.id}`} key={phase.id}>
-              <Card className="payment-card">
-                <div>
-                  <Badge className={statusClass(phase.status)}>
-                    {statusLabel(phase.status)}
-                  </Badge>
-                  <h2>{phase.title}</h2>
-                  <p style={{ color: "var(--muted)" }}>
-                    {project.title} â€¢ {project.businessName}
-                  </p>
-                  <p style={{ color: "var(--muted)" }}>
-                    {phase.deliverables.length} deliverables
-                  </p>
-                </div>
-                {Icons.arrow}
-              </Card>
-            </Link>
+            <PhaseSummaryCard
+              key={phase.id}
+              phase={phase}
+              href={`/staff/phases/${phase.id}`}
+              projectTitle={project.title}
+              businessName={project.businessName}
+            />
           ))}
         </div>
       ) : (
@@ -285,7 +255,6 @@ export function StaffPhases() {
     </div>
   );
 }
-
 function AddDeliverableModal({
   phase,
   onClose,
@@ -696,6 +665,11 @@ export function StaffSettings() {
     </div>
   );
 }
+
+
+
+
+
 
 
 

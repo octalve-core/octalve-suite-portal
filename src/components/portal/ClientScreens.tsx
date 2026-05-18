@@ -1,5 +1,10 @@
-﻿"use client";
+"use client";
 
+import {
+  PaymentSummaryCard,
+  PhaseSummaryCard,
+  ProjectSummaryCard,
+} from "./WorkspaceCards";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { improveBrief, recommendPackage } from "@/lib/ai";
@@ -441,6 +446,7 @@ export function ClientDashboard() {
 }
 export function ClientProjects() {
   const { clientProjects } = useApp();
+
   return (
     <div className="content narrow">
       <PageHeader
@@ -452,57 +458,15 @@ export function ClientProjects() {
           </Link>
         }
       />
+
       {clientProjects.length ? (
-        <div className="stack">
+        <div className="grid-2-even">
           {clientProjects.map((project) => (
-            <Link href={`/client/projects/${project.id}`} key={project.id}>
-              <Card className="project-hero">
-                <div
-                  className="project-hero-top"
-                  style={{
-                    background: "#0064E0",
-                  }}
-                >
-                  <div>
-                    <Badge className={packageClass(project.packageType)}>
-                      {project.packageType}
-                    </Badge>
-                    <h1>{project.title}</h1>
-                    <p>{project.businessName}</p>
-                  </div>
-                  <ProgressCircle value={projectProgress(project)} />
-                </div>
-                <div className="project-hero-bottom">
-                  <div className="kv">
-                    <span>Status</span>
-                    <Badge className={statusClass(project.status)}>
-                      {statusLabel(project.status)}
-                    </Badge>
-                  </div>
-                  <div className="kv">
-                    <span>Phases Completed</span>
-                    <strong>
-                      {
-                        project.phases.filter((p) => p.status === "APPROVED")
-                          .length
-                      }{" "}
-                      / {project.phases.length}
-                    </strong>
-                  </div>
-                  <div className="kv">
-                    <span>Target Date</span>
-                    <ProjectDateCountdown targetDate={project.targetDate} compact />
-                  </div>
-                  <div className="kv">
-                    <span>Deliverables</span>
-                    <strong>
-                      {project.phases.flatMap((p) => p.deliverables).length}{" "}
-                      items
-                    </strong>
-                  </div>
-                </div>
-              </Card>
-            </Link>
+            <ProjectSummaryCard
+              key={project.id}
+              project={project}
+              href={`/client/projects/${project.id}`}
+            />
           ))}
         </div>
       ) : (
@@ -519,7 +483,6 @@ export function ClientProjects() {
     </div>
   );
 }
-
 export function ClientProjectDetail({ projectId }: { projectId: string }) {
   const { state, setSelectedProjectId } = useApp();
   const project = state.projects.find((p) => p.id === projectId);
@@ -878,7 +841,8 @@ export function ClientCreateProject() {
 
 export function ClientPhases() {
   const { selectedProject } = useApp();
-  if (!selectedProject)
+
+  if (!selectedProject) {
     return (
       <div className="content narrow">
         <PageHeader
@@ -891,87 +855,52 @@ export function ClientPhases() {
         />
       </div>
     );
+  }
+
+  const locked =
+    selectedProject.status !== "ACTIVE" &&
+    selectedProject.status !== "AWAITING_BALANCE";
+
   return (
     <div className="content narrow">
       <PageHeader
         title="Project Phases"
         subtitle="Track your project progress through each phase"
       />
+
       <ProjectSwitcher />
-      {selectedProject.status !== "ACTIVE" &&
-        selectedProject.status !== "AWAITING_BALANCE" && (
-          <Card className="payment-card" style={{ marginBottom: 24 }}>
-            <div>
-              <Badge className={statusClass(selectedProject.status)}>
-                {statusLabel(selectedProject.status)}
-              </Badge>
-              <h3>Project tracking is locked</h3>
-              <p style={{ color: "var(--muted)" }}>
-                Complete the required approval/payment step to unlock phases.
-              </p>
-            </div>
-            <Link className="btn btn-primary" href="/client/payments">
-              Open Payments
-            </Link>
-          </Card>
-        )}
-      <div className="stack">
-        {selectedProject.phases.map((phase) => (
-          <Link key={phase.id} href={`/client/phases/${phase.id}`}>
-            <Card
-              className={`phase-card phase-${phase.status === "APPROVED" ? "approved" : phase.status === "AWAITING_APPROVAL" ? "awaiting" : phase.status === "IN_PROGRESS" ? "in-progress" : phase.status === "LOCKED" ? "locked" : ""}`}
-            >
-              <div className="phase-head">
-                <div className="phase-title">
-                  <div className="phase-number">
-                    {phase.status === "LOCKED"
-                      ? Icons.lock
-                      : phase.status === "APPROVED"
-                        ? Icons.check
-                        : Icons.clock}
-                  </div>
-                  <div>
-                    <h2 style={{ margin: 0 }}>{phase.title}</h2>
-                    <p style={{ color: "var(--muted)", margin: "6px 0" }}>
-                      {phase.status === "LOCKED"
-                        ? `Complete previous phase first to unlock`
-                        : phase.description}
-                    </p>
-                    <Badge className={statusClass(phase.status)}>
-                      {statusLabel(phase.status)}
-                    </Badge>{" "}
-                    <span style={{ color: "var(--muted)", marginLeft: 12 }}>
-                      {
-                        phase.deliverables.filter(
-                          (d) => d.status === "APPROVED",
-                        ).length
-                      }{" "}
-                      / {phase.deliverables.length} deliverables
-                    </span>
-                  </div>
-                </div>
-                <div style={{ minWidth: 160 }}>
-                  <span>
-                    {projectProgress({ ...selectedProject, phases: [phase] })}%
-                  </span>
-                  <ProgressBar
-                    value={
-                      (phase.deliverables.filter((d) => d.status === "APPROVED")
-                        .length /
-                        Math.max(1, phase.deliverables.length)) *
-                      100
-                    }
-                  />
-                </div>
-              </div>
-            </Card>
+
+      {locked && (
+        <Card className="payment-card" style={{ marginBottom: 24 }}>
+          <div>
+            <Badge className={statusClass(selectedProject.status)}>
+              {statusLabel(selectedProject.status)}
+            </Badge>
+            <h3>Project tracking is locked</h3>
+            <p style={{ color: "var(--muted)" }}>
+              Complete the required approval/payment step to unlock phases.
+            </p>
+          </div>
+          <Link className="btn btn-primary" href="/client/payments">
+            Open Payments
           </Link>
+        </Card>
+      )}
+
+      <div className="grid-2-even">
+        {selectedProject.phases.map((phase) => (
+          <PhaseSummaryCard
+            key={phase.id}
+            phase={phase}
+            href={`/client/phases/${phase.id}`}
+            projectTitle={selectedProject.title}
+            businessName={selectedProject.businessName}
+          />
         ))}
       </div>
     </div>
   );
 }
-
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
   const { state, approvePhase, requestChanges, sendPhaseMessage } = useApp();
   const [approve, setApprove] = useState(false);
@@ -1307,7 +1236,8 @@ export function ClientApprovals() {
 export function ClientPayments() {
   const { selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  if (!selectedProject)
+
+  if (!selectedProject) {
     return (
       <div className="content narrow">
         <PageHeader title="Payments" />
@@ -1317,43 +1247,25 @@ export function ClientPayments() {
         />
       </div>
     );
+  }
+
   return (
     <div className="content narrow">
       <PageHeader title="Payments" subtitle="View deposit and balance status" />
+
       <ProjectSwitcher />
-      <div className="stack">
+
+      <div className="grid-2-even">
         {selectedProject.payments.map((payment) => (
-          <Card key={payment.id} className="payment-card">
-            <div>
-              <Badge className={statusClass(payment.status)}>
-                {statusLabel(payment.status)}
-              </Badge>
-              <h2>
-                {payment.type === "DEPOSIT"
-                  ? "First Deposit"
-                  : "Balance Payment"}
-              </h2>
-              <p style={{ color: "var(--muted)" }}>{payment.reference}</p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <strong style={{ fontSize: 24 }}>
-                {formatNaira(payment.amount)}
-              </strong>
-              <div style={{ marginTop: 10 }}>
-                {payment.status === "UNPAID" ? (
-                  <Button onClick={() => setPaymentId(payment.id)}>
-                    Make Payment
-                  </Button>
-                ) : payment.status === "PENDING_CONFIRMATION" ? (
-                  <Badge className="badge-orange">Awaiting Confirmation</Badge>
-                ) : (
-                  <Badge className="badge-green">Confirmed</Badge>
-                )}
-              </div>
-            </div>
-          </Card>
+          <PaymentSummaryCard
+            key={payment.id}
+            payment={payment}
+            projectTitle={selectedProject.title}
+            onAction={() => setPaymentId(payment.id)}
+          />
         ))}
       </div>
+
       {paymentId && (
         <ManualPaymentModal
           project={selectedProject}
@@ -1364,7 +1276,6 @@ export function ClientPayments() {
     </div>
   );
 }
-
 export function ClientSupport() {
   return (
     <div className="content narrow">
@@ -1454,6 +1365,11 @@ export function ClientSupport() {
     </div>
   );
 }
+
+
+
+
+
 
 
 
