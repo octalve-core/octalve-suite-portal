@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  CheckCircle2,
   Headphones,
   Mail,
   MessageSquareText,
@@ -10,7 +11,7 @@ import {
   Timer,
 } from "lucide-react";
 import { useApp } from "./AppContext";
-import { Badge, Button, Card, EmptyState, PageHeader, statusLabel } from "./UI";
+import { Badge, Card, EmptyState, PageHeader, statusLabel } from "./UI";
 
 const SUPPORT_EMAIL = "support@octalve.com";
 
@@ -41,59 +42,71 @@ export function SupportScreen() {
     <div className="content narrow">
       <PageHeader
         title="Help & Support"
-        subtitle="Get assistance from your project manager or the Octalve support team"
+        subtitle="Reach the Octalve support team or continue from your active project phase."
       />
 
-      <Card className="card-body" style={{ marginBottom: 24 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.4fr) minmax(260px, 0.8fr)",
-            gap: 28,
-            alignItems: "center",
-          }}
-        >
-          <div>
+      <Card className="overflow-hidden">
+        <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="min-w-0">
             <Badge className="badge-purple">Support Desk</Badge>
-            <h2 style={{ margin: "16px 0 10px", fontSize: 28 }}>
+
+            <h2 className="mt-5 max-w-[560px] text-[30px] font-medium leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-[40px]">
               Need help with your project?
             </h2>
-            <p style={{ color: "var(--muted)", lineHeight: 1.7, margin: 0 }}>
-              Reach your project manager by email or continue the conversation
-              inside the active phase thread.
+
+            <p className="mt-4 max-w-[620px] text-[16px] font-medium leading-7 text-slate-500">
+              Send an email to your project manager or continue the conversation
+              inside the phase message thread.
             </p>
+
+            {selectedProject && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Badge className="badge-blue">{selectedProject.title}</Badge>
+                <Badge className="badge-slate">
+                  {statusLabel(selectedProject.status as any)}
+                </Badge>
+              </div>
+            )}
           </div>
 
-          <div className="stack" style={{ gap: 12 }}>
+          <div className="grid gap-3">
             <a
-              className="btn btn-primary"
+              className="btn btn-primary min-h-[52px] w-full"
               href={`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${body}`}
             >
-              <Mail size={17} /> Email {pm ? "Project Manager" : "Support"}
+              <Mail size={18} /> Email {pm ? "Project Manager" : "Support"}
             </a>
 
             {activePhase ? (
-              <Link className="btn btn-secondary" href={`/client/phases/${activePhase.id}`}>
-                <MessageSquareText size={17} /> Send Phase Message
+              <Link
+                className="btn btn-secondary min-h-[52px] w-full"
+                href={`/client/phases/${activePhase.id}`}
+              >
+                <MessageSquareText size={18} /> Send Phase Message
               </Link>
             ) : (
-              <Link className="btn btn-secondary" href="/client/phases">
-                <MessageSquareText size={17} /> Open Phase Messages
+              <Link
+                className="btn btn-secondary min-h-[52px] w-full"
+                href="/client/phases"
+              >
+                <MessageSquareText size={18} /> Open Phase Messages
               </Link>
             )}
           </div>
         </div>
       </Card>
 
-      <div className="grid-2-even" style={{ marginBottom: 24 }}>
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card className="card-body">
           <div className="deliverable-main">
-            <div className="deliverable-icon" style={{ color: "var(--primary)" }}>
+            <div className="deliverable-icon text-[#0064E0]">
               <Timer size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0 }}>Typical response time</h3>
-              <p style={{ color: "var(--muted)", margin: "6px 0 0" }}>
+              <h3 className="m-0 text-lg font-medium text-slate-950">
+                Typical response time
+              </h3>
+              <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
                 We aim to respond within 24 business hours.
               </p>
             </div>
@@ -102,59 +115,67 @@ export function SupportScreen() {
 
         <Card className="card-body">
           <div className="deliverable-main">
-            <div className="deliverable-icon" style={{ color: "var(--success)" }}>
+            <div className="deliverable-icon text-emerald-600">
               <ShieldCheck size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0 }}>Current project</h3>
-              <p style={{ color: "var(--muted)", margin: "6px 0 0" }}>
-                {selectedProject
-                  ? `${selectedProject.title} — ${statusLabel(selectedProject.status as any)}`
-                  : "No active project selected"}
+              <h3 className="m-0 text-lg font-medium text-slate-950">
+                Project contact
+              </h3>
+              <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
+                {pm?.name
+                  ? `${pm.name} is assigned as project manager.`
+                  : "Octalve support team is available for this workspace."}
               </p>
             </div>
           </div>
         </Card>
       </div>
 
-      <Card>
+      <Card className="mt-6">
         <div className="card-title">
           <h2>Helpful answers</h2>
         </div>
-        <div className="card-body stack">
+
+        <div className="card-body grid gap-3">
           {[
             ["How do I approve a phase?", "Open Approvals, review the deliverables, then approve or request changes."],
             ["Where do I send feedback?", "Use the message box inside the relevant phase detail page."],
             ["How do I make payment?", "Open Payments, copy the bank details, transfer, then click “I have paid”."],
-            ["Where are my deliverable links?", "Open a phase detail page or check Key Links on your dashboard."],
+            ["Where are my deliverable links?", "Open a phase detail page and click the link provided by the delivery team."],
           ].map(([question, answer]) => (
             <div
               key={question}
-              className="deliverable-row"
-              style={{ alignItems: "flex-start" }}
+              className="rounded-2xl border border-slate-200 bg-white p-4"
             >
-              <div className="deliverable-main">
-                <div className="deliverable-icon">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#EAF3FF] text-[#0064E0]">
                   <Headphones size={18} />
-                </div>
-                <div>
-                  <strong>{question}</strong>
-                  <p style={{ margin: "6px 0 0", color: "var(--muted)" }}>
+                </span>
+                <div className="min-w-0">
+                  <strong className="block font-medium text-slate-950">
+                    {question}
+                  </strong>
+                  <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
                     {answer}
                   </p>
                 </div>
+                <ArrowRight
+                  size={16}
+                  className="ml-auto mt-1 shrink-0 text-slate-400"
+                />
               </div>
-              <ArrowRight size={16} style={{ color: "var(--muted)" }} />
             </div>
           ))}
         </div>
       </Card>
 
       {!selectedProject && (
-        <div style={{ marginTop: 24 }}>
+        <div className="mt-6">
           <EmptyState
             title="No active project yet"
-            body="Once your project is active, your project manager and phase messages will appear here."
+            body="Once your project is active, support actions and phase messages will appear here."
+            icon={<CheckCircle2 size={28} />}
           />
         </div>
       )}

@@ -38,7 +38,7 @@ import {
 } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { DeliverableManager } from "./DeliverableManager";
-import { ProjectTeamNotes } from "./ProjectTeamNotes";
+import { ProjectWorkspaceTabs } from "./ProjectTeamNotes";
 import {
   BackLink,
   Badge,
@@ -710,12 +710,8 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           </div>
         </div>
       </Card>
-      <nav className="tabs project-tabs" aria-label="Project sections">
-        <a className="active" href="#project-phases">Phases</a>
-        <a href="#project-team">Team</a>
-        <a href="#project-notes">Notes</a>
-      </nav>
-      <div id="project-phases" className="stack">
+      <ProjectWorkspaceTabs project={project} users={state.users}>
+        <div className="stack">
         {project.phases.map((phase) => (
           <Card
             key={phase.id}
@@ -771,7 +767,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           </Card>
         ))}
       </div>
-      <ProjectTeamNotes project={project} users={state.users} />
+      </ProjectWorkspaceTabs>
 
       {assigning && (
         <AssignModal
@@ -1190,11 +1186,12 @@ export function AdminCreateProject() {
               </Field>
               <Field label="Target Completion Date">
                 <Input
+                  type="date"
                   value={form.targetDate}
                   onChange={(e) =>
                     setForm({ ...form, targetDate: e.target.value })
                   }
-                  placeholder="May 9, 2026"
+                  placeholder="Select date"
                 />
               </Field>
             </div>
@@ -1577,10 +1574,11 @@ function RequestReviewModal({
           </Field>
           <Field label="Target Date">
             <Input
+              type="date"
               value={form.targetDate}
               disabled={!isPending}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
-              placeholder="May 9, 2026"
+              placeholder="Select date"
             />
           </Field>
           <Field label="Internal Notes">
@@ -3036,6 +3034,8 @@ export function AdminSettings() {
     </div>
   );
 }
+
+
 
 
 

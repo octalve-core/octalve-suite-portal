@@ -382,7 +382,7 @@ export function PortalShell({
                 aria-label={`${pendingTotal} pending items`}
               >
                 <Bell size={16} strokeWidth={2.25} />
-                <span>{pendingTotal} Pending</span>
+                <span>{pendingTotal} Pending</span><em className="topbar-action-badge">{pendingTotal}</em>
               </Link>
             )}
 
@@ -393,7 +393,7 @@ export function PortalShell({
                 aria-label={`${counts.payments} payment items`}
               >
                 <CreditCard size={16} strokeWidth={2.25} />
-                <span>{counts.payments} Payment{counts.payments > 1 ? "s" : ""}</span>
+                <span>{counts.payments} Payment{counts.payments > 1 ? "s" : ""}</span><em className="topbar-action-badge">{counts.payments}</em>
               </Link>
             )}
 
@@ -444,3 +444,4 @@ export function PortalShell({
     </div>
   );
 }
+

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { improveBrief, recommendPackage } from "@/lib/ai";
 import { PackageType, Project, ProjectPhase } from "@/lib/types";
 import { useApp } from "./AppContext";
+import { ProjectDateCountdown } from "./ProjectDateCountdown";
 import {
   BackLink,
   Badge,
@@ -464,7 +465,7 @@ export function ClientProjects() {
                   </div>
                   <div className="kv">
                     <span>Target Date</span>
-                    <strong>{project.targetDate ?? "Not set"}</strong>
+                    <ProjectDateCountdown targetDate={project.targetDate} compact />
                   </div>
                   <div className="kv">
                     <span>Deliverables</span>
@@ -541,7 +542,7 @@ export function ClientProjectDetail({ projectId }: { projectId: string }) {
           </div>
           <div className="kv">
             <span>Target Date</span>
-            <strong>{project.targetDate ?? "Not set"}</strong>
+            <ProjectDateCountdown targetDate={project.targetDate} compact />
           </div>
           <div className="kv">
             <span>Deliverables</span>
@@ -1427,6 +1428,8 @@ export function ClientSupport() {
     </div>
   );
 }
+
+
 
 
 
