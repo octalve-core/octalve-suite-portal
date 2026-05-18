@@ -117,7 +117,12 @@ export function activePhase(project: Project) {
 }
 
 export function packageClass(packageType?: string) {
-  if (packageType === "Impact" || packageType === "BrandingStarter" || packageType === "BrandingProBiz" || packageType === "BrandingAdvance") {
+  if (
+    packageType === "Impact" ||
+    packageType === "BrandingStarter" ||
+    packageType === "BrandingProBiz" ||
+    packageType === "BrandingAdvance"
+  ) {
     return "badge-red";
   }
 
@@ -129,7 +134,11 @@ export function packageClass(packageType?: string) {
     return "badge-purple";
   }
 
-  if (packageType === "WebsiteStarter" || packageType === "WebsiteProBiz" || packageType === "LeapRegistration") {
+  if (
+    packageType === "WebsiteStarter" ||
+    packageType === "WebsiteProBiz" ||
+    packageType === "LeapRegistration"
+  ) {
     return "badge-orange";
   }
 

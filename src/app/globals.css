@@ -4870,3 +4870,199 @@ strong,
 .grid-2-even .premium-suite-card {
   cursor: pointer;
 }
+
+/* Phase 5B package expansion safe */
+.project-form-error {
+  margin: 16px 0;
+  padding: 13px 15px;
+  border-radius: 16px;
+  background: #E61525;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.premium-suite-card {
+  position: relative;
+  min-height: 168px;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid var(--suite-color) !important;
+  background: var(--suite-color) !important;
+  color: #ffffff !important;
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--suite-color) 22%, transparent);
+  cursor: pointer;
+}
+
+.premium-suite-card h3,
+.premium-suite-card p {
+  color: #ffffff !important;
+}
+
+.premium-suite-card p {
+  opacity: 0.88;
+}
+
+.premium-suite-card.selected {
+  outline: 4px solid color-mix(in srgb, var(--suite-color) 22%, transparent);
+  transform: translateY(-2px);
+}
+
+.premium-suite-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+}
+
+.suite-selected-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff !important;
+}
+
+.package-card-category {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-brief-panel {
+  border-color: #0064E0;
+  background: #0064E0;
+  color: #ffffff;
+}
+
+.ai-brief-panel p,
+.ai-brief-panel .badge {
+  color: #ffffff !important;
+}
+
+.ai-brief-panel .badge {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ai-brief-panel .btn,
+.ai-brief-panel button {
+  background: #ffffff !important;
+  color: #0064E0 !important;
+  border-color: transparent !important;
+}
+
+/* Phase 5B isolated package expansion */
+.project-form-error {
+  margin: 16px 0;
+  padding: 13px 15px;
+  border-radius: 16px;
+  background: #E61525;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.premium-suite-card {
+  position: relative;
+  min-height: 168px;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid var(--suite-color) !important;
+  background: var(--suite-color) !important;
+  color: #ffffff !important;
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--suite-color) 22%, transparent);
+  cursor: pointer;
+}
+
+.premium-suite-card h3,
+.premium-suite-card p {
+  color: #ffffff !important;
+}
+
+.premium-suite-card p {
+  opacity: 0.88;
+}
+
+.premium-suite-card.selected {
+  outline: 4px solid color-mix(in srgb, var(--suite-color) 22%, transparent);
+  transform: translateY(-2px);
+}
+
+.premium-suite-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+}
+
+.suite-selected-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff !important;
+}
+
+.package-card-category {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-brief-panel {
+  border-color: #0064E0;
+  background: #0064E0;
+  color: #ffffff;
+}
+
+.ai-brief-panel p,
+.ai-brief-panel .badge {
+  color: #ffffff !important;
+}
+
+.ai-brief-panel .badge {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ai-brief-panel .btn,
+.ai-brief-panel button {
+  background: #ffffff !important;
+  color: #0064E0 !important;
+  border-color: transparent !important;
+}

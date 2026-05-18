@@ -1,3 +1,10 @@
 import { PortalShell } from "@/components/portal/PortalShell";
-import { ClientCreateProject } from "@/components/portal/ClientScreens";
-export default function Page() { return <PortalShell role="CLIENT"><ClientCreateProject /></PortalShell>; }
+import { ClientCreateProjectExpanded } from "@/components/portal/ClientCreateProjectExpanded";
+
+export default function Page() {
+  return (
+    <PortalShell role="CLIENT">
+      <ClientCreateProjectExpanded />
+    </PortalShell>
+  );
+}
