@@ -47,4 +47,7 @@ Thumbs.db
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-prisma/generated
+prisma/generated.next/
+node_modules/
+.env.local
+tsconfig.tsbuildinfo
