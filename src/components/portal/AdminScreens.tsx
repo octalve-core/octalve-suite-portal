@@ -1308,7 +1308,7 @@ export function AdminCreateProject() {
                 });
                 router.push(`/admin/projects/${id}`);
               } catch (err: any) {
-                alert(err.message || "Failed to create project");
+                setCreateError(err?.message || "Failed to create project");
                 setLoading(false);
               }
             }}
