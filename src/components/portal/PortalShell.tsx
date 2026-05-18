@@ -8,7 +8,6 @@ import {
   BarChart3,
   Bell,
   BriefcaseBusiness,
-  CheckSquare,
   ClipboardCheck,
   CreditCard,
   FileText,
@@ -25,8 +24,6 @@ import {
   Rocket,
   Search,
   Settings2,
-  ShieldCheck,
-  Sparkles,
   Star,
   UserRoundCog,
   UsersRound,
@@ -62,157 +59,38 @@ function navIcon(Icon: React.ComponentType<{ size?: number; strokeWidth?: number
 function navForRole(role: Role, counts: CountState): NavItem[] {
   if (role === "CLIENT") {
     return [
-      {
-        label: "Dashboard",
-        shortLabel: "Home",
-        href: "/client",
-        icon: navIcon(Gauge),
-      },
-      {
-        label: "Projects",
-        shortLabel: "Projects",
-        href: "/client/projects",
-        icon: navIcon(FolderKanban),
-      },
-      {
-        label: "Phases",
-        shortLabel: "Phases",
-        href: "/client/phases",
-        icon: navIcon(Layers3),
-      },
-      {
-        label: "Approvals",
-        shortLabel: "Approve",
-        href: "/client/approvals",
-        icon: navIcon(ClipboardCheck),
-        badge: counts.approvals,
-      },
-      {
-        label: "Payments",
-        shortLabel: "Pay",
-        href: "/client/payments",
-        icon: navIcon(WalletCards),
-        badge: counts.payments,
-      },
-      {
-        label: "Support",
-        shortLabel: "Help",
-        href: "/client/support",
-        icon: navIcon(MessagesSquare),
-      },
-      {
-        label: "Settings",
-        shortLabel: "Settings",
-        href: "/client/settings",
-        icon: navIcon(Settings2),
-      },
+      { label: "Dashboard", shortLabel: "Home", href: "/client", icon: navIcon(Gauge) },
+      { label: "Projects", shortLabel: "Projects", href: "/client/projects", icon: navIcon(FolderKanban) },
+      { label: "Phases", shortLabel: "Phases", href: "/client/phases", icon: navIcon(Layers3) },
+      { label: "Approvals", shortLabel: "Approve", href: "/client/approvals", icon: navIcon(ClipboardCheck), badge: counts.approvals },
+      { label: "Payments", shortLabel: "Pay", href: "/client/payments", icon: navIcon(WalletCards), badge: counts.payments },
+      { label: "Support", shortLabel: "Help", href: "/client/support", icon: navIcon(MessagesSquare) },
+      { label: "Settings", shortLabel: "Settings", href: "/client/settings", icon: navIcon(Settings2) },
     ];
   }
 
   if (role === "STAFF" || role === "PROJECT_MANAGER") {
     return [
-      {
-        label: "Dashboard",
-        shortLabel: "Home",
-        href: "/staff",
-        icon: navIcon(Gauge),
-      },
-      {
-        label: "Projects",
-        shortLabel: "Projects",
-        href: "/staff/projects",
-        icon: navIcon(BriefcaseBusiness),
-      },
-      {
-        label: "Phases",
-        shortLabel: "Phases",
-        href: "/staff/phases",
-        icon: navIcon(Layers3),
-      },
-      {
-        label: "Messages",
-        shortLabel: "Chats",
-        href: "/staff/messages",
-        icon: navIcon(MessageSquareText),
-      },
-      {
-        label: "Workload",
-        shortLabel: "Work",
-        href: "/staff/workload",
-        icon: navIcon(ListChecks),
-      },
-      {
-        label: "Settings",
-        shortLabel: "Settings",
-        href: "/staff/settings",
-        icon: navIcon(Settings2),
-      },
+      { label: "Dashboard", shortLabel: "Home", href: "/staff", icon: navIcon(Gauge) },
+      { label: "Projects", shortLabel: "Projects", href: "/staff/projects", icon: navIcon(BriefcaseBusiness) },
+      { label: "Phases", shortLabel: "Phases", href: "/staff/phases", icon: navIcon(Layers3) },
+      { label: "Messages", shortLabel: "Chats", href: "/staff/messages", icon: navIcon(MessageSquareText) },
+      { label: "Workload", shortLabel: "Work", href: "/staff/workload", icon: navIcon(ListChecks) },
+      { label: "Settings", shortLabel: "Settings", href: "/staff/settings", icon: navIcon(Settings2) },
     ];
   }
 
   return [
-    {
-      label: "Overview",
-      shortLabel: "Home",
-      href: "/admin",
-      icon: navIcon(Gauge),
-    },
-    {
-      label: "Projects",
-      shortLabel: "Projects",
-      href: "/admin/projects",
-      icon: navIcon(FolderKanban),
-    },
-    {
-      label: "Requests",
-      shortLabel: "Requests",
-      href: "/admin/project-requests",
-      icon: navIcon(Inbox),
-      badge: counts.requests,
-    },
-    {
-      label: "Clients",
-      shortLabel: "Clients",
-      href: "/admin/clients",
-      icon: navIcon(UsersRound),
-    },
-    {
-      label: "Templates",
-      shortLabel: "Templates",
-      href: "/admin/templates",
-      icon: navIcon(FileText),
-    },
-    {
-      label: "Team",
-      shortLabel: "Team",
-      href: "/admin/team",
-      icon: navIcon(UserRoundCog),
-    },
-    {
-      label: "Payments",
-      shortLabel: "Payments",
-      href: "/admin/payments",
-      icon: navIcon(CreditCard),
-      badge: counts.payments,
-    },
-    {
-      label: "Analytics",
-      shortLabel: "Data",
-      href: "/admin/analytics",
-      icon: navIcon(BarChart3),
-    },
-    {
-      label: "Reviews",
-      shortLabel: "Reviews",
-      href: "/admin/reviews",
-      icon: navIcon(Star),
-    },
-    {
-      label: "Settings",
-      shortLabel: "Settings",
-      href: "/admin/settings",
-      icon: navIcon(Settings2),
-    },
+    { label: "Overview", shortLabel: "Home", href: "/admin", icon: navIcon(Gauge) },
+    { label: "Projects", shortLabel: "Projects", href: "/admin/projects", icon: navIcon(FolderKanban) },
+    { label: "Requests", shortLabel: "Requests", href: "/admin/project-requests", icon: navIcon(Inbox), badge: counts.requests },
+    { label: "Clients", shortLabel: "Clients", href: "/admin/clients", icon: navIcon(UsersRound) },
+    { label: "Templates", shortLabel: "Templates", href: "/admin/templates", icon: navIcon(FileText) },
+    { label: "Team", shortLabel: "Team", href: "/admin/team", icon: navIcon(UserRoundCog) },
+    { label: "Payments", shortLabel: "Payments", href: "/admin/payments", icon: navIcon(CreditCard), badge: counts.payments },
+    { label: "Analytics", shortLabel: "Data", href: "/admin/analytics", icon: navIcon(BarChart3) },
+    { label: "Reviews", shortLabel: "Reviews", href: "/admin/reviews", icon: navIcon(Star) },
+    { label: "Settings", shortLabel: "Settings", href: "/admin/settings", icon: navIcon(Settings2) },
   ];
 }
 
@@ -224,16 +102,22 @@ function roleHome(role: Role) {
 
 function roleLabel(role: Role) {
   if (role === "CLIENT") return "Client Workspace";
-  if (role === "SUPER_ADMIN") return "Command Workspace";
+  if (role === "SUPER_ADMIN") return "Admin Console";
   if (role === "PROJECT_MANAGER") return "Project Manager";
-  return "Delivery Workspace";
+  return "Staff Workspace";
 }
 
 function roleEyebrow(role: Role) {
-  if (role === "CLIENT") return "Client Portal";
+  if (role === "CLIENT") return "Client";
   if (role === "SUPER_ADMIN") return "Admin Console";
-  if (role === "PROJECT_MANAGER") return "PM Desk";
-  return "Staff Desk";
+  if (role === "PROJECT_MANAGER") return "Project Manager";
+  return "Staff";
+}
+
+function settingsHref(role: Role) {
+  if (role === "SUPER_ADMIN") return "/admin/settings";
+  if (role === "CLIENT") return "/client/settings";
+  return "/staff/settings";
 }
 
 function getCreateAction(role: Role) {
@@ -262,7 +146,6 @@ function getCreateAction(role: Role) {
 
 function UserAvatar({ name }: { name?: string }) {
   const initial = name?.trim()?.[0]?.toUpperCase() ?? "O";
-
   return <div className="avatar">{initial}</div>;
 }
 
@@ -309,6 +192,8 @@ export function PortalShell({
 
   const nav = navForRole(role, counts);
   const createAction = getCreateAction(role);
+  const userName = currentUser?.name ?? "Octalve";
+  const pendingTotal = counts.approvals + counts.requests;
 
   const isActiveHref = (href: string) =>
     pathname === href ||
@@ -320,10 +205,6 @@ export function PortalShell({
   const mobileMoreNav = nav.slice(3);
   const mobileMoreActive =
     mobileMoreOpen || mobileMoreNav.some((item) => isActiveHref(item.href));
-
-  const pendingTotal = counts.approvals + counts.requests;
-  const userName = currentUser?.name ?? "Octalve";
-  const workspaceLabel = roleLabel(role);
 
   const handleLogout = async () => {
     await logout();
@@ -351,7 +232,7 @@ export function PortalShell({
           </Link>
         </div>
 
-        <nav className="sidebar-nav" aria-label={`${workspaceLabel} navigation`}>
+        <nav className="sidebar-nav" aria-label={`${roleLabel(role)} navigation`}>
           {nav.map((item) => {
             const active = isActiveHref(item.href);
 
@@ -363,7 +244,7 @@ export function PortalShell({
                 aria-current={active ? "page" : undefined}
               >
                 <span className="nav-icon">{item.icon}</span>
-                <span className="nav-text">{item.label}</span>
+                <span className="nav-text">{item.shortLabel ?? item.label}</span>
                 {!!item.badge && <span className="nav-badge">{item.badge}</span>}
               </Link>
             );
@@ -420,7 +301,7 @@ export function PortalShell({
             <div className="mobile-more-head">
               <div>
                 <strong>More actions</strong>
-                <span>{workspaceLabel}</span>
+                <span>{roleLabel(role)}</span>
               </div>
 
               <button
@@ -479,55 +360,13 @@ export function PortalShell({
       )}
 
       <main className="main">
-        <header className="topbar">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              minWidth: 0,
-            }}
-          >
-            <div className="search">
-              <Search size={18} strokeWidth={2.2} />
-              <input placeholder="Search workspace..." aria-label="Search workspace" />
-            </div>
-
-            <div
-              style={{
-                minWidth: 0,
-                display: "none",
-              }}
-              className="topbar-context"
-            >
-              <span
-                style={{
-                  display: "block",
-                  fontSize: 11,
-                  lineHeight: 1,
-                  color: "var(--muted)",
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                }}
-              >
-                {roleEyebrow(role)}
-              </span>
-              <strong
-                style={{
-                  display: "block",
-                  marginTop: 4,
-                  fontSize: 14,
-                  color: "var(--text)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {workspaceLabel}
-              </strong>
-            </div>
+        <header className="topbar topbar-clean">
+          <div className="search topbar-search">
+            <Search size={18} strokeWidth={2.2} />
+            <input placeholder="Search workspace..." aria-label="Search workspace" />
           </div>
 
-          <div className="top-actions">
+          <div className="top-actions top-actions-clean">
             {pendingTotal > 0 && (
               <Link
                 href={
@@ -540,79 +379,49 @@ export function PortalShell({
                       : "/staff/phases"
                 }
                 className="notification-btn"
+                aria-label={`${pendingTotal} pending items`}
               >
                 <Bell size={16} strokeWidth={2.25} />
-                {pendingTotal} Pending
+                <span>{pendingTotal} Pending</span>
               </Link>
             )}
 
-            {counts.payments > 0 && role === "SUPER_ADMIN" && (
-              <Link href="/admin/payments" className="notification-btn">
+            {counts.payments > 0 && (
+              <Link
+                href={role === "CLIENT" ? "/client/payments" : "/admin/payments"}
+                className="notification-btn"
+                aria-label={`${counts.payments} payment items`}
+              >
                 <CreditCard size={16} strokeWidth={2.25} />
-                {counts.payments} Payment{counts.payments > 1 ? "s" : ""}
+                <span>{counts.payments} Payment{counts.payments > 1 ? "s" : ""}</span>
               </Link>
             )}
 
             <Link
-              href={
-                role === "STAFF" || role === "PROJECT_MANAGER"
-                  ? "/staff/settings"
-                  : role === "SUPER_ADMIN"
-                    ? "/admin/settings"
-                    : "/client/settings"
-              }
+              href={settingsHref(role)}
               className="notification-btn"
+              aria-label="Open settings"
             >
               <Settings2 size={16} strokeWidth={2.25} />
-              Settings
+              <span>Settings</span>
             </Link>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                paddingLeft: 4,
-              }}
+            <Link
+              href={settingsHref(role)}
+              className="topbar-profile"
+              aria-label="Open profile settings"
+              title="Open profile settings"
             >
               <UserAvatar name={userName} />
-              <div
-                style={{
-                  display: "grid",
-                  gap: 2,
-                  minWidth: 0,
-                }}
-              >
-                <strong
-                  style={{
-                    fontSize: 13,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: 140,
-                  }}
-                >
-                  {userName}
-                </strong>
-                <span
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 12,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {roleEyebrow(role)}
-                </span>
-              </div>
-            </div>
+              <span className="topbar-profile-info">
+                <strong>{userName}</strong>
+                <em>{roleEyebrow(role)}</em>
+              </span>
+            </Link>
           </div>
         </header>
 
-        <div
-          style={{
-            position: "relative",
-          }}
-        >
+        <div style={{ position: "relative" }}>
           <div
             aria-hidden
             style={{

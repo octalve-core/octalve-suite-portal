@@ -2264,3 +2264,118 @@ strong,
     font-size: 9.5px !important;
   }
 }
+
+/* Final mobile topbar correction */
+.topbar-profile {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 4px 10px 4px 4px;
+  color: var(--text);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.topbar-profile:hover {
+  background: var(--surface-soft);
+}
+
+.topbar-profile-info {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.topbar-profile-info strong {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-size: 13px;
+}
+
+.topbar-profile-info em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+@media (max-width: 760px) {
+  .topbar-clean {
+    height: 66px !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+  }
+
+  .topbar-search {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    flex: 0 0 42px !important;
+  }
+
+  .topbar-search input {
+    display: none !important;
+  }
+
+  .top-actions-clean {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    justify-content: flex-end !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  .top-actions-clean .notification-btn {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    font-size: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 42px !important;
+  }
+
+  .top-actions-clean .notification-btn span {
+    display: none !important;
+  }
+
+  .top-actions-clean .notification-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .topbar-profile {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    flex: 0 0 42px !important;
+    justify-content: center !important;
+    background: #e2e8f0 !important;
+  }
+
+  .topbar-profile .avatar {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 17px !important;
+    background: #e2e8f0 !important;
+  }
+
+  .topbar-profile-info {
+    display: none !important;
+  }
+
+  .top-actions-clean > a:nth-child(n + 5) {
+    display: none !important;
+  }
+}

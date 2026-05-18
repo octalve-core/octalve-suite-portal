@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -34,7 +34,7 @@ function ProjectSwitcher() {
   return (
     <div className="project-switcher">
       <button className="switcher-btn" onClick={() => setOpen(!open)}>
-        ▣ {selectedProject.title} <span>⌄</span>
+        â–£ {selectedProject.title} <span>âŒ„</span>
       </button>
       {open && (
         <div className="switcher-menu">
@@ -261,7 +261,7 @@ export function ClientDashboard() {
                 }}
               />
               <p style={{ color: "var(--muted)" }}>
-                ▣ Target: {project.targetDate ?? "Not set"}
+                â–£ Target: {project.targetDate ?? "Not set"}
               </p>
             </div>
           </div>
@@ -356,9 +356,10 @@ export function ClientDashboard() {
                 {links.map((link) => (
                   <a
                     key={link.id}
-                    className="deliverable-row"
                     href={link.link}
                     target="_blank"
+                    rel="noreferrer"
+                    className="deliverable-row"
                   >
                     <div className="deliverable-main">
                       <div className="deliverable-icon">{Icons.doc}</div>
@@ -387,8 +388,9 @@ export function ClientDashboard() {
             .flatMap((p) => p.messages)
             .slice(-4)
             .map((message) => (
-              <div key={message.id} className="deliverable-row">
-                <span style={{ color: "var(--primary)" }}>•</span>
+              <div key={message.id}
+                  className="deliverable-row">
+                <span style={{ color: "var(--primary)" }}>â€¢</span>
                 <div>
                   <strong>{message.message}</strong>
                   <p style={{ margin: 4, color: "var(--muted)" }}>
@@ -669,7 +671,7 @@ export function ClientCreateProject() {
                       <span
                         style={{ marginLeft: "auto", color: "var(--primary)" }}
                       >
-                        ✓
+                        âœ“
                       </span>
                     )}
                   </Card>
@@ -838,7 +840,7 @@ export function ClientCreateProject() {
                 }
               }}
             >
-              Submit Project Request ✓
+              Submit Project Request âœ“
             </Button>
           )}
         </div>
@@ -982,7 +984,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
               Request Changes
             </Button>
             <Button variant="success" onClick={() => setApprove(true)}>
-              ✓ Approve Phase
+              âœ“ Approve Phase
             </Button>
           </div>
         )}
@@ -994,39 +996,63 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
               <h2>Deliverables</h2>
             </div>
             <div className="card-body stack">
-              {visible.map((d) => (
-                <a
-                  key={d.id}
-                  href={d.link ?? "#"}
-                  target="_blank"
-                  className="deliverable-row"
-                >
-                  <div className="deliverable-main">
-                    <div className="deliverable-icon">{Icons.doc}</div>
-                    <div>
-                      <strong>{d.name}</strong>
-                      {d.description && (
-                        <p style={{ color: "var(--muted)", margin: 4 }}>
-                          {d.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Badge
-                    className={
-                      d.status === "DRAFT"
-                        ? "badge-slate"
-                        : d.status === "READY_FOR_REVIEW"
-                          ? "badge-purple"
-                          : d.status === "APPROVED"
-                            ? "badge-green"
-                            : "badge-red"
-                    }
+              {visible.map((d) => {
+                const hasLink = Boolean(d.link?.trim());
+
+                return (
+                  <a
+                    key={d.id}
+                    href={hasLink ? d.link! : "#deliverables"}
+                    target={hasLink ? "_blank" : undefined}
+                    rel={hasLink ? "noreferrer" : undefined}
+                    aria-disabled={!hasLink}
+                    onClick={(event) => {
+                      if (!hasLink) event.preventDefault();
+                    }}
+                    className="deliverable-row"
+                    style={{
+                      cursor: hasLink ? "pointer" : "default",
+                      opacity: hasLink ? 1 : 0.92,
+                    }}
                   >
-                    {statusLabel(d.status as any)}
-                  </Badge>
-                </a>
-              ))}
+                    <div className="deliverable-main">
+                      <div className="deliverable-icon">{Icons.doc}</div>
+                      <div>
+                        <strong>{d.name}</strong>
+                        {d.description && (
+                          <p style={{ color: "var(--muted)", margin: 4 }}>
+                            {d.description}
+                          </p>
+                        )}
+                        {!hasLink && (
+                          <p
+                            style={{
+                              color: "var(--muted)",
+                              margin: "6px 0 0",
+                              fontSize: 13,
+                            }}
+                          >
+                            Link not available yet.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge
+                      className={
+                        d.status === "DRAFT"
+                          ? "badge-slate"
+                          : d.status === "READY_FOR_REVIEW"
+                            ? "badge-purple"
+                            : d.status === "APPROVED"
+                              ? "badge-green"
+                              : "badge-red"
+                      }
+                    >
+                      {statusLabel(d.status)}
+                    </Badge>
+                  </a>
+                );
+              })}
             </div>
           </Card>
           <Card>
@@ -1035,7 +1061,8 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
             </div>
             <div className="card-body">
               {phase.status === "APPROVED" ? (
-                <div className="deliverable-row">
+                <div
+                  className="deliverable-row">
                   <Badge className="badge-green">Approved</Badge>
                   <span>
                     {phase.approvedAt
@@ -1044,7 +1071,8 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
                   </span>
                 </div>
               ) : (
-                <div className="deliverable-row">
+                <div
+                  className="deliverable-row">
                   <Badge className="badge-orange">Pending</Badge>
                   <span>
                     {phase.approvalRequestedAt
@@ -1057,7 +1085,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
           </Card>
         </div>
         <Card className="thread">
-          <div className="thread-header">▱ Phase Thread</div>
+          <div className="thread-header">â–± Phase Thread</div>
           <div className="thread-body">
             {phase.messages.length ? (
               phase.messages.map((message) => (
@@ -1073,7 +1101,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
               <EmptyState
                 title="No messages yet"
                 body="Use the box below to message the team."
-                icon="▱"
+                icon="â–±"
               />
             )}
           </div>
@@ -1096,7 +1124,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
                 setMsg("");
               }}
             >
-              ➤
+              âž¤
             </Button>
           </div>
         </Card>
@@ -1104,7 +1132,7 @@ export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
       {approve && (
         <Modal title="Approve Phase" onClose={() => setApprove(false)}>
           <p style={{ color: "var(--muted)" }}>
-            Are you sure you want to approve “{phase.title}”? This will unlock
+            Are you sure you want to approve â€œ{phase.title}â€? This will unlock
             the next phase.
           </p>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
@@ -1325,8 +1353,8 @@ export function ClientSupport() {
           </p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <Button variant="secondary">✉ Email PM</Button>
-          <Button variant="secondary">▱ Send Message</Button>
+          <Button variant="secondary">âœ‰ Email PM</Button>
+          <Button variant="secondary">â–± Send Message</Button>
         </div>
       </Card>
       <Card className="payment-card" style={{ marginBottom: 24 }}>
@@ -1362,7 +1390,7 @@ export function ClientSupport() {
               }}
             >
               <strong>{q}</strong>
-              <span>⌄</span>
+              <span>âŒ„</span>
             </div>
           ))}
         </div>
@@ -1374,7 +1402,7 @@ export function ClientSupport() {
         <div className="card-body grid-2-even">
           <Card className="payment-card" style={{ boxShadow: "none" }}>
             <div className="deliverable-main">
-              <div className="deliverable-icon">↗</div>
+              <div className="deliverable-icon">â†—</div>
               <div>
                 <strong>Getting Started Guide</strong>
                 <p style={{ color: "var(--muted)" }}>
@@ -1385,7 +1413,7 @@ export function ClientSupport() {
           </Card>
           <Card className="payment-card" style={{ boxShadow: "none" }}>
             <div className="deliverable-main">
-              <div className="deliverable-icon">↗</div>
+              <div className="deliverable-icon">â†—</div>
               <div>
                 <strong>Approval Best Practices</strong>
                 <p style={{ color: "var(--muted)" }}>
@@ -1399,3 +1427,7 @@ export function ClientSupport() {
     </div>
   );
 }
+
+
+
+

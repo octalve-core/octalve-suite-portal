@@ -38,6 +38,7 @@ import {
 } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { DeliverableManager } from "./DeliverableManager";
+import { ProjectTeamNotes } from "./ProjectTeamNotes";
 import {
   BackLink,
   Badge,
@@ -709,12 +710,12 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           </div>
         </div>
       </Card>
-      <div className="tabs">
-        <button className="active">Phases</button>
-        <button>Team</button>
-        <button>Notes</button>
-      </div>
-      <div className="stack">
+      <nav className="tabs project-tabs" aria-label="Project sections">
+        <a className="active" href="#project-phases">Phases</a>
+        <a href="#project-team">Team</a>
+        <a href="#project-notes">Notes</a>
+      </nav>
+      <div id="project-phases" className="stack">
         {project.phases.map((phase) => (
           <Card
             key={phase.id}
@@ -770,67 +771,8 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
           </Card>
         ))}
       </div>
+      <ProjectTeamNotes project={project} users={state.users} />
 
-      <div id="project-team" className="grid-2-even" style={{ marginTop: 24 }}>
-        <Card>
-          <div className="card-title">
-            <h2>Project Team</h2>
-          </div>
-          <div className="card-body stack">
-            <div className="deliverable-row">
-              <div className="deliverable-main">
-                <div className="avatar">
-                  {pm?.name?.[0]?.toUpperCase() ?? "O"}
-                </div>
-                <div>
-                  <strong>{pm?.name ?? "Project Manager not assigned"}</strong>
-                  <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>
-                    Project Manager
-                  </p>
-                </div>
-              </div>
-              <Badge className={pm ? "badge-green" : "badge-orange"}>
-                {pm ? "Assigned" : "Pending"}
-              </Badge>
-            </div>
-
-            {project.phases
-              .filter((phase) => phase.assignedStaffId)
-              .map((phase) => {
-                const staff = state.users.find(
-                  (user) => user.id === phase.assignedStaffId,
-                );
-
-                return (
-                  <div className="deliverable-row" key={phase.id}>
-                    <div>
-                      <strong>{staff?.name ?? "Assigned staff"}</strong>
-                      <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>
-                        {phase.title}
-                      </p>
-                    </div>
-                    <Badge className="badge-blue">
-                      {staff?.specialty ?? staff?.role ?? "Staff"}
-                    </Badge>
-                  </div>
-                );
-              })}
-          </div>
-        </Card>
-
-        <Card id="project-notes">
-          <div className="card-title">
-            <h2>Project Notes</h2>
-          </div>
-          <div className="card-body">
-            <p style={{ color: "var(--muted)", lineHeight: 1.7, marginTop: 0 }}>
-              {project.internalNotes ||
-                project.clientBrief ||
-                "No internal notes have been added for this project yet."}
-            </p>
-          </div>
-        </Card>
-      </div>
       {assigning && (
         <AssignModal
           phase={assigning}
@@ -3094,6 +3036,8 @@ export function AdminSettings() {
     </div>
   );
 }
+
+
 
 
 
