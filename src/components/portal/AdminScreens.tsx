@@ -1,5 +1,10 @@
 ﻿"use client";
 
+import {
+  ProjectSummaryCard,
+  TeamMemberSummaryCard,
+  WorkspaceEmptyCard,
+} from "./WorkspaceCards";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -301,7 +306,7 @@ export function AdminOverview() {
                   key={project.id}
                   href={`/admin/projects/${project.id}`}
                   title={project.title}
-                  subtitle={`${project.businessName} • ${project.packageType} Suite`}
+                  subtitle={`${project.businessName} â€¢ ${project.packageType} Suite`}
                   icon={DashboardIcons.project}
                   badge={
                     <Badge className={statusClass(project.status)}>
@@ -344,7 +349,7 @@ export function AdminOverview() {
                     key={request.id}
                     href="/admin/project-requests"
                     title={request.projectName}
-                    subtitle={`${request.businessName} • ${request.packageType} Suite`}
+                    subtitle={`${request.businessName} â€¢ ${request.packageType} Suite`}
                     icon={DashboardIcons.clock}
                     badge={<Badge className="badge-orange">New</Badge>}
                   />
@@ -429,268 +434,101 @@ export function AdminOverview() {
   );
 }
 export function AdminProjects() {
-  const { state, deleteProject } = useApp();
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [status, setStatus] = useState("All Status");
-  const [pkg, setPkg] = useState("All Packages");
+  const { state } = useApp();
 
-  const activeCount = state.projects.filter((p) =>
-    ["ACTIVE", "AWAITING_BALANCE"].includes(p.status),
-  ).length;
-  const awaitingDeposit = state.projects.filter(
-    (p) => p.status === "APPROVED_AWAITING_DEPOSIT",
-  ).length;
-  const completedCount = state.projects.filter(
-    (p) => p.status === "COMPLETED",
+  const projects = state.projects;
+  const active = projects.filter((project) =>
+    ["ACTIVE", "AWAITING_BALANCE"].includes(project.status),
   ).length;
 
-  const filteredProjects = state.projects.filter((p) => {
-    const matchesStatus = status === "All Status" || p.status === status;
-    const matchesPkg = pkg === "All Packages" || p.packageType === pkg;
-    return matchesStatus && matchesPkg;
-  });
+  const completed = projects.filter(
+    (project) => project.status === "COMPLETED",
+  ).length;
+
+  const pendingPayment = projects.filter(
+    (project) => project.status === "AWAITING_BALANCE",
+  ).length;
+
+  const averageProgress = projects.length
+    ? Math.round(
+        projects.reduce((total, project) => total + projectProgress(project), 0) /
+          projects.length,
+      )
+    : 0;
 
   return (
     <div className="content">
-      <PageHeader
+      <DashboardHero
+        eyebrow="Project Operations"
         title="Projects"
-        subtitle={`${state.projects.length} total projects`}
+        subtitle="Track every client project, delivery phase, payment status, and project movement from one clean admin view."
         action={
           <Link href="/admin/projects/new">
-            <Button>
-              <Plus size={18} /> Create Project
-            </Button>
+            <Button>{Icons.plus} New Project</Button>
           </Link>
+        }
+        meta={
+          <>
+            <Badge className="badge-blue">{projects.length} Total</Badge>
+            <Badge className="badge-green">{completed} Completed</Badge>
+            <Badge className="badge-orange">{pendingPayment} Awaiting Balance</Badge>
+          </>
         }
       />
 
-      <div className="metric-grid">
-        <MetricCard
-          label="Active Projects"
-          value={activeCount}
-          icon={Icons.projects}
-          tone="blue"
-        />
-        <MetricCard
-          label="Awaiting Deposit"
-          value={awaitingDeposit}
-          icon={Icons.clock}
-          tone="orange"
-        />
-        <MetricCard
-          label="Completed"
-          value={completedCount}
-          icon={Icons.check}
-          tone="green"
-        />
-      </div>
+      <DashboardStats
+        items={[
+          {
+            label: "Total Projects",
+            value: projects.length,
+            tone: "blue",
+            icon: DashboardIcons.project,
+            helper: "All project records",
+          },
+          {
+            label: "Active Delivery",
+            value: active,
+            tone: "green",
+            icon: DashboardIcons.phase,
+            helper: "Currently moving",
+          },
+          {
+            label: "Payment Watch",
+            value: pendingPayment,
+            tone: pendingPayment > 0 ? "orange" : "slate",
+            icon: Icons.payments,
+            helper: "Balance/payment attention",
+          },
+          {
+            label: "Avg Progress",
+            value: `${averageProgress}%`,
+            tone: averageProgress >= 70 ? "green" : averageProgress >= 35 ? "blue" : "orange",
+            icon: DashboardIcons.check,
+            helper: "Across all projects",
+          },
+        ]}
+      />
 
-      <div className="grid-1" style={{ marginTop: 24 }}>
-        <DataList
-          title={<h2>Project Portfolio</h2>}
-          defaultView="grid"
-          allowedViews={["grid", "grid2", "grid3", "list"]}
-          data={filteredProjects}
-          actions={
-            <div
-              className="datalist-filters"
-              style={{ display: "flex", gap: 10, flexWrap: "wrap" }}
-            >
-              <Select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
-              >
-                <option>All Status</option>
-                <option>ACTIVE</option>
-                <option>APPROVED_AWAITING_DEPOSIT</option>
-                <option>PENDING_REVIEW</option>
-                <option>COMPLETED</option>
-              </Select>
-              <Select
-                value={pkg}
-                onChange={(e) => setPkg(e.target.value)}
-                style={{ minWidth: 130, height: 36, fontSize: 13, flex: 1 }}
-              >
-                <option>All Packages</option>
-                <option>Launch</option>
-                <option>Impact</option>
-                <option>Growth</option>
-                <option>Partner</option>
-                <option>Custom</option>
-              </Select>
-            </div>
-          }
-          filterFn={(project, query) => {
-            const text =
-              `${project.title} ${project.businessName} ${project.status} ${project.packageType} ${project.projectCode}`.toLowerCase();
-            return text.includes(query.toLowerCase());
-          }}
-          itemsPerPage={9}
-          emptyState={
-            <EmptyState
-              title="No projects found"
-              body="No projects match your search criteria."
+      {projects.length ? (
+        <div className="grid-3">
+          {projects.map((project) => (
+            <ProjectSummaryCard
+              key={project.id}
+              project={project}
+              href={`/admin/projects/${project.id}`}
             />
-          }
-          renderItem={(project, view) => {
-            if (view.startsWith("grid")) {
-              return (
-                <Card
-                  key={project.id}
-                  className="project-card"
-                  style={{ position: "relative" }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Badge className={packageClass(project.packageType)}>
-                      {project.packageType}
-                    </Badge>
-                    <ActionMenu>
-                      <Link href={`/admin/projects/${project.id}`}>
-                        <Edit3 size={15} /> Open details
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        className="danger"
-                        style={{
-                          color: "var(--danger)",
-                          width: "100%",
-                          justifyContent: "flex-start",
-                          height: 32,
-                          padding: "0 8px",
-                        }}
-                        loading={pendingAction === `delete-${project.id}`}
-                        onClick={async () => {
-                          if (
-                            confirm(
-                              `Are you sure you want to delete ${project.title}?`,
-                            )
-                          ) {
-                            setPendingAction(`delete-${project.id}`);
-                            try {
-                              await deleteProject(project.id);
-                            } finally {
-                              setPendingAction(null);
-                            }
-                          }
-                        }}
-                      >
-                        <Trash2 size={15} /> Delete project
-                      </Button>
-                    </ActionMenu>
-                  </div>
-                  <Link href={`/admin/projects/${project.id}`}>
-                    <div>
-                      <h3>{project.title}</h3>
-                      <p>{project.businessName}</p>
-                    </div>
-                    <Badge className={statusClass(project.status)}>
-                      {statusLabel(project.status)}
-                    </Badge>
-                    <div className="project-card-footer">
-                      <div className="timeline-row">
-                        <span style={{ color: "var(--muted)" }}>Progress</span>
-                        <strong>
-                          {
-                            project.phases.filter(
-                              (p) => p.status === "APPROVED",
-                            ).length
-                          }
-                          /{project.phases.length} phases
-                        </strong>
-                      </div>
-                      <ProgressBar value={projectProgress(project)} />
-                    </div>
-                  </Link>
-                </Card>
-              );
-            }
-
-            return (
-              <div
-                key={project.id}
-                className="deliverable-row"
-                style={{
-                  padding: "16px 0",
-                  borderBottom: "1px solid var(--line)",
-                }}
-              >
-                <div className="deliverable-main" style={{ gap: 16 }}>
-                  <div
-                    className={`metric-icon tone-${project.status === "COMPLETED" ? "green" : ["ACTIVE", "AWAITING_BALANCE"].includes(project.status) ? "blue" : "orange"}`}
-                    style={{ width: 40, height: 40, fontSize: 16 }}
-                  >
-                    {Icons.projects}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
-                      {project.title}
-                    </h3>
-                    <p style={{ color: "var(--muted)", margin: 0 }}>
-                      {project.businessName} â€¢ {project.packageType}
-                    </p>
-                    <div style={{ marginTop: 8 }}>
-                      <Badge className={statusClass(project.status)}>
-                        {statusLabel(project.status)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-                  <div style={{ width: 160 }}>
-                    <div
-                      className="timeline-row"
-                      style={{ marginBottom: 8, fontSize: 13 }}
-                    >
-                      <span style={{ color: "var(--muted)" }}>Progress</span>
-                      <strong>{projectProgress(project)}%</strong>
-                    </div>
-                    <ProgressBar value={projectProgress(project)} />
-                  </div>
-                  <ActionMenu>
-                    <Link href={`/admin/projects/${project.id}`}>
-                      View Details
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      className="danger"
-                      style={{
-                        color: "var(--danger)",
-                        width: "100%",
-                        justifyContent: "flex-start",
-                        height: 32,
-                        padding: "0 8px",
-                      }}
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            `Are you sure you want to delete ${project.title}?`,
-                          )
-                        ) {
-                          await deleteProject(project.id);
-                        }
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </ActionMenu>
-                </div>
-              </div>
-            );
-          }}
+          ))}
+        </div>
+      ) : (
+        <WorkspaceEmptyCard
+          title="No projects yet"
+          body="Created or approved client projects will appear here."
+          icon={DashboardIcons.project}
         />
-      </div>
+      )}
     </div>
   );
 }
-
 export function AdminProjectDetail({ projectId }: { projectId: string }) {
   const { state, assignPhase, addDeliverable, requestPhaseApproval } = useApp();
   const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
@@ -723,7 +561,7 @@ export function AdminProjectDetail({ projectId }: { projectId: string }) {
             </div>
             <h1>{project.title}</h1>
             <p>
-              {project.businessName} â€¢ {project.clientEmail}
+              {project.businessName} Ã¢â‚¬Â¢ {project.clientEmail}
             </p>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -862,7 +700,7 @@ function AssignModal({
           <Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>
             {team.map((u) => (
               <option key={u.id} value={u.id}>
-                {u.name} â€” {u.specialty ?? u.role}
+                {u.name} Ã¢â‚¬â€ {u.specialty ?? u.role}
               </option>
             ))}
           </Select>
@@ -1182,7 +1020,7 @@ export function AdminCreateProject() {
                     <span
                       style={{ marginLeft: "auto", color: "var(--primary)" }}
                     >
-                      âœ“
+                      Ã¢Å“â€œ
                     </span>
                   )}
                 </Card>
@@ -1381,7 +1219,7 @@ export function AdminCreateProject() {
               }
             }}
           >
-            Create Project âœ“
+            Create Project Ã¢Å“â€œ
           </Button>
         )}
       </div>
@@ -1409,7 +1247,7 @@ export function AdminRequests() {
                 </Badge>
                 <h2>{req.projectName}</h2>
                 <p style={{ color: "var(--muted)" }}>
-                  {req.businessName} â€¢ {req.projectGoal}
+                  {req.businessName} Ã¢â‚¬Â¢ {req.projectGoal}
                 </p>
                 <Badge className={statusClass(req.status as any)}>
                   {statusLabel(req.status as any)}
@@ -1534,7 +1372,7 @@ function RequestReviewModal({
                   fontSize: 16,
                 }}
               >
-                âœ¨
+                Ã¢Å“Â¨
               </div>
               <h3 style={{ margin: 0, fontSize: 16 }}>AI Suggested Phases</h3>
             </div>
@@ -1655,7 +1493,7 @@ function RequestReviewModal({
                 }
               }}
             >
-              Approve & Request Deposit âœ“
+              Approve & Request Deposit Ã¢Å“â€œ
             </Button>
           )}
         </div>
@@ -1694,7 +1532,7 @@ export function AdminClients() {
         <MetricCard
           label="High Value"
           value={highValue}
-          icon="â˜…"
+          icon="Ã¢Ëœâ€¦"
           tone="orange"
         />
         <MetricCard
@@ -1919,7 +1757,7 @@ export function AdminTemplates() {
                             fontSize: 13,
                           }}
                         >
-                          {template.phases.length} Phases â€¢{" "}
+                          {template.phases.length} Phases Ã¢â‚¬Â¢{" "}
                           <span style={{ color: "var(--primary)" }}>
                             {template.packageType}
                           </span>
@@ -2261,763 +2099,94 @@ function TemplateModal({
 }
 
 export function AdminTeam() {
-  const { state, createTeamMember, updateTeamMember, deleteTeamMember } =
-    useApp();
-  const [modal, setModal] = useState<User | "new" | null>(null);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const team = state.users.filter((u) => u.role !== "CLIENT");
+  const { state } = useApp();
 
-  // Pre-calculate assignments for metrics and sorting
-  const teamWithStats = team.map((member) => {
-    const assigned = state.projects
-      .flatMap((p) => p.phases)
-      .filter((phase) => phase.assignedStaffId === member.id).length;
-    return { ...member, assigned };
-  });
-
-  const totalPhases = teamWithStats.reduce((sum, m) => sum + m.assigned, 0);
-  const highLoad = teamWithStats.filter((m) => m.assigned > 5).length;
+  const team = state.users.filter((user) => user.role !== "CLIENT");
+  const staff = team.filter((user) => user.role !== "SUPER_ADMIN");
+  const totalAssignedPhases = state.projects.flatMap((project) => project.phases).length;
 
   return (
     <div className="content">
-      <PageHeader
+      <DashboardHero
+        eyebrow="Team Operations"
         title="Team"
-        subtitle="Manage your agency staff and workload"
-        action={
-          <Button onClick={() => setModal("new")}>
-            <Plus size={18} /> Add Team Member
-          </Button>
+        subtitle="View project managers, staff workload, active phase assignments, and delivery capacity."
+        meta={
+          <>
+            <Badge className="badge-blue">{team.length} Team Members</Badge>
+            <Badge className="badge-purple">{staff.length} Delivery Staff</Badge>
+            <Badge className="badge-green">{totalAssignedPhases} Total Phases</Badge>
+          </>
         }
       />
 
-      <div className="metric-grid">
-        <MetricCard
-          label="Total Members"
-          value={team.length}
-          icon={Icons.team}
-          tone="blue"
-        />
-        <MetricCard
-          label="Active Phases"
-          value={totalPhases}
-          icon={Icons.phases}
-          tone="purple"
-        />
-        <MetricCard
-          label="High Load Staff"
-          value={highLoad}
-          icon="!"
-          tone="red"
-        />
-      </div>
+      <DashboardStats
+        items={[
+          {
+            label: "Team Members",
+            value: team.length,
+            tone: "blue",
+            icon: Icons.team,
+            helper: "Admin, PM and staff",
+          },
+          {
+            label: "Delivery Staff",
+            value: staff.length,
+            tone: "purple",
+            icon: DashboardIcons.phase,
+            helper: "Can receive assignments",
+          },
+          {
+            label: "Assigned Phases",
+            value: state.projects
+              .flatMap((project) => project.phases)
+              .filter((phase) => phase.assignedStaffId).length,
+            tone: "green",
+            icon: DashboardIcons.check,
+            helper: "Currently assigned",
+          },
+          {
+            label: "Unassigned Phases",
+            value: state.projects
+              .flatMap((project) => project.phases)
+              .filter((phase) => !phase.assignedStaffId && phase.status !== "LOCKED").length,
+            tone: "orange",
+            icon: DashboardIcons.clock,
+            helper: "Needs staff attention",
+          },
+        ]}
+      />
 
-      <div className="grid-1" style={{ marginTop: 24 }}>
-        <DataList
-          title={<h2>Team Directory</h2>}
-          defaultView="grid"
-          allowedViews={["list", "grid", "grid2"]}
-          data={teamWithStats}
-          filterFn={(member, query) => {
-            const text =
-              `${member.name} ${member.email} ${member.specialty} ${member.role}`.toLowerCase();
-            return text.includes(query.toLowerCase());
-          }}
-          itemsPerPage={8}
-          emptyState={
-            <EmptyState
-              title="No team members"
-              body="No staff match your criteria."
-            />
-          }
-          renderItem={(member, view) => {
-            if (view.startsWith("grid")) {
-              return (
-                <Card key={member.id} className="card-body">
-                  <div className="deliverable-main">
-                    <div className="avatar">{member.name[0]}</div>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: 0 }}>{member.name}</h3>
-                      <p
-                        style={{
-                          margin: "4px 0",
-                          color: "var(--muted)",
-                          fontSize: 13,
-                        }}
-                      >
-                        âœ‰ {member.email}
-                      </p>
-                    </div>
-                    <ActionMenu>
-                      <button onClick={() => setModal(member)}>
-                        <Edit3 size={15} /> Edit member
-                      </button>
+      {team.length ? (
+        <div className="grid-3">
+          {team.map((member) => {
+            const assignedPhaseCount = state.projects
+              .flatMap((project) => project.phases)
+              .filter((phase) => phase.assignedStaffId === member.id).length;
 
-                      <Button
-                        variant="ghost"
-                        className="danger"
-                        style={{
-                          color: "var(--danger)",
-                          width: "100%",
-                          justifyContent: "flex-start",
-                          height: 32,
-                          padding: "0 8px",
-                        }}
-                        loading={pendingAction === `delete-${member.id}`}
-                        onClick={async () => {
-                          if (
-                            confirm(
-                              `Are you sure you want to delete ${member.name}?`,
-                            )
-                          ) {
-                            setPendingAction(`delete-${member.id}`);
-                            try {
-                              await deleteTeamMember(member.id);
-                            } finally {
-                              setPendingAction(null);
-                            }
-                          }
-                        }}
-                      >
-                        <Trash2 size={15} /> Delete member
-                      </Button>
-                    </ActionMenu>
-                  </div>
-
-                  <div
-                    className="timeline-row"
-                    style={{ marginTop: 20, marginBottom: 12 }}
-                  >
-                    <span style={{ fontSize: 14 }}>
-                      â–£ {member.assigned} active phases
-                    </span>
-                    {member.assigned > 5 && (
-                      <Badge className="badge-red">High load</Badge>
-                    )}
-                  </div>
-
-                  <Badge className="badge-purple">
-                    {member.specialty ?? statusLabel(member.role)}
-                  </Badge>
-                </Card>
-              );
-            }
+            const managedProjectCount = state.projects.filter(
+              (project) => project.projectManagerId === member.id,
+            ).length;
 
             return (
-              <div
+              <TeamMemberSummaryCard
                 key={member.id}
-                className="deliverable-row"
-                style={{
-                  padding: "16px 0",
-                  borderBottom: "1px solid var(--line)",
-                }}
-              >
-                <div className="deliverable-main" style={{ gap: 16 }}>
-                  <div className="avatar" style={{ width: 40, height: 40 }}>
-                    {member.name[0]}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: "0 0 4px", fontSize: 16 }}>
-                      {member.name}
-                    </h3>
-                    <p
-                      style={{ color: "var(--muted)", margin: 0, fontSize: 14 }}
-                    >
-                      {member.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <div style={{ textAlign: "right" }}>
-                    <Badge className="badge-purple">
-                      {member.specialty ?? statusLabel(member.role)}
-                    </Badge>
-                  </div>
-                  <div style={{ width: 140, textAlign: "right" }}>
-                    <strong>{member.assigned} phases</strong>
-                    {member.assigned > 5 && (
-                      <p
-                        style={{
-                          color: "var(--danger)",
-                          fontSize: 12,
-                          margin: 0,
-                        }}
-                      >
-                        High Load
-                      </p>
-                    )}
-                  </div>
-                  <ActionMenu>
-                    <button onClick={() => setModal(member)}>
-                      <Edit3 size={14} /> Edit
-                    </button>
-                    <Button
-                      variant="ghost"
-                      className="danger"
-                      style={{
-                        color: "var(--danger)",
-                        width: "100%",
-                        justifyContent: "flex-start",
-                        height: 32,
-                        padding: "0 8px",
-                      }}
-                      loading={pendingAction === `delete-${member.id}`}
-                      onClick={async () => {
-                        if (
-                          confirm(
-                            `Are you sure you want to delete ${member.name}?`,
-                          )
-                        ) {
-                          setPendingAction(`delete-${member.id}`);
-                          try {
-                            await deleteTeamMember(member.id);
-                          } finally {
-                            setPendingAction(null);
-                          }
-                        }
-                      }}
-                    >
-                      <Trash2 size={14} /> Delete
-                    </Button>
-                  </ActionMenu>
-                </div>
-              </div>
+                member={member}
+                assignedCount={assignedPhaseCount + managedProjectCount}
+              />
             );
-          }}
-        />
-      </div>
-
-      {modal && (
-        <TeamModal
-          member={modal === "new" ? undefined : modal}
-          onClose={() => setModal(null)}
-          onSave={async (payload) => {
-            modal === "new"
-              ? await createTeamMember(payload)
-              : await updateTeamMember((modal as User).id, payload);
-            setModal(null);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function TeamModal({
-  member,
-  onClose,
-  onSave,
-}: {
-  member?: User;
-  onClose: () => void;
-  onSave: (payload: {
-    name: string;
-    email: string;
-    specialty: string;
-    role: Role;
-  }) => Promise<void>;
-}) {
-  const [form, setForm] = useState({
-    name: member?.name ?? "",
-    email: member?.email ?? "",
-    specialty: member?.specialty ?? "Designer",
-    role: member?.role ?? ("STAFF" as Role),
-  });
-
-  return (
-    <Modal
-      title={member ? "Edit Team Member" : "Add Team Member"}
-      onClose={onClose}
-    >
-      <div className="stack">
-        <Field label="Name *">
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Full name"
-          />
-        </Field>
-
-        <Field label="Email *">
-          <Input
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="email@company.com"
-          />
-        </Field>
-
-        <Field label="Specialty *">
-          <Select
-            value={form.specialty}
-            onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-          >
-            <option>Designer</option>
-            <option>Developer</option>
-            <option>Strategist</option>
-            <option>Copywriter</option>
-            <option>Project Manager</option>
-          </Select>
-        </Field>
-
-        <Field label="Access Role">
-          <Select
-            value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-          >
-            <option value="STAFF">Staff</option>
-            <option value="PROJECT_MANAGER">Project Manager</option>
-            <option value="SUPER_ADMIN">Super Admin</option>
-          </Select>
-        </Field>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={async () =>
-              form.name.trim() && form.email.trim() && (await onSave(form))
-            }
-          >
-            {member ? "Save Changes" : "Add Member"}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-export function AdminPayments() {
-  const { state, confirmPayment, rejectPayment } = useApp();
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const rows = state.projects.flatMap((project) =>
-    project.payments.map((payment) => ({ project, payment })),
-  );
-
-  const pending = rows.filter(
-    (r) => r.payment.status === "PENDING_CONFIRMATION",
-  );
-  const unpaid = rows.filter((r) => r.payment.status === "UNPAID");
-  const confirmed = rows.filter((r) => r.payment.status === "CONFIRMED");
-
-  const pendingAmount = pending.reduce((sum, r) => sum + r.payment.amount, 0);
-  const unpaidAmount = unpaid.reduce((sum, r) => sum + r.payment.amount, 0);
-  const confirmedAmount = confirmed.reduce(
-    (sum, r) => sum + r.payment.amount,
-    0,
-  );
-
-  // Sort: Pending first, then Unpaid, then Confirmed
-  const sortedRows = [...pending, ...unpaid, ...confirmed];
-
-  return (
-    <div className="content">
-      <PageHeader
-        title="Payments"
-        subtitle="Confirm manual deposits and balance payments"
-      />
-
-      <div className="metric-grid">
-        <MetricCard
-          label="Requires Confirmation"
-          value={formatNaira(pendingAmount)}
-          icon={Icons.clock}
-          tone="orange"
-        />
-        <MetricCard
-          label="Confirmed Revenue"
-          value={formatNaira(confirmedAmount)}
-          icon={Icons.payments}
-          tone="green"
-        />
-        <MetricCard
-          label="Awaiting Payment"
-          value={formatNaira(unpaidAmount)}
-          icon={Icons.phases}
-          tone="blue"
-        />
-      </div>
-
-      <div className="grid-1" style={{ marginTop: 24 }}>
-        <DataList
-          title={<h2>Transaction History</h2>}
-          defaultView="grid"
-          allowedViews={["list", "grid", "grid2", "grid3"]}
-          data={sortedRows}
-          filterFn={(row, query) => {
-            const text =
-              `${row.project.title} ${row.project.businessName} ${row.payment.reference} ${row.payment.type} ${row.payment.status}`.toLowerCase();
-            return text.includes(query.toLowerCase());
-          }}
-          itemsPerPage={10}
-          emptyState={
-            <EmptyState
-              title="No transactions"
-              body="No payments match your criteria."
-            />
-          }
-          renderItem={({ project, payment }, view) => {
-            const statusTone =
-              payment.status === "CONFIRMED"
-                ? "success"
-                : payment.status === "PENDING_CONFIRMATION"
-                  ? "warning"
-                  : payment.status === "UNPAID"
-                    ? "blue"
-                    : "danger";
-
-            if (view.startsWith("grid")) {
-              return (
-                <div
-                  key={payment.id}
-                  style={{
-                    background: `var(--${statusTone}-soft)`,
-                    border: `1px solid transparent`,
-                    borderRadius: 16,
-                    padding: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 16,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = `var(--${statusTone})`;
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 24px rgba(0,0,0,0.05)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = "transparent";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div>
-                      <Badge className={statusClass(payment.status)}>
-                        {statusLabel(payment.status)}
-                      </Badge>
-                      <h3 style={{ margin: "12px 0 4px", fontSize: 16 }}>
-                        {project.title}
-                      </h3>
-                      <p
-                        style={{
-                          color: "var(--muted)",
-                          margin: 0,
-                          fontSize: 13,
-                        }}
-                      >
-                        {payment.type} â€¢ {project.businessName}
-                      </p>
-                    </div>
-                    <div
-                      className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
-                      style={{ width: 40, height: 40, fontSize: 18 }}
-                    >
-                      {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    <div>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--muted)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Amount
-                      </span>
-                      <strong style={{ fontSize: 20, display: "block" }}>
-                        {formatNaira(payment.amount)}
-                      </strong>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      {payment.status === "PENDING_CONFIRMATION" && (
-                        <Button
-                          variant="success"
-                          style={{ height: 32, fontSize: 13, padding: "0 12px" }}
-                          loading={pendingAction === `confirm-${payment.id}`}
-                          onClick={async () => {
-                            setPendingAction(`confirm-${payment.id}`);
-                            try {
-                              await confirmPayment(payment.id);
-                            } finally {
-                              setPendingAction(null);
-                            }
-                          }}
-                        >
-                          Confirm âœ“
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={payment.id}
-                className="deliverable-row"
-                style={{
-                  padding: "16px",
-                  borderRadius: 16,
-                  background: `var(--${statusTone}-soft)`,
-                  marginBottom: 12,
-                  alignItems: "center",
-                }}
-              >
-                <div className="deliverable-main" style={{ gap: 16, flex: 1 }}>
-                  <div
-                    className={`metric-icon tone-${statusTone === "success" ? "green" : statusTone === "warning" ? "orange" : "blue"}`}
-                    style={{ width: 44, height: 44, fontSize: 18 }}
-                  >
-                    {payment.type === "DEPOSIT" ? Icons.arrow : Icons.check}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: "0 0 2px", fontSize: 16 }}>
-                      {project.title} â€” {payment.type}
-                    </h3>
-                    <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>
-                      {project.businessName} â€¢ Ref: {payment.reference}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "right", marginRight: 24 }}>
-                    <strong style={{ display: "block", fontSize: 18 }}>
-                      {formatNaira(payment.amount)}
-                    </strong>
-                    <Badge className={statusClass(payment.status)} style={{ fontSize: 11 }}>
-                      {statusLabel(payment.status)}
-                    </Badge>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  {payment.status === "PENDING_CONFIRMATION" && (
-                    <>
-                      <Button
-                        variant="secondary"
-                        style={{ height: 36, fontSize: 13 }}
-                        onClick={async () => {
-                          if (confirm("Reject this payment?")) {
-                            setPendingAction(`reject-${payment.id}`);
-                            try {
-                              await rejectPayment(payment.id);
-                            } finally {
-                              setPendingAction(null);
-                            }
-                          }
-                        }}
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        variant="success"
-                        style={{ height: 36, fontSize: 13 }}
-                        loading={pendingAction === `confirm-${payment.id}`}
-                        onClick={async () => {
-                          setPendingAction(`confirm-${payment.id}`);
-                          try {
-                            await confirmPayment(payment.id);
-                          } finally {
-                            setPendingAction(null);
-                          }
-                        }}
-                      >
-                        Confirm âœ“
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-export function AdminAnalytics() {
-  const { state, dataLoading } = useApp();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const projectsLoaded = state.projects?.length > 0;
-  const total = state.projects?.length;
-  const active = state.projects?.filter((p) => p.status === "ACTIVE").length;
-  const overdue =
-    state?.projects
-      ?.flatMap((p) => p.phases)
-      ?.filter((p) => p.status === "CHANGES_REQUESTED")?.length || 0;
-  const packageData = (
-    ["Launch", "Impact", "Growth", "Partner"] as PackageType[]
-  ).map((name) => ({
-    name,
-    value: state?.projects?.filter((p) => p.packageType === name).length,
-  }));
-  const phaseStatus = [
-    "NOT_STARTED",
-    "IN_PROGRESS",
-    "AWAITING_APPROVAL",
-    "APPROVED",
-  ].map((s) => ({
-    status: statusLabel(s as any),
-    count:
-      state?.projects?.flatMap((p) => p.phases)?.filter((p) => p.status === s)
-        ?.length || 0,
-  }));
-  const COLORS = ["#0064E0", "#f59e0b", "#10b981", "#0064E0"];
-  return (
-    <div className="content">
-      <PageHeader
-        title="Analytics"
-        subtitle="Track your team's performance and project metrics"
-      />
-      <div className="metric-grid">
-        {(!projectsLoaded && dataLoading) || !isMounted ? (
-          <>
-            <Skeleton height={120} />
-            <Skeleton height={120} />
-            <Skeleton height={120} />
-            <Skeleton height={120} />
-          </>
-        ) : (
-          <>
-            <MetricCard
-              label="Total Projects"
-              value={total}
-              icon={Icons.analytics}
-            />
-            <MetricCard
-              label="Active Projects"
-              value={active}
-              icon="â—Ž"
-              tone="blue"
-            />
-            <MetricCard
-              label="On-Time Rate"
-              value="100%"
-              icon={Icons.clock}
-              tone="green"
-            />
-            <MetricCard
-              label="Overdue Phases"
-              value={overdue}
-              icon="!"
-              tone="red"
-            />
-          </>
-        )}
-      </div>
-      <div className="grid-2">
-        <Card className="chart-card">
-          <div className="card-title">
-            <h2>Projects by Package</h2>
-          </div>
-          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
-            {(!projectsLoaded && dataLoading) || !isMounted ? (
-              <Skeleton height="100%" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={packageData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={64}
-                    outerRadius={100}
-                    paddingAngle={2}
-                  >
-                    {packageData.map((_, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
-        <Card className="chart-card">
-          <div className="card-title">
-            <h2>Phases by Status</h2>
-          </div>
-          <div className="card-body" style={{ height: 310, minWidth: 0 }}>
-            {(!projectsLoaded && dataLoading) || !isMounted ? (
-              <Skeleton height="100%" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={phaseStatus}
-                  layout="vertical"
-                  margin={{ left: 30 }}
-                >
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="status" />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#0064E0" radius={[0, 8, 8, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
-      </div>
-      <Card style={{ marginTop: 24 }}>
-        <div className="card-title">
-          <h2>AI Delivery Health</h2>
-        </div>
-        <div className="card-body stack">
-          {state.projects.slice(0, 3).map((p) => (
-            <p key={p.id}>{generateProjectSummary(p)}</p>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-export function AdminReviews() {
-  const { state } = useApp();
-  return (
-    <div className="content narrow">
-      <PageHeader
-        title="Reviews"
-        subtitle="Client reviews after completed projects"
-      />
-      {state.reviews.length ? (
-        <div className="stack">
-          {state.reviews.map((r) => (
-            <Card key={r.id} className="card-body">
-              <strong>{"â˜…".repeat(r.rating)}</strong>
-              <p>{r.comment}</p>
-            </Card>
-          ))}
+          })}
         </div>
       ) : (
-        <EmptyState
-          title="No reviews yet"
-          body="Client reviews will appear after completed projects."
+        <WorkspaceEmptyCard
+          title="No team members yet"
+          body="Team members will appear here after they are added to the workspace."
+          icon={Icons.team}
         />
       )}
     </div>
   );
 }
-
 export function AdminSettings() {
   return (
     <div className="content narrow">
@@ -3079,14 +2248,510 @@ export function AdminSettings() {
     </div>
   );
 }
+export function AdminAnalytics() {
+  const { state } = useApp();
 
+  const projects = state.projects;
+  const phases = projects.flatMap((project) => project.phases);
+  const payments = projects.flatMap((project) => project.payments);
 
+  const activeProjects = projects.filter((project) =>
+    ["ACTIVE", "AWAITING_BALANCE"].includes(project.status),
+  ).length;
 
+  const completedProjects = projects.filter(
+    (project) => project.status === "COMPLETED",
+  ).length;
 
+  const approvedPhases = phases.filter((phase) => phase.status === "APPROVED").length;
+  const awaitingApproval = phases.filter(
+    (phase) => phase.status === "AWAITING_APPROVAL",
+  ).length;
 
+  const confirmedRevenue = payments
+    .filter((payment) => payment.status === "CONFIRMED")
+    .reduce((total, payment) => total + payment.amount, 0);
 
+  const pendingRevenue = payments
+    .filter(
+      (payment) =>
+        payment.status === "UNPAID" ||
+        payment.status === "PENDING_CONFIRMATION",
+    )
+    .reduce((total, payment) => total + payment.amount, 0);
 
+  const deliveryRate = phases.length
+    ? Math.round((approvedPhases / phases.length) * 100)
+    : 0;
 
+  const paymentRate = payments.length
+    ? Math.round(
+        (payments.filter((payment) => payment.status === "CONFIRMED").length /
+          payments.length) *
+          100,
+      )
+    : 0;
 
+  const formatMoney = (amount: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(amount);
+
+  const packageCounts = projects.reduce<Record<string, number>>((acc, project) => {
+    acc[project.packageType] = (acc[project.packageType] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="content">
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-main">
+          <span className="dashboard-eyebrow">Workspace Intelligence</span>
+          <h1>Analytics</h1>
+          <p>
+            Review project volume, delivery health, payment movement and package
+            distribution across Octalve Workspace.
+          </p>
+
+          <div className="dashboard-hero-meta">
+            <span className="badge badge-blue">{projects.length} Projects</span>
+            <span className="badge badge-green">{completedProjects} Completed</span>
+            <span className="badge badge-orange">{awaitingApproval} Awaiting Approval</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="dashboard-stats">
+        <div className="card dashboard-stat-card">
+          <div>
+            <span>Confirmed Revenue</span>
+            <strong>{formatMoney(confirmedRevenue)}</strong>
+            <p>Payments confirmed by admin</p>
+          </div>
+        </div>
+
+        <div className="card dashboard-stat-card">
+          <div>
+            <span>Pending Revenue</span>
+            <strong>{formatMoney(pendingRevenue)}</strong>
+            <p>Unpaid or awaiting confirmation</p>
+          </div>
+        </div>
+
+        <div className="card dashboard-stat-card">
+          <div>
+            <span>Delivery Rate</span>
+            <strong>{deliveryRate}%</strong>
+            <p>Approved phases against total phases</p>
+          </div>
+        </div>
+
+        <div className="card dashboard-stat-card">
+          <div>
+            <span>Payment Rate</span>
+            <strong>{paymentRate}%</strong>
+            <p>Confirmed payments against total payments</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card dashboard-panel">
+          <div className="dashboard-panel-head">
+            <h2>Project Health</h2>
+          </div>
+
+          <div className="dashboard-panel-body stack">
+            <div className="dashboard-list-item">
+              <div className="dashboard-list-main">
+                <div>
+                  <strong>Active Projects</strong>
+                  <p>Projects currently moving through delivery.</p>
+                </div>
+              </div>
+              <div className="dashboard-list-side">
+                <strong>{activeProjects}</strong>
+              </div>
+            </div>
+
+            <div className="dashboard-list-item">
+              <div className="dashboard-list-main">
+                <div>
+                  <strong>Approved Phases</strong>
+                  <p>Client-approved delivery phases.</p>
+                </div>
+              </div>
+              <div className="dashboard-list-side">
+                <strong>{approvedPhases}/{phases.length}</strong>
+              </div>
+            </div>
+
+            <div className="dashboard-list-item">
+              <div className="dashboard-list-main">
+                <div>
+                  <strong>Awaiting Approval</strong>
+                  <p>Phases currently waiting for client review.</p>
+                </div>
+              </div>
+              <div className="dashboard-list-side">
+                <strong>{awaitingApproval}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card dashboard-panel">
+          <div className="dashboard-panel-head">
+            <h2>Package Distribution</h2>
+          </div>
+
+          <div className="dashboard-panel-body stack">
+            {Object.keys(packageCounts).length ? (
+              Object.entries(packageCounts).map(([name, count]) => (
+                <div className="dashboard-list-item" key={name}>
+                  <div className="dashboard-list-main">
+                    <div>
+                      <strong>{name} Suite</strong>
+                      <p>{count} project{count > 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <div className="dashboard-list-side">
+                    <strong>{count}</strong>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: "var(--muted)", margin: 0 }}>
+                No package data yet.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+export function AdminPayments() {
+  const { state, confirmPayment, rejectPayment } = useApp();
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  const rows = state.projects.flatMap((project) =>
+    project.payments.map((payment) => ({ project, payment })),
+  );
+
+  const pending = rows.filter(
+    (row) => row.payment.status === "PENDING_CONFIRMATION",
+  );
+  const unpaid = rows.filter((row) => row.payment.status === "UNPAID");
+  const confirmed = rows.filter((row) => row.payment.status === "CONFIRMED");
+  const rejected = rows.filter((row) => row.payment.status === "REJECTED");
+
+  const pendingAmount = pending.reduce(
+    (total, row) => total + row.payment.amount,
+    0,
+  );
+
+  const unpaidAmount = unpaid.reduce(
+    (total, row) => total + row.payment.amount,
+    0,
+  );
+
+  const confirmedAmount = confirmed.reduce(
+    (total, row) => total + row.payment.amount,
+    0,
+  );
+
+  const sortedRows = [...pending, ...unpaid, ...confirmed, ...rejected];
+
+  async function handleConfirm(paymentId: string) {
+    setPendingAction(`confirm-${paymentId}`);
+
+    try {
+      await confirmPayment(paymentId);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleReject(paymentId: string) {
+    if (!confirm("Reject this payment confirmation?")) return;
+
+    setPendingAction(`reject-${paymentId}`);
+
+    try {
+      await rejectPayment(paymentId);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  return (
+    <div className="content">
+      <PageHeader
+        title="Payments"
+        subtitle="Confirm manual deposits, balance payments, and pending transfer claims."
+      />
+
+      <div className="metric-grid">
+        <MetricCard
+          label="Requires Confirmation"
+          value={formatNaira(pendingAmount)}
+          icon={Icons.clock}
+          tone="orange"
+        />
+
+        <MetricCard
+          label="Confirmed Revenue"
+          value={formatNaira(confirmedAmount)}
+          icon={Icons.payments}
+          tone="green"
+        />
+
+        <MetricCard
+          label="Awaiting Payment"
+          value={formatNaira(unpaidAmount)}
+          icon={Icons.phases}
+          tone="blue"
+        />
+      </div>
+
+      {sortedRows.length ? (
+        <div className="grid-2-even" style={{ marginTop: 24 }}>
+          {sortedRows.map(({ project, payment }) => (
+            <Card
+              key={payment.id}
+              className="workspace-card workspace-payment-card"
+            >
+              <div className="workspace-card-top">
+                <span className="workspace-card-icon tone-blue">
+                  {Icons.payments}
+                </span>
+
+                <Badge className={statusClass(payment.status)}>
+                  {statusLabel(payment.status)}
+                </Badge>
+              </div>
+
+              <div className="workspace-card-main">
+                <h3>
+                  {payment.type === "DEPOSIT"
+                    ? "First Deposit"
+                    : "Balance Payment"}
+                </h3>
+                <p>{project.title}</p>
+              </div>
+
+              <div className="workspace-payment-amount">
+                {formatNaira(payment.amount)}
+              </div>
+
+              <div className="workspace-card-context">
+                <strong>{project.businessName}</strong>
+                <span>{payment.reference}</span>
+              </div>
+
+              <div className="workspace-card-footer">
+                <span>
+                  {payment.status === "CONFIRMED"
+                    ? "Payment confirmed"
+                    : payment.status === "PENDING_CONFIRMATION"
+                      ? "Client says payment has been made"
+                      : payment.status === "REJECTED"
+                        ? "Payment was rejected"
+                        : "Waiting for client payment"}
+                </span>
+
+                {payment.status === "PENDING_CONFIRMATION" ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <Button
+                      variant="danger"
+                      loading={pendingAction === `reject-${payment.id}`}
+                      onClick={() => handleReject(payment.id)}
+                    >
+                      Reject
+                    </Button>
+
+                    <Button
+                      loading={pendingAction === `confirm-${payment.id}`}
+                      onClick={() => handleConfirm(payment.id)}
+                    >
+                      Confirm
+                    </Button>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/admin/projects/${project.id}`}
+                    className="btn btn-secondary"
+                  >
+                    Open Project
+                  </Link>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div style={{ marginTop: 24 }}>
+          <EmptyState
+            title="No transactions yet"
+            body="Project payment records will appear here once deposits or balances are created."
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+export function AdminReviews() {
+  const { state } = useApp();
+
+  const reviews = (((state as any).reviews ?? []) as any[]).slice();
+
+  const published = reviews.filter(
+    (review) =>
+      review.status === "PUBLISHED" ||
+      review.isPublished === true ||
+      review.published === true,
+  ).length;
+
+  const pending = reviews.filter(
+    (review) =>
+      review.status === "PENDING" ||
+      review.status === "PENDING_REVIEW" ||
+      review.isPublished === false,
+  ).length;
+
+  const ratings = reviews
+    .map((review) => Number(review.rating ?? review.score ?? 0))
+    .filter((rating) => rating > 0);
+
+  const averageRating = ratings.length
+    ? (ratings.reduce((total, rating) => total + rating, 0) / ratings.length).toFixed(1)
+    : "0.0";
+
+  return (
+    <div className="content">
+      <DashboardHero
+        eyebrow="Client Feedback"
+        title="Reviews"
+        subtitle="Review client feedback, testimonials, and public proof of delivery quality."
+        meta={
+          <>
+            <Badge className="badge-blue">{reviews.length} Total Reviews</Badge>
+            <Badge className="badge-green">{published} Published</Badge>
+            <Badge className="badge-orange">{pending} Pending</Badge>
+          </>
+        }
+      />
+
+      <DashboardStats
+        items={[
+          {
+            label: "Total Reviews",
+            value: reviews.length,
+            tone: "blue",
+            icon: <span aria-hidden="true">★</span>,
+            helper: "All submitted reviews",
+          },
+          {
+            label: "Published",
+            value: published,
+            tone: "green",
+            icon: DashboardIcons.check,
+            helper: "Visible testimonials",
+          },
+          {
+            label: "Pending",
+            value: pending,
+            tone: pending > 0 ? "orange" : "slate",
+            icon: DashboardIcons.clock,
+            helper: "Awaiting review",
+          },
+          {
+            label: "Average Rating",
+            value: averageRating,
+            tone: "purple",
+            icon: <span aria-hidden="true">★</span>,
+            helper: "Across rated feedback",
+          },
+        ]}
+      />
+
+      {reviews.length ? (
+        <div className="grid-2-even">
+          {reviews.map((review) => (
+            <Card key={review.id ?? review.email ?? review.name} className="workspace-card">
+              <div className="workspace-card-top">
+                <span className="workspace-card-icon tone-purple">
+                  {<span aria-hidden="true">★</span>}
+                </span>
+
+                <Badge
+                  className={
+                    review.status === "PUBLISHED" ||
+                    review.isPublished ||
+                    review.published
+                      ? "badge-green"
+                      : "badge-orange"
+                  }
+                >
+                  {review.status
+                    ? statusLabel(review.status)
+                    : review.isPublished || review.published
+                      ? "Published"
+                      : "Pending"}
+                </Badge>
+              </div>
+
+              <div className="workspace-card-main">
+                <h3>{review.name ?? review.clientName ?? "Client Review"}</h3>
+                <p>
+                  {review.projectTitle ??
+                    review.businessName ??
+                    review.email ??
+                    "Octalve Workspace feedback"}
+                </p>
+              </div>
+
+              <div className="workspace-card-context">
+                <strong>
+                  Rating: {review.rating ?? review.score ?? "Not rated"}
+                </strong>
+                <span>
+                  {review.message ??
+                    review.comment ??
+                    review.testimonial ??
+                    "No review message was provided."}
+                </span>
+              </div>
+
+              <div className="workspace-card-footer">
+                <span>
+                  {review.createdAt
+                    ? new Date(review.createdAt).toLocaleDateString("en-NG")
+                    : "No date"}
+                </span>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <WorkspaceEmptyCard
+          title="No reviews yet"
+          body="Client reviews and testimonials will appear here when they are submitted."
+          icon={<span aria-hidden="true">★</span>}
+        />
+      )}
+    </div>
+  );
+}
 
 
