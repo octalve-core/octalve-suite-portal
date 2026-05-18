@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type React from "react";
 import Link from "next/link";
@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Role } from "@/lib/types";
 import { AIAssistant } from "./AIAssistant";
+import { NotificationBell } from "./NotificationBell";
 import { useApp } from "./AppContext";
 import { Button, PageLoading } from "./UI";
 
@@ -208,7 +209,6 @@ export function PortalShell({
 
   const handleLogout = async () => {
     await logout();
-    window.location.reload();
   };
 
   if (sessionLoading || (dataLoading && state.projects.length === 0)) {
@@ -367,6 +367,7 @@ export function PortalShell({
           </div>
 
           <div className="top-actions top-actions-clean">
+            <NotificationBell />
             {pendingTotal > 0 && (
               <Link
                 href={

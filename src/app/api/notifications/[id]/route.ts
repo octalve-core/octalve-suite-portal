@@ -1,23 +1,44 @@
 import { NextResponse } from "next/server";
+import { getSessionOrThrow } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
-import { getSessionOrThrow, errorResponse } from "@/lib/api-helpers";
 
-type Params = { params: Promise<{ id: string }> };
-
-/**
- * PATCH /api/notifications/[id] — Mark a notification as read.
- */
-export async function PATCH(_request: Request, { params }: Params) {
-  const { id } = await params;
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const result = await getSessionOrThrow();
-  if (result.error) return result.error;
 
-  const notification = await prisma.notification.findUnique({ where: { id } });
-  if (!notification) return errorResponse("Notification not found", 404);
+  if (result.error) {
+    return result.error;
+  }
+
+  const { id } = await params;
+  const body = await request.json().catch(() => ({}));
+  const read = Boolean(body.read);
+
+  const notification = await prisma.notification.findFirst({
+    where: {
+      id,
+      OR: [
+        { userId: result.user.id },
+        { role: result.role, userId: null },
+      ],
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!notification) {
+    return NextResponse.json(
+      { error: "Notification not found" },
+      { status: 404 },
+    );
+  }
 
   await prisma.notification.update({
     where: { id },
-    data: { read: true },
+    data: { read },
   });
 
   return NextResponse.json({ success: true });
