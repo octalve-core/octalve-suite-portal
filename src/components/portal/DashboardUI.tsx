@@ -1,5 +1,7 @@
 "use client";
 
+import { useApp } from "./AppContext";
+
 import Link from "next/link";
 import type React from "react";
 import {
@@ -25,25 +27,86 @@ export function DashboardHero({
   action,
   meta,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
   meta?: React.ReactNode;
 }) {
-  return (
-    <section className="dashboard-hero">
-      <div className="dashboard-hero-main">
-        <span className="dashboard-eyebrow">{eyebrow}</span>
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
-        {meta && <div className="dashboard-hero-meta">{meta}</div>}
-      </div>
+  const { currentUser } = useApp();
 
-      {action && <div className="dashboard-hero-action">{action}</div>}
+  const lowerEyebrow = String(eyebrow ?? "").toLowerCase();
+  const lowerTitle = String(title ?? "").toLowerCase();
+
+  const isClientHero =
+    currentUser?.role === "CLIENT" ||
+    lowerEyebrow.includes("client");
+
+  const isAdminHero =
+    currentUser?.role === "SUPER_ADMIN" ||
+    currentUser?.role === "PROJECT_MANAGER" ||
+    lowerEyebrow.includes("admin");
+
+  const isStaffHero =
+    currentUser?.role === "STAFF" ||
+    lowerEyebrow.includes("staff");
+
+  const hour = new Date().getHours();
+
+  const greeting =
+    hour < 12
+      ? "Good morning"
+      : hour < 17
+        ? "Good afternoon"
+        : "Good evening";
+
+  const userLabel =
+    currentUser?.name ||
+    currentUser?.company ||
+    currentUser?.email?.split("@")[0] ||
+    "there";
+
+  const heroTone = isClientHero
+    ? "dashboard-hero-client"
+    : isAdminHero
+      ? "dashboard-hero-admin"
+      : isStaffHero
+        ? "dashboard-hero-staff"
+        : "dashboard-hero-default";
+
+  const shouldPersonalizeClient =
+    isClientHero &&
+    (lowerTitle.includes("welcome") || lowerEyebrow.includes("client"));
+
+  const displayTitle = shouldPersonalizeClient
+    ? `${greeting}, ${userLabel}`
+    : title;
+
+  const displaySubtitle = shouldPersonalizeClient
+    ? "Track your active project, approvals, payments, and delivery deadlines from one premium workspace."
+    : subtitle;
+
+  const showEyebrow = Boolean(eyebrow) && !shouldPersonalizeClient;
+
+  return (
+    <section className={`dashboard-hero dashboard-hero-solid ${heroTone}`}>
+      <div className="dashboard-hero-content">
+        <div className="dashboard-hero-copy">
+          {showEyebrow && <span className="dashboard-eyebrow">{eyebrow}</span>}
+
+          <h1>{displayTitle}</h1>
+
+          {displaySubtitle && <p>{displaySubtitle}</p>}
+
+          {meta && <div className="dashboard-hero-meta">{meta}</div>}
+        </div>
+
+        {action && <div className="dashboard-hero-action">{action}</div>}
+      </div>
     </section>
   );
 }
+
 
 export function DashboardStats({
   items,

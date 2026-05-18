@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -116,16 +116,24 @@ export function activePhase(project: Project) {
   );
 }
 
-export function packageClass(type: PackageType) {
-  const map: Record<PackageType, string> = {
-    Launch: "badge-purple",
-    Impact: "badge-orange",
-    Growth: "badge-green",
-    Partner: "badge-blue",
-    Custom: "badge-slate",
-  };
+export function packageClass(packageType?: string) {
+  if (packageType === "Impact" || packageType === "BrandingStarter" || packageType === "BrandingProBiz" || packageType === "BrandingAdvance") {
+    return "badge-red";
+  }
 
-  return map[type];
+  if (packageType === "Growth" || packageType === "WebsiteAdvance") {
+    return "badge-green";
+  }
+
+  if (packageType === "Partner" || packageType === "Custom") {
+    return "badge-purple";
+  }
+
+  if (packageType === "WebsiteStarter" || packageType === "WebsiteProBiz" || packageType === "LeapRegistration") {
+    return "badge-orange";
+  }
+
+  return "badge-blue";
 }
 
 export function statusLabel(status?: AnyStatus) {

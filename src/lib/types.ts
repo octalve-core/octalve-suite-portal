@@ -1,5 +1,17 @@
 export type Role = "CLIENT" | "STAFF" | "PROJECT_MANAGER" | "SUPER_ADMIN";
-export type PackageType = "Launch" | "Impact" | "Growth" | "Partner" | "Custom";
+export type PackageType =
+  | "Launch"
+  | "Impact"
+  | "Growth"
+  | "Partner"
+  | "WebsiteStarter"
+  | "WebsiteProBiz"
+  | "WebsiteAdvance"
+  | "BrandingStarter"
+  | "BrandingProBiz"
+  | "BrandingAdvance"
+  | "LeapRegistration"
+  | "Custom";
 export type ProjectStatus =
   | "PENDING_REVIEW"
   | "APPROVED_AWAITING_DEPOSIT"
