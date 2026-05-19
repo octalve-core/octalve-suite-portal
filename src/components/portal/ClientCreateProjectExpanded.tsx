@@ -7,11 +7,14 @@ import {
   Code2,
   Gem,
   Globe2,
+  Grid2X2,
   Handshake,
   HeartHandshake,
   Landmark,
+  LayoutList,
   MonitorSmartphone,
   Palette,
+  Rows3,
   Rocket,
   SlidersHorizontal,
   Sparkles,
@@ -39,6 +42,8 @@ type PackageOption = {
   category: string;
   description: string;
 };
+
+type LayoutMode = "grid" | "compact" | "list";
 
 function packageTitle(packageType: PackageType | string) {
   const titles: Record<string, string> = {
@@ -130,10 +135,10 @@ Recommended direction: Octalve should translate this into a clear delivery scope
 Expected outcome: a professional solution that improves brand clarity, customer trust, digital presentation, conversion flow, and long-term business growth.`;
 }
 
-const packageOptions: PackageOption[] = [
+const basePackageOptions: PackageOption[] = [
   {
     type: "Launch",
-    icon: <Rocket size={22} />,
+    icon: <Rocket size={21} />,
     color: "#0064E0",
     title: "Launch Suite",
     category: "Suite",
@@ -142,7 +147,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "Impact",
-    icon: <HeartHandshake size={22} />,
+    icon: <HeartHandshake size={21} />,
     color: "#E61525",
     title: "Impact Suite",
     category: "Suite",
@@ -151,7 +156,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "Growth",
-    icon: <TrendingUp size={22} />,
+    icon: <TrendingUp size={21} />,
     color: "#29BE3E",
     title: "Growth Suite",
     category: "Suite",
@@ -160,7 +165,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "Partner",
-    icon: <Handshake size={22} />,
+    icon: <Handshake size={21} />,
     color: "#5300D9",
     title: "Partner Suite",
     category: "Suite",
@@ -169,7 +174,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "WebsiteStarter",
-    icon: <Globe2 size={22} />,
+    icon: <Globe2 size={21} />,
     color: "#0064E0",
     title: "Website Dev. Starter",
     category: "Website",
@@ -178,7 +183,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "WebsiteProBiz",
-    icon: <MonitorSmartphone size={22} />,
+    icon: <MonitorSmartphone size={21} />,
     color: "#FC7E24",
     title: "Website Dev. Pro-Biz",
     category: "Website",
@@ -187,7 +192,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "WebsiteAdvance",
-    icon: <Code2 size={22} />,
+    icon: <Code2 size={21} />,
     color: "#29BE3E",
     title: "Website Dev. Advance",
     category: "Website",
@@ -196,7 +201,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "BrandingStarter",
-    icon: <Palette size={22} />,
+    icon: <Palette size={21} />,
     color: "#E61525",
     title: "Branding Starter",
     category: "Branding",
@@ -205,7 +210,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "BrandingProBiz",
-    icon: <BadgeCheck size={22} />,
+    icon: <BadgeCheck size={21} />,
     color: "#FC7E24",
     title: "Branding Pro-Biz",
     category: "Branding",
@@ -214,7 +219,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "BrandingAdvance",
-    icon: <Gem size={22} />,
+    icon: <Gem size={21} />,
     color: "#5300D9",
     title: "Branding Advance",
     category: "Branding",
@@ -223,7 +228,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "LeapRegistration",
-    icon: <Landmark size={22} />,
+    icon: <Landmark size={21} />,
     color: "#0064E0",
     title: "Leap / Registration",
     category: "Leap",
@@ -232,7 +237,7 @@ const packageOptions: PackageOption[] = [
   },
   {
     type: "Custom",
-    icon: <SlidersHorizontal size={22} />,
+    icon: <SlidersHorizontal size={21} />,
     color: "#5300D9",
     title: "Custom",
     category: "Custom",
@@ -241,14 +246,24 @@ const packageOptions: PackageOption[] = [
   },
 ];
 
+const layoutOptions: Array<{
+  key: LayoutMode;
+  label: string;
+  icon: ReactNode;
+}> = [
+  { key: "grid", label: "Grid", icon: <Grid2X2 size={14} /> },
+  { key: "compact", label: "Compact", icon: <Rows3 size={14} /> },
+  { key: "list", label: "List", icon: <LayoutList size={14} /> },
+];
+
 export function ClientCreateProjectExpanded() {
   const { state, createProjectRequest } = useApp();
 
   const [step, setStep] = useState(1);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
   const [packageType, setPackageType] = useState<PackageType>("Launch");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
-  const [layoutMode, setLayoutMode] = useState<"grid" | "compact" | "list">("grid");
 
   const [form, setForm] = useState({
     projectName: "",
@@ -259,15 +274,10 @@ export function ClientCreateProjectExpanded() {
     additionalNotes: "",
   });
 
-  const template =
-    state.templates.find((template) => template.packageType === packageType) ??
-    state.templates.find((template) => template.packageType === "Launch") ??
-    state.templates[0];
-
-  const packageOptionsWithTemplates = useMemo(() => {
+  const packageOptions = useMemo(() => {
     const optionMap = new Map<string, PackageOption>();
 
-    for (const option of packageOptions) {
+    for (const option of basePackageOptions) {
       optionMap.set(option.type, option);
     }
 
@@ -285,6 +295,11 @@ export function ClientCreateProjectExpanded() {
 
     return Array.from(optionMap.values());
   }, [state.templates]);
+
+  const template =
+    state.templates.find((template) => template.packageType === packageType) ??
+    state.templates.find((template) => template.packageType === "Launch") ??
+    state.templates[0];
 
   const aiPackage = useMemo(
     () => recommendPackageLocal(`${form.projectGoal} ${form.projectDescription}`),
@@ -371,11 +386,11 @@ export function ClientCreateProjectExpanded() {
       <div className="wizard">
         <BackLink href="/client/projects" label="Cancel" />
 
-        <div className="wizard-head-premium">
+        <div className="wizard-head-premium compact-create-head">
           <Badge className="badge-blue">Step {step} of 3</Badge>
           <h1>Create Project Request</h1>
           <p>
-            Share a clear project brief so Octalve can review your request, recommend the right structure, and convert it into a managed delivery workflow.
+            Choose a package, share the project context, and let Octalve convert it into a managed delivery workflow.
           </p>
         </div>
 
@@ -392,25 +407,28 @@ export function ClientCreateProjectExpanded() {
             <div className="package-select-head">
               <div>
                 <h2>Select Package / Suite</h2>
-                <p>Choose a delivery structure. Templates created from admin can appear here with their phases and deliverables.</p>
+                <p>
+                  Pick the delivery structure that best fits your goal. Admin-created templates can update the title, description, phases, and deliverables shown here.
+                </p>
               </div>
 
-              <div className="package-layout-switcher" aria-label="Package layout switcher">
-                {(["grid", "compact", "list"] as const).map((mode) => (
+              <div className="package-layout-switcher" aria-label="Package layout">
+                {layoutOptions.map((option) => (
                   <button
-                    key={mode}
+                    key={option.key}
                     type="button"
-                    className={layoutMode === mode ? "active" : ""}
-                    onClick={() => setLayoutMode(mode)}
+                    className={layoutMode === option.key ? "active" : ""}
+                    onClick={() => setLayoutMode(option.key)}
                   >
-                    {mode}
+                    {option.icon}
+                    <span>{option.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className={`package-option-grid package-option-grid-${layoutMode}`}>
-              {packageOptionsWithTemplates.map((option) => (
+              {packageOptions.map((option) => (
                 <Card
                   key={option.type}
                   onClick={() => {
@@ -430,16 +448,12 @@ export function ClientCreateProjectExpanded() {
                     {option.icon}
                   </div>
 
-                  <div>
+                  <div className="package-card-copy">
                     <span className="package-card-category">
                       {option.category}
                     </span>
                     <h3>{option.title}</h3>
-                    <p>
-                      {state.templates.find(
-                        (template) => template.packageType === option.type,
-                      )?.description || option.description}
-                    </p>
+                    <p>{option.description}</p>
                   </div>
 
                   {packageType === option.type && (
@@ -453,13 +467,25 @@ export function ClientCreateProjectExpanded() {
 
             {template && (
               <Card className="template-preview">
-                <h3>{template.name}</h3>
-                <p style={{ color: "var(--muted)" }}>{template.description}</p>
-                <ol>
+                <div className="template-preview-head">
+                  <div>
+                    <Badge className={packageClass(packageType)}>
+                      Selected Template
+                    </Badge>
+                    <h3>{template.name}</h3>
+                    <p>{template.description}</p>
+                  </div>
+                </div>
+
+                <div className="template-phase-preview">
                   {template.phases?.slice(0, 5).map((phase, index) => (
-                    <li key={phase.id ?? index}>{phase.title}</li>
+                    <div key={phase.id ?? index} className="template-phase-card">
+                      <span>Phase {index + 1}</span>
+                      <strong>{phase.title}</strong>
+                      {phase.description && <p>{phase.description}</p>}
+                    </div>
                   ))}
-                </ol>
+                </div>
               </Card>
             )}
           </>

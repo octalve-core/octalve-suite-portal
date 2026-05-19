@@ -30,26 +30,23 @@ export function DashboardHero({
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  action?: React.ReactNode;
-  meta?: React.ReactNode;
+  action?: any;
+  meta?: any;
 }) {
   const { currentUser } = useApp();
 
+  const role = currentUser?.role;
   const lowerEyebrow = String(eyebrow ?? "").toLowerCase();
   const lowerTitle = String(title ?? "").toLowerCase();
 
-  const isClientHero =
-    currentUser?.role === "CLIENT" ||
-    lowerEyebrow.includes("client");
-
-  const isAdminHero =
-    currentUser?.role === "SUPER_ADMIN" ||
-    currentUser?.role === "PROJECT_MANAGER" ||
-    lowerEyebrow.includes("admin");
-
-  const isStaffHero =
-    currentUser?.role === "STAFF" ||
-    lowerEyebrow.includes("staff");
+  const tone =
+    role === "SUPER_ADMIN" || role === "PROJECT_MANAGER" || lowerEyebrow.includes("admin")
+      ? "admin"
+      : role === "STAFF" || lowerEyebrow.includes("staff")
+        ? "staff"
+        : role === "CLIENT" || lowerEyebrow.includes("client")
+          ? "client"
+          : "default";
 
   const hour = new Date().getHours();
 
@@ -61,51 +58,57 @@ export function DashboardHero({
         : "Good evening";
 
   const userLabel =
-    currentUser?.name ||
     currentUser?.company ||
+    currentUser?.name ||
     currentUser?.email?.split("@")[0] ||
     "there";
 
-  const heroTone = isClientHero
-    ? "dashboard-hero-client"
-    : isAdminHero
-      ? "dashboard-hero-admin"
-      : isStaffHero
-        ? "dashboard-hero-staff"
-        : "dashboard-hero-default";
+  const isWelcome =
+    lowerTitle.includes("welcome") ||
+    lowerEyebrow.includes("workspace") ||
+    lowerEyebrow.includes("client");
 
-  const shouldPersonalizeClient =
-    isClientHero &&
-    (lowerTitle.includes("welcome") || lowerEyebrow.includes("client"));
+  const heroTitle =
+    isWelcome && tone === "client"
+      ? "Welcome back to your workspace"
+      : title;
 
-  const displayTitle = shouldPersonalizeClient
-    ? `${greeting}, ${userLabel}`
-    : title;
-
-  const displaySubtitle = shouldPersonalizeClient
-    ? "Track your active project, approvals, payments, and delivery deadlines from one premium workspace."
-    : subtitle;
-
-  const showEyebrow = Boolean(eyebrow) && !shouldPersonalizeClient;
+  const heroSubtitle =
+    isWelcome && tone === "client"
+      ? "Track active projects, approvals, payments and delivery timelines from one premium workspace."
+      : subtitle;
 
   return (
-    <section className={`dashboard-hero dashboard-hero-solid ${heroTone}`}>
-      <div className="dashboard-hero-content">
-        <div className="dashboard-hero-copy">
-          {showEyebrow && <span className="dashboard-eyebrow">{eyebrow}</span>}
+    <section className={`dashboard-hero-compact dashboard-hero-compact-${tone}`}>
+      <div className="dashboard-hero-glow" />
 
-          <h1>{displayTitle}</h1>
+      <div className="dashboard-hero-compact-content">
+        <div className="dashboard-hero-compact-copy">
+          <span className="dashboard-hero-greeting">
+            {greeting}, {userLabel}.
+          </span>
 
-          {displaySubtitle && <p>{displaySubtitle}</p>}
+          {eyebrow && !isWelcome && (
+            <span className="dashboard-hero-kicker">{eyebrow}</span>
+          )}
 
-          {meta && <div className="dashboard-hero-meta">{meta}</div>}
+          <h1>{heroTitle}</h1>
+
+          {heroSubtitle && <p>{heroSubtitle}</p>}
+
+          {meta && <div className="dashboard-hero-compact-meta">{meta}</div>}
         </div>
 
-        {action && <div className="dashboard-hero-action">{action}</div>}
+        {action && (
+          <div className="dashboard-hero-compact-actions">
+            {action}
+          </div>
+        )}
       </div>
     </section>
   );
 }
+
 
 
 export function DashboardStats({
