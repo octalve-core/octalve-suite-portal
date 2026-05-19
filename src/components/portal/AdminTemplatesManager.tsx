@@ -1,5 +1,7 @@
 "use client";
 
+
+import { PACKAGE_CATALOG } from "./packageCatalog";
 import { useMemo, useState } from "react";
 import { Copy, LayoutTemplate, Pencil, Plus, Trash2 } from "lucide-react";
 import type { PackageType, ProjectTemplate } from "@/lib/types";

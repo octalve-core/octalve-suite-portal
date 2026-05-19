@@ -293,7 +293,9 @@ export function ClientDashboard() {
         }
       />
 
-      <ProjectSwitcher />
+      <div className="mt-2">
+        <ProjectSwitcher />
+      </div>
 
       {block ? (
         <Card className="payment-card" style={{ marginBottom: 24 }}>
@@ -888,7 +890,9 @@ export function ClientPhases() {
         subtitle="Track your project progress through each phase"
       />
 
-      <ProjectSwitcher />
+      <div className="mt-2">
+        <ProjectSwitcher />
+      </div>
 
       {locked && (
         <Card className="payment-card" style={{ marginBottom: 24 }}>
@@ -1362,7 +1366,9 @@ export function ClientPayments() {
     <div className="content narrow">
       <PageHeader title="Payments" subtitle="View deposit and balance status" />
 
-      <ProjectSwitcher />
+      <div className="mt-2">
+        <ProjectSwitcher />
+      </div>
 
       <div className="grid-2-even">
         {selectedProject.payments.map((payment) => (

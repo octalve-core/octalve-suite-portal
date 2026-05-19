@@ -39,7 +39,10 @@ export function DashboardHero({
   const lowerTitle = String(title ?? "").toLowerCase();
 
   const tone =
-    role === "SUPER_ADMIN" || role === "PROJECT_MANAGER" || lowerEyebrow.includes("admin")
+    role === "SUPER_ADMIN" ||
+    role === "PROJECT_MANAGER" ||
+    lowerEyebrow.includes("admin") ||
+    lowerEyebrow.includes("command")
       ? "admin"
       : role === "STAFF" || lowerEyebrow.includes("staff")
         ? "staff"
@@ -54,10 +57,10 @@ export function DashboardHero({
 
   const actionToneClass =
     tone === "admin"
-      ? "[&_a]:text-[#E61525] [&_button]:text-[#E61525]"
+      ? "[&_button]:!text-[#E61525] [&_a]:!text-[#E61525]"
       : tone === "staff"
-        ? "[&_a]:text-[#29BE3E] [&_button]:text-[#29BE3E]"
-        : "[&_a]:text-[#0064E0] [&_button]:text-[#0064E0]";
+        ? "[&_button]:!text-[#29BE3E] [&_a]:!text-[#29BE3E]"
+        : "[&_button]:!text-[#0064E0] [&_a]:!text-[#0064E0]";
 
   const hour = new Date().getHours();
 
@@ -92,7 +95,7 @@ export function DashboardHero({
   return (
     <section
       className={[
-        "relative isolate overflow-hidden rounded-[28px]",
+        "relative isolate mb-7 overflow-hidden rounded-[28px]",
         "px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10",
         "shadow-[0_22px_60px_rgba(15,23,42,0.14)]",
         toneClass,
@@ -101,7 +104,7 @@ export function DashboardHero({
       <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15" />
       <div className="pointer-events-none absolute right-8 top-10 hidden h-24 w-24 rounded-[28px] bg-white/10 lg:block" />
 
-      <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="relative z-10 grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0">
           <p className="mb-3 text-sm font-semibold tracking-[-0.01em] text-white/80">
             {greeting}, {userLabel}.
@@ -113,18 +116,18 @@ export function DashboardHero({
             </p>
           ) : null}
 
-          <h1 className="max-w-[760px] text-[32px] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-[42px] lg:text-[52px]">
+          <h1 className="max-w-[820px] text-[32px] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-[42px] lg:text-[52px]">
             {finalTitle}
           </h1>
 
           {finalSubtitle ? (
-            <p className="mt-4 max-w-[680px] text-[15px] font-medium leading-7 text-white/82 sm:text-[16px]">
+            <p className="mt-4 max-w-[700px] text-[15px] font-medium leading-7 text-white/85 sm:text-[16px]">
               {finalSubtitle}
             </p>
           ) : null}
 
           {meta ? (
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-white [&_.badge]:border-white/20 [&_.badge]:bg-white/10 [&_.badge]:text-white">
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-white [&_.badge]:border-white/25 [&_.badge]:bg-white/12 [&_.badge]:text-white">
               {meta}
             </div>
           ) : null}
@@ -134,9 +137,10 @@ export function DashboardHero({
           <div
             className={[
               "flex shrink-0 items-center justify-start lg:justify-end",
-              "[&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:justify-center [&_a]:rounded-2xl [&_a]:border-0 [&_a]:bg-white [&_a]:px-5 [&_a]:font-semibold",
-              "[&_button]:min-h-11 [&_button]:rounded-2xl [&_button]:border-0 [&_button]:bg-white [&_button]:px-5 [&_button]:font-semibold",
-              "[&_a]:shadow-[0_16px_34px_rgba(15,23,42,0.16)] [&_button]:shadow-[0_16px_34px_rgba(15,23,42,0.16)]",
+              "[&_a]:!bg-transparent [&_a]:!p-0 [&_a]:!shadow-none",
+              "[&_button]:!min-h-12 [&_button]:!rounded-2xl [&_button]:!border-0",
+              "[&_button]:!bg-white [&_button]:!px-6 [&_button]:!font-semibold",
+              "[&_button]:!shadow-[0_16px_34px_rgba(15,23,42,0.16)]",
               actionToneClass,
             ].join(" ")}
           >
@@ -147,6 +151,7 @@ export function DashboardHero({
     </section>
   );
 }
+
 
 
 

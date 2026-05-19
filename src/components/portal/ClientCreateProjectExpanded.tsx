@@ -22,6 +22,11 @@ import {
 } from "lucide-react";
 
 import { type PackageType } from "@/lib/types";
+import {
+  PACKAGE_CATALOG,
+  getPackageCatalogItem,
+  getPackageTitle,
+} from "./packageCatalog";
 import { useApp } from "./AppContext";
 import {
   BackLink,
@@ -34,35 +39,32 @@ import {
   packageClass,
 } from "./UI";
 
-type PackageOption = {
-  type: PackageType;
-  icon: ReactNode;
-  color: string;
-  title: string;
-  category: string;
-  description: string;
-};
-
 type LayoutMode = "grid" | "compact" | "list";
 
-function packageTitle(packageType: PackageType | string) {
-  const titles: Record<string, string> = {
-    Launch: "Launch Suite",
-    Impact: "Impact Suite",
-    Growth: "Growth Suite",
-    Partner: "Partner Suite",
-    WebsiteStarter: "Website Dev. Starter",
-    WebsiteProBiz: "Website Dev. Pro-Biz",
-    WebsiteAdvance: "Website Dev. Advance",
-    BrandingStarter: "Branding Starter",
-    BrandingProBiz: "Branding Pro-Biz",
-    BrandingAdvance: "Branding Advance",
-    LeapRegistration: "Leap / Registration",
-    Custom: "Custom",
-  };
+const iconMap: Record<PackageType, ReactNode> = {
+  Launch: <Rocket size={21} />,
+  Impact: <HeartHandshake size={21} />,
+  Growth: <TrendingUp size={21} />,
+  Partner: <Handshake size={21} />,
+  WebsiteStarter: <Globe2 size={21} />,
+  WebsiteProBiz: <MonitorSmartphone size={21} />,
+  WebsiteAdvance: <Code2 size={21} />,
+  BrandingStarter: <Palette size={21} />,
+  BrandingProBiz: <BadgeCheck size={21} />,
+  BrandingAdvance: <Gem size={21} />,
+  LeapRegistration: <Landmark size={21} />,
+  Custom: <SlidersHorizontal size={21} />,
+};
 
-  return titles[String(packageType)] ?? String(packageType);
-}
+const layoutOptions: Array<{
+  key: LayoutMode;
+  label: string;
+  icon: ReactNode;
+}> = [
+  { key: "grid", label: "Grid", icon: <Grid2X2 size={14} /> },
+  { key: "compact", label: "Compact", icon: <Rows3 size={14} /> },
+  { key: "list", label: "List", icon: <LayoutList size={14} /> },
+];
 
 function recommendPackageLocal(text: string): PackageType {
   const value = text.toLowerCase();
@@ -135,127 +137,6 @@ Recommended direction: Octalve should translate this into a clear delivery scope
 Expected outcome: a professional solution that improves brand clarity, customer trust, digital presentation, conversion flow, and long-term business growth.`;
 }
 
-const basePackageOptions: PackageOption[] = [
-  {
-    type: "Launch",
-    icon: <Rocket size={21} />,
-    color: "#0064E0",
-    title: "Launch Suite",
-    category: "Suite",
-    description:
-      "For businesses preparing a professional launch, website rollout, brand presence, or customer-facing digital system.",
-  },
-  {
-    type: "Impact",
-    icon: <HeartHandshake size={21} />,
-    color: "#E61525",
-    title: "Impact Suite",
-    category: "Suite",
-    description:
-      "For NGOs, campaigns, social initiatives, and mission-driven projects that need visibility, credibility, and donation readiness.",
-  },
-  {
-    type: "Growth",
-    icon: <TrendingUp size={21} />,
-    color: "#29BE3E",
-    title: "Growth Suite",
-    category: "Suite",
-    description:
-      "For existing businesses that want stronger sales structure, automation, conversion flow, and digital growth systems.",
-  },
-  {
-    type: "Partner",
-    icon: <Handshake size={21} />,
-    color: "#5300D9",
-    title: "Partner Suite",
-    category: "Suite",
-    description:
-      "For long-term execution support, strategic collaboration, managed project delivery, and continuous business improvement.",
-  },
-  {
-    type: "WebsiteStarter",
-    icon: <Globe2 size={21} />,
-    color: "#0064E0",
-    title: "Website Dev. Starter",
-    category: "Website",
-    description:
-      "For a clean starter website or landing presence that helps a business look credible, clear, and ready for enquiries.",
-  },
-  {
-    type: "WebsiteProBiz",
-    icon: <MonitorSmartphone size={21} />,
-    color: "#FC7E24",
-    title: "Website Dev. Pro-Biz",
-    category: "Website",
-    description:
-      "For a complete business website with stronger structure, conversion flow, content sections, and professional presentation.",
-  },
-  {
-    type: "WebsiteAdvance",
-    icon: <Code2 size={21} />,
-    color: "#29BE3E",
-    title: "Website Dev. Advance",
-    category: "Website",
-    description:
-      "For advanced websites, e-commerce, landing pages, integrations, or custom digital experiences requiring deeper delivery.",
-  },
-  {
-    type: "BrandingStarter",
-    icon: <Palette size={21} />,
-    color: "#E61525",
-    title: "Branding Starter",
-    category: "Branding",
-    description:
-      "For a clean starter identity covering logo, visual direction, brand guide, and essential business materials.",
-  },
-  {
-    type: "BrandingProBiz",
-    icon: <BadgeCheck size={21} />,
-    color: "#FC7E24",
-    title: "Branding Pro-Biz",
-    category: "Branding",
-    description:
-      "For a stronger brand system with social assets, presentation materials, and more complete professional rollout.",
-  },
-  {
-    type: "BrandingAdvance",
-    icon: <Gem size={21} />,
-    color: "#5300D9",
-    title: "Branding Advance",
-    category: "Branding",
-    description:
-      "For premium identity systems with deeper brand personality, packaging, brochure, signage, and wider applications.",
-  },
-  {
-    type: "LeapRegistration",
-    icon: <Landmark size={21} />,
-    color: "#0064E0",
-    title: "Leap / Registration",
-    category: "Leap",
-    description:
-      "For business registration, CAC/TIN readiness, compliance support, licensing guidance, and founder setup structure.",
-  },
-  {
-    type: "Custom",
-    icon: <SlidersHorizontal size={21} />,
-    color: "#5300D9",
-    title: "Custom",
-    category: "Custom",
-    description:
-      "For special projects that need a custom delivery structure, mixed services, or a scope outside a standard package.",
-  },
-];
-
-const layoutOptions: Array<{
-  key: LayoutMode;
-  label: string;
-  icon: ReactNode;
-}> = [
-  { key: "grid", label: "Grid", icon: <Grid2X2 size={14} /> },
-  { key: "compact", label: "Compact", icon: <Rows3 size={14} /> },
-  { key: "list", label: "List", icon: <LayoutList size={14} /> },
-];
-
 export function ClientCreateProjectExpanded() {
   const { state, createProjectRequest } = useApp();
 
@@ -275,26 +156,21 @@ export function ClientCreateProjectExpanded() {
   });
 
   const packageOptions = useMemo(() => {
-    const optionMap = new Map<string, PackageOption>();
+    return PACKAGE_CATALOG.map((item) => {
+      const template = state.templates.find(
+        (template) => template.packageType === item.type,
+      );
 
-    for (const option of basePackageOptions) {
-      optionMap.set(option.type, option);
-    }
-
-    for (const template of state.templates) {
-      const current = optionMap.get(template.packageType);
-
-      if (current) {
-        optionMap.set(template.packageType, {
-          ...current,
-          title: template.name || current.title,
-          description: template.description || current.description,
-        });
-      }
-    }
-
-    return Array.from(optionMap.values());
+      return {
+        ...item,
+        title: template?.name || item.title,
+        description: template?.description || item.description,
+        template,
+      };
+    });
   }, [state.templates]);
+
+  const selectedPackage = getPackageCatalogItem(packageType);
 
   const template =
     state.templates.find((template) => template.packageType === packageType) ??
@@ -351,7 +227,7 @@ export function ClientCreateProjectExpanded() {
       projectDescription: form.projectDescription || improvedBrief,
       additionalNotes:
         form.additionalNotes ||
-        `Recommended direction: ${packageTitle(aiPackage)}. Please align the execution around brand clarity, user experience, conversion flow, delivery accountability, and measurable business outcomes.`,
+        `Recommended direction: ${getPackageTitle(aiPackage)}. Please align execution around clarity, user experience, conversion flow, delivery accountability, and measurable business outcomes.`,
     });
 
     setFormError("");
@@ -381,110 +257,220 @@ export function ClientCreateProjectExpanded() {
     }
   }
 
+  const gridClass =
+    layoutMode === "compact"
+      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+      : layoutMode === "list"
+        ? "grid-cols-1"
+        : "grid-cols-1 lg:grid-cols-2";
+
   return (
     <div className="content narrow">
-      <div className="wizard">
+      <div className="mx-auto max-w-[1120px]">
         <BackLink href="/client/projects" label="Cancel" />
 
-        <div className="wizard-head-premium compact-create-head">
-          <Badge className="badge-blue">Step {step} of 3</Badge>
-          <h1>Create Project Request</h1>
-          <p>
-            Choose a package, share the project context, and let Octalve convert it into a managed delivery workflow.
-          </p>
+        <div className="mb-8 mt-2 rounded-[28px] border border-slate-200 bg-white px-6 py-7 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:px-8 lg:px-10">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge className="badge-blue">Step {step} of 3</Badge>
+            <span className="text-sm font-semibold text-slate-500">
+              {step === 1
+                ? "Choose structure"
+                : step === 2
+                  ? "Project brief"
+                  : "Review request"}
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
+            <div>
+              <h1 className="max-w-[760px] text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] text-slate-950 sm:text-[46px]">
+                Create Project Request
+              </h1>
+
+              <p className="mt-3 max-w-[720px] text-[15px] font-medium leading-7 text-slate-600">
+                Select the right delivery package, describe your business need, and Octalve will convert it into a managed project workflow.
+              </p>
+            </div>
+
+            <div className="flex gap-2 lg:justify-end">
+              {[1, 2, 3].map((item) => (
+                <span
+                  key={item}
+                  className={[
+                    "h-2.5 flex-1 rounded-full lg:w-16 lg:flex-none",
+                    step >= item ? "bg-[#0064E0]" : "bg-slate-200",
+                  ].join(" ")}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="wizard-progress">
-          <span className={step >= 1 ? "active" : ""} />
-          <span className={step >= 2 ? "active" : ""} />
-          <span className={step >= 3 ? "active" : ""} />
-        </div>
-
-        {formError && <div className="project-form-error">{formError}</div>}
+        {formError && (
+          <div className="mb-5 rounded-2xl bg-[#E61525] px-4 py-3 text-sm font-semibold text-white">
+            {formError}
+          </div>
+        )}
 
         {step === 1 && (
           <>
-            <div className="package-select-head">
+            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h2>Select Package / Suite</h2>
-                <p>
-                  Pick the delivery structure that best fits your goal. Admin-created templates can update the title, description, phases, and deliverables shown here.
+                <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+                  Select Package / Suite
+                </h2>
+                <p className="mt-2 max-w-[720px] text-sm leading-6 text-slate-600">
+                  Choose the structure that best fits your goal. Admin templates can update the package title, description, phases and deliverables shown here.
                 </p>
               </div>
 
-              <div className="package-layout-switcher" aria-label="Package layout">
+              <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
                 {layoutOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
-                    className={layoutMode === option.key ? "active" : ""}
                     onClick={() => setLayoutMode(option.key)}
+                    className={[
+                      "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition",
+                      layoutMode === option.key
+                        ? "bg-[#0064E0] text-white"
+                        : "text-slate-600 hover:bg-slate-50",
+                    ].join(" ")}
                   >
                     {option.icon}
-                    <span>{option.label}</span>
+                    {option.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className={`package-option-grid package-option-grid-${layoutMode}`}>
-              {packageOptions.map((option) => (
-                <Card
-                  key={option.type}
-                  onClick={() => {
-                    setPackageType(option.type);
-                    setFormError("");
-                  }}
-                  className={`package-card premium-suite-card ${
-                    packageType === option.type ? "selected" : ""
-                  }`}
-                  style={
-                    {
-                      "--suite-color": option.color,
-                    } as CSSProperties
-                  }
-                >
-                  <div className="package-icon premium-suite-icon">
-                    {option.icon}
-                  </div>
+            <div className={`grid gap-4 ${gridClass}`}>
+              {packageOptions.map((option) => {
+                const isSelected = packageType === option.type;
+                const colorStyle = {
+                  "--package-color": option.color,
+                } as CSSProperties;
 
-                  <div className="package-card-copy">
-                    <span className="package-card-category">
-                      {option.category}
+                return (
+                  <button
+                    key={option.type}
+                    type="button"
+                    onClick={() => {
+                      setPackageType(option.type);
+                      setFormError("");
+                    }}
+                    style={colorStyle}
+                    className={[
+                      "group relative w-full rounded-[24px] border bg-white p-5 text-left transition",
+                      "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
+                      isSelected
+                        ? "border-[var(--package-color)] ring-4 ring-[color-mix(in_srgb,var(--package-color)_14%,transparent)]"
+                        : "border-slate-200",
+                      layoutMode === "list"
+                        ? "grid min-h-[128px] grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
+                        : "min-h-[176px]",
+                    ].join(" ")}
+                  >
+                    <span className="grid h-13 w-13 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--package-color)_12%,white)] text-[var(--package-color)]">
+                      {iconMap[option.type]}
                     </span>
-                    <h3>{option.title}</h3>
-                    <p>{option.description}</p>
-                  </div>
 
-                  {packageType === option.type && (
-                    <span className="suite-selected-icon">
-                      <CheckCircle2 size={18} />
+                    <span
+                      className={[
+                        "block",
+                        layoutMode === "list" ? "" : "mt-5",
+                      ].join(" ")}
+                    >
+                      <span className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--package-color)_10%,white)] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-[var(--package-color)]">
+                        {option.category}
+                      </span>
+
+                      <span className="block text-[17px] font-semibold tracking-[-0.03em] text-slate-950">
+                        {option.title}
+                      </span>
+
+                      <span className="mt-2 block max-w-[620px] text-sm leading-6 text-slate-600">
+                        {option.description}
+                      </span>
+
+                      {option.template ? (
+                        <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                          Admin template connected
+                        </span>
+                      ) : null}
                     </span>
-                  )}
-                </Card>
-              ))}
+
+                    {isSelected ? (
+                      <span className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[color-mix(in_srgb,var(--package-color)_12%,white)] text-[var(--package-color)]">
+                        <CheckCircle2 size={18} />
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
 
             {template && (
-              <Card className="template-preview">
-                <div className="template-preview-head">
-                  <div>
-                    <Badge className={packageClass(packageType)}>
-                      Selected Template
-                    </Badge>
-                    <h3>{template.name}</h3>
-                    <p>{template.description}</p>
+              <Card className="mt-6 overflow-hidden border-slate-200">
+                <div className="border-b border-slate-200 bg-white px-6 py-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <Badge className={packageClass(packageType)}>
+                        Selected Template
+                      </Badge>
+                      <h3 className="mt-3 text-xl font-semibold tracking-[-0.035em] text-slate-950">
+                        {template.name || selectedPackage.title}
+                      </h3>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                        {template.description || selectedPackage.description}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                      <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">
+                        Workflow
+                      </span>
+                      <strong className="text-lg text-slate-950">
+                        {template.phases?.length || 0} phases
+                      </strong>
+                    </div>
                   </div>
                 </div>
 
-                <div className="template-phase-preview">
-                  {template.phases?.slice(0, 5).map((phase, index) => (
-                    <div key={phase.id ?? index} className="template-phase-card">
-                      <span>Phase {index + 1}</span>
-                      <strong>{phase.title}</strong>
-                      {phase.description && <p>{phase.description}</p>}
-                    </div>
-                  ))}
+                <div className="grid gap-3 bg-slate-50 p-4 sm:p-5">
+                  {template.phases?.slice(0, 6).map((phase, index) => {
+                    const deliverableCount =
+                      "deliverables" in phase && Array.isArray(phase.deliverables)
+                        ? phase.deliverables.length
+                        : 0;
+
+                    return (
+                      <div
+                        key={phase.id ?? index}
+                        className="rounded-2xl border border-slate-200 bg-white p-4"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">
+                              Phase {index + 1}
+                            </span>
+                            <h4 className="mt-1 text-base font-semibold tracking-[-0.02em] text-slate-950">
+                              {phase.title}
+                            </h4>
+                            {phase.description ? (
+                              <p className="mt-1 text-sm leading-6 text-slate-600">
+                                {phase.description}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                            {deliverableCount} deliverables
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </Card>
             )}
@@ -493,7 +479,9 @@ export function ClientCreateProjectExpanded() {
 
         {step === 2 && (
           <>
-            <h2>Project Brief</h2>
+            <h2 className="mb-3 text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+              Project Brief
+            </h2>
 
             <Card className="card-body">
               <div className="form-grid">
@@ -558,17 +546,21 @@ export function ClientCreateProjectExpanded() {
                 </Field>
               </div>
 
-              <div className="ai-brief-panel">
+              <div className="mt-5 rounded-3xl bg-[#0064E0] p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
                 <div>
-                  <Badge className={packageClass(aiPackage)}>
-                    <Sparkles size={13} /> AI recommends {packageTitle(aiPackage)}
+                  <Badge className="border-white/20 bg-white/15 text-white">
+                    <Sparkles size={13} /> AI recommends {getPackageTitle(aiPackage)}
                   </Badge>
-                  <p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-white/85">
                     Use this to turn rough notes into a clearer business-ready project brief before submission.
                   </p>
                 </div>
 
-                <Button variant="secondary" onClick={structureWithAI}>
+                <Button
+                  variant="secondary"
+                  onClick={structureWithAI}
+                  className="mt-4 bg-white text-[#0064E0] sm:mt-0"
+                >
                   <Sparkles size={16} /> Structure Brief
                 </Button>
               </div>
@@ -578,12 +570,14 @@ export function ClientCreateProjectExpanded() {
 
         {step === 3 && (
           <>
-            <h2>Review & Submit</h2>
+            <h2 className="mb-3 text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+              Review & Submit
+            </h2>
 
             <Card className="card-body stack">
               <div className="timeline-row">
                 <span>Selected Package</span>
-                <strong>{packageTitle(packageType)}</strong>
+                <strong>{getPackageTitle(packageType)}</strong>
               </div>
 
               <div className="timeline-row">
@@ -621,7 +615,7 @@ export function ClientCreateProjectExpanded() {
           </>
         )}
 
-        <div className="wizard-actions">
+        <div className="sticky bottom-0 z-10 mt-5 flex justify-between gap-3 border-t border-slate-200 bg-[rgba(248,250,252,0.86)] py-4 backdrop-blur">
           <Button
             variant="secondary"
             onClick={() => {
