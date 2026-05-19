@@ -1,5 +1,7 @@
-﻿"use client";
+"use client";
 
+
+import { getPackageTitle } from "./packageCatalog";
 import Link from "next/link";
 import type React from "react";
 import {
@@ -94,7 +96,7 @@ export function ProjectSummaryCard({
 
           <div className="workspace-card-badges">
             <Badge className={packageClass(project.packageType)}>
-              {project.packageType}
+              {getPackageTitle(project.packageType)}
             </Badge>
             <Badge className={statusClass(project.status)}>
               {statusLabel(project.status)}

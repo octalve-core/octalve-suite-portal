@@ -99,7 +99,8 @@ import {
   statusLabel,
   Textarea,
 } from "./UI";
-import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
+import { getPackageCatalogItem, getPackageTitle, PACKAGE_CATALOG } from "./packageCatalog";
+import { TemplatePackagePicker, getTemplatePackageOptions, type TemplatePickerOption } from "./TemplatePackagePicker";
 
 function toneForPhase(status: ProjectPhase["status"]) {
   if (status === "APPROVED") return "phase-approved";
@@ -1034,25 +1035,26 @@ export function AdminCreateProject() {
   const { state, createAdminProject, dataLoading } = useApp();
   const router = useRouter();
 
-  const liveTemplates = useMemo(
-    () =>
-      [...state.templates].sort((a, b) =>
-        getPackageTitle(a.packageType).localeCompare(getPackageTitle(b.packageType)),
-      ),
-    [state.templates],
-  );
-
   const [step, setStep] = useState(1);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [loading, setLoading] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  const selectedTemplate =
-    liveTemplates.find((template) => template.id === selectedTemplateId) ??
-    liveTemplates[0];
+  const packageOptions = useMemo(
+    () => getTemplatePackageOptions(state.templates),
+    [state.templates],
+  );
 
-  const selectedCatalog = getPackageCatalogItem(selectedTemplate?.packageType);
-  const packageType = selectedTemplate?.packageType ?? "Launch";
+  const selectedOption =
+    packageOptions.find((option) => option.id === selectedTemplateId) ??
+    packageOptions[0];
+
+  const selectedTemplate =
+    selectedOption?.template ??
+    state.templates.find((template) => template.id === selectedTemplateId) ??
+    null;
+
+  const packageType = selectedOption?.type ?? selectedTemplate?.packageType ?? "Launch";
 
   const [form, setForm] = useState({
     title: "",
@@ -1067,10 +1069,10 @@ export function AdminCreateProject() {
   });
 
   useEffect(() => {
-    if (!selectedTemplateId && liveTemplates[0]) {
-      setSelectedTemplateId(liveTemplates[0].id);
+    if (!selectedTemplateId && packageOptions[0]) {
+      setSelectedTemplateId(packageOptions[0].id);
     }
-  }, [liveTemplates, selectedTemplateId]);
+  }, [packageOptions, selectedTemplateId]);
 
   if (dataLoading && state.templates.length === 0) {
     return <PageLoading />;
@@ -1101,9 +1103,15 @@ export function AdminCreateProject() {
     (user) => user.role === "PROJECT_MANAGER" || user.role === "STAFF",
   );
 
+  function selectTemplate(option: TemplatePickerOption) {
+    setSelectedTemplateId(option.id);
+    setCreateError("");
+  }
+
   function validateStep(targetStep = step) {
     if (targetStep !== 2 && targetStep !== 3) return "";
 
+    if (!selectedTemplate) return "Select a valid admin-managed template.";
     if (!form.title.trim()) return "Project title is required.";
     if (!form.clientName.trim()) return "Client name is required.";
     if (!form.clientEmail.trim()) return "Client email is required.";
@@ -1166,7 +1174,7 @@ export function AdminCreateProject() {
                 Create Managed Project
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/82 sm:text-[15px]">
-                Select an admin-managed template, assign client details, and open a structured project with the right phases and deliverables.
+                Select the same admin-managed template structure used by the client project request flow.
               </p>
             </div>
 
@@ -1192,74 +1200,16 @@ export function AdminCreateProject() {
 
         {step === 1 && (
           <>
-            <div className="mb-5">
-              <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
-                Select Template
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                These templates come directly from Admin Templates. Editing or syncing templates updates the options used for project creation.
-              </p>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              {liveTemplates.map((template) => {
-                const catalog = getPackageCatalogItem(template.packageType);
-                const isSelected = selectedTemplate?.id === template.id;
-                const deliverableCount = template.phases.reduce(
-                  (total, phase) => total + (phase.deliverables?.length ?? 0),
-                  0,
-                );
-
-                return (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedTemplateId(template.id);
-                      setCreateError("");
-                    }}
-                    className={[
-                      "group w-full rounded-[24px] border bg-white p-5 text-left transition",
-                      "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
-                      isSelected ? "border-[#E61525] ring-4 ring-red-100" : "border-slate-200",
-                    ].join(" ")}
-                  >
-                    <div className="flex gap-4">
-                      <span
-                        className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
-                        style={{
-                          backgroundColor: `${catalog.color}14`,
-                          color: catalog.color,
-                        }}
-                      >
-                        {template.name.slice(0, 1)}
-                      </span>
-
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-semibold tracking-[-0.03em] text-slate-950">
-                            {template.name}
-                          </h3>
-
-                          <Badge className={packageClass(template.packageType)}>
-                            {catalog.title}
-                          </Badge>
-                        </div>
-
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {template.description || catalog.description}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                          <span>{template.phases.length} phases</span>
-                          <span>{deliverableCount} deliverables</span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <TemplatePackagePicker
+              templates={state.templates}
+              selectedId={selectedTemplateId}
+              onSelect={selectTemplate}
+              role="admin"
+              layout="grid"
+              showLayoutSwitch={false}
+              heading="Select Admin Template"
+              description="These templates come directly from Admin Templates. Updating a template updates the workflow available for admin and client project creation."
+            />
 
             {selectedTemplate && (
               <Card className="mt-6 overflow-hidden border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
@@ -1271,7 +1221,7 @@ export function AdminCreateProject() {
                     {selectedTemplate.name}
                   </h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                    {selectedTemplate.description || selectedCatalog.description}
+                    {selectedTemplate.description || getPackageCatalogItem(selectedTemplate.packageType).description}
                   </p>
                 </div>
 
@@ -1476,6 +1426,7 @@ export function AdminCreateProject() {
     </div>
   );
 }
+
 
 
 export function AdminRequests() {
@@ -2013,11 +1964,11 @@ function TemplateModal({
                 setForm({ ...form, packageType: e.target.value as PackageType })
               }
             >
-              <option>Launch</option>
-              <option>Impact</option>
-              <option>Growth</option>
-              <option>Partner</option>
-              <option>Custom</option>
+              {PACKAGE_CATALOG.map((item) => (
+                <option key={item.type} value={item.type}>
+                  {item.title}
+                </option>
+              ))}
             </Select>
           </Field>
           <Field label="Description">

@@ -1,5 +1,7 @@
-﻿"use client";
+"use client";
 
+
+import { getPackageTitle } from "./packageCatalog";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Clock3, FileText, XCircle } from "lucide-react";
@@ -243,7 +245,7 @@ export function AdminProjectRequestsManager() {
                       {request.businessName} • {request.projectGoal}
                     </p>
                     <div className="workspace-action-card-meta">
-                      <span>{request.packageType} Suite</span>
+                      <span>{getPackageTitle(request.packageType)}</span>
                       <span>{new Date(request.createdAt).toLocaleDateString("en-NG")}</span>
                     </div>
                   </div>
@@ -286,7 +288,7 @@ export function AdminProjectRequestsManager() {
                   </div>
                   <div className="kv">
                     <span>Package</span>
-                    <strong>{activeRequest.packageType} Suite</strong>
+                    <strong>{getPackageTitle(activeRequest.packageType)}</strong>
                   </div>
                   <div className="kv">
                     <span>Timeline</span>

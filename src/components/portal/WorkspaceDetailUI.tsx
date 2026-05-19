@@ -1,5 +1,7 @@
 "use client";
 
+
+import { getPackageTitle } from "./packageCatalog";
 import Link from "next/link";
 import type React from "react";
 import {
@@ -90,7 +92,7 @@ export function ProjectDetailHero({
           <div>
             <div className="workspace-detail-badges">
               <Badge className={packageClass(project.packageType)}>
-                {project.packageType} Suite
+                {getPackageTitle(project.packageType)}
               </Badge>
               <Badge className={statusClass(project.status)}>
                 {statusLabel(project.status)}
@@ -178,7 +180,7 @@ export function PhaseDetailHero({
               </Badge>
               {project && (
                 <Badge className={packageClass(project.packageType)}>
-                  {project.packageType} Suite
+                  {getPackageTitle(project.packageType)}
                 </Badge>
               )}
             </div>

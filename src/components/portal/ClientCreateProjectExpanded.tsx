@@ -1,34 +1,21 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
-import {
-  BadgeCheck,
-  CheckCircle2,
-  Code2,
-  Gem,
-  Globe2,
-  Grid2X2,
-  Handshake,
-  HeartHandshake,
-  Landmark,
-  LayoutList,
-  MonitorSmartphone,
-  Palette,
-  Rows3,
-  Rocket,
-  SlidersHorizontal,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Sparkles } from "lucide-react";
 
 import { type PackageType } from "@/lib/types";
 import {
-  PACKAGE_CATALOG,
   getPackageCatalogItem,
   getPackagePhases,
   getPackageTitle,
   type PackageDeliverable,
 } from "./packageCatalog";
+import {
+  TemplatePackagePicker,
+  getTemplatePackageOptions,
+  type TemplatePickerLayout,
+  type TemplatePickerOption,
+} from "./TemplatePackagePicker";
 import { useApp } from "./AppContext";
 import {
   BackLink,
@@ -40,33 +27,6 @@ import {
   Textarea,
   packageClass,
 } from "./UI";
-
-type LayoutMode = "grid" | "compact" | "list";
-
-const iconMap: Record<PackageType, ReactNode> = {
-  Launch: <Rocket size={21} />,
-  Impact: <HeartHandshake size={21} />,
-  Growth: <TrendingUp size={21} />,
-  Partner: <Handshake size={21} />,
-  WebsiteStarter: <Globe2 size={21} />,
-  WebsiteProBiz: <MonitorSmartphone size={21} />,
-  WebsiteAdvance: <Code2 size={21} />,
-  BrandingStarter: <Palette size={21} />,
-  BrandingProBiz: <BadgeCheck size={21} />,
-  BrandingAdvance: <Gem size={21} />,
-  LeapRegistration: <Landmark size={21} />,
-  Custom: <SlidersHorizontal size={21} />,
-};
-
-const layoutOptions: Array<{
-  key: LayoutMode;
-  label: string;
-  icon: ReactNode;
-}> = [
-  { key: "grid", label: "Grid", icon: <Grid2X2 size={14} /> },
-  { key: "compact", label: "Compact", icon: <Rows3 size={14} /> },
-  { key: "list", label: "List", icon: <LayoutList size={14} /> },
-];
 
 function recommendPackageLocal(text: string): PackageType {
   const value = text.toLowerCase();
@@ -139,9 +99,9 @@ export function ClientCreateProjectExpanded() {
   const { state, createProjectRequest } = useApp();
 
   const [step, setStep] = useState(1);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
-  const [packageType, setPackageType] = useState<PackageType>("Launch");
+  const [layoutMode, setLayoutMode] = useState<TemplatePickerLayout>("grid");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [packageType, setPackageType] = useState<PackageType>("Launch");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -155,30 +115,10 @@ export function ClientCreateProjectExpanded() {
     additionalNotes: "",
   });
 
-  const packageOptions = useMemo(() => {
-    if (state.templates.length > 0) {
-      return state.templates.map((template) => {
-        const catalog = getPackageCatalogItem(template.packageType);
-
-        return {
-          ...catalog,
-          id: template.id,
-          type: template.packageType,
-          title: template.name || catalog.title,
-          description: template.description || catalog.description,
-          template,
-          isLiveTemplate: true,
-        };
-      });
-    }
-
-    return PACKAGE_CATALOG.map((item) => ({
-      ...item,
-      id: `catalog-${item.type}`,
-      template: null,
-      isLiveTemplate: false,
-    }));
-  }, [state.templates]);
+  const packageOptions = useMemo(
+    () => getTemplatePackageOptions(state.templates),
+    [state.templates],
+  );
 
   const selectedOption =
     packageOptions.find((option) => option.id === selectedTemplateId) ??
@@ -188,14 +128,28 @@ export function ClientCreateProjectExpanded() {
 
   const template =
     selectedOption?.template ??
-    state.templates.find((template) => template.id === selectedTemplateId) ??
-    state.templates.find((template) => template.packageType === packageType) ??
+    state.templates.find((item) => item.id === selectedTemplateId) ??
+    state.templates.find((item) => item.packageType === packageType) ??
     null;
+
+  useEffect(() => {
+    if (!selectedTemplateId && packageOptions[0]) {
+      setSelectedTemplateId(packageOptions[0].id);
+      setPackageType(packageOptions[0].type);
+    }
+  }, [packageOptions, selectedTemplateId]);
+
+  function selectTemplate(option: TemplatePickerOption) {
+    setSelectedTemplateId(option.id);
+    setPackageType(option.type);
+    setFormError("");
+  }
 
   const displayPhases = useMemo(() => {
     if (template?.phases?.length) {
       return template.phases.map((phase, index) => {
         const fallback = selectedPackage.phases[index];
+        const normalized = normalizeDeliverables((phase as any).deliverables);
 
         return {
           id: phase.id ?? `${packageType}-${index}`,
@@ -205,9 +159,7 @@ export function ClientCreateProjectExpanded() {
             fallback?.description ||
             "Structured delivery phase prepared for client review.",
           deliverables:
-            normalizeDeliverables((phase as any).deliverables).length > 0
-              ? normalizeDeliverables((phase as any).deliverables)
-              : fallback?.deliverables ?? [],
+            normalized.length > 0 ? normalized : fallback?.deliverables ?? [],
         };
       });
     }
@@ -217,13 +169,6 @@ export function ClientCreateProjectExpanded() {
       ...phase,
     }));
   }, [packageType, selectedPackage.phases, template]);
-
-  useEffect(() => {
-    if (!selectedTemplateId && packageOptions[0]) {
-      setSelectedTemplateId(packageOptions[0].id);
-      setPackageType(packageOptions[0].type);
-    }
-  }, [packageOptions, selectedTemplateId]);
 
   const aiPackage = useMemo(
     () => recommendPackageLocal(`${form.projectGoal} ${form.projectDescription}`),
@@ -275,7 +220,7 @@ export function ClientCreateProjectExpanded() {
   }
 
   function structureWithAI() {
-    const selectedTitle = getPackageTitle(packageType);
+    const selectedTitle = selectedOption?.title || getPackageTitle(packageType);
     const phaseSummary = displayPhases
       .slice(0, 4)
       .map((phase, index) => `${index + 1}. ${phase.title}`)
@@ -298,13 +243,13 @@ export function ClientCreateProjectExpanded() {
       ...form,
       projectGoal:
         form.projectGoal ||
-        `Use the ${selectedTitle} to ${outcome} for ${form.businessName || "the business"}.`,
+        `Use the ${selectedTitle} workflow to ${outcome} for ${form.businessName || "the business"}.`,
       projectDescription:
         form.projectDescription ||
         `The project should be structured around ${selectedTitle}. Octalve should clarify the scope, define the delivery phases, prepare client-visible deliverables, manage approvals, and hand over the final outputs in a way that supports practical business use. Proposed delivery flow: ${phaseSummary}.`,
       additionalNotes:
         form.additionalNotes ||
-        `Please align this request with the selected package: ${selectedTitle}. The delivery should prioritize clarity, professional presentation, client review points, and measurable handoff outcomes.`,
+        `Please align this request with the selected admin-managed template: ${selectedTitle}. The delivery should prioritize clarity, professional presentation, client review points, and measurable handoff outcomes.`,
     });
 
     setFormError("");
@@ -343,13 +288,6 @@ export function ClientCreateProjectExpanded() {
     }
   }
 
-  const gridClass =
-    layoutMode === "compact"
-      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-      : layoutMode === "list"
-        ? "grid-cols-1"
-        : "grid-cols-1 lg:grid-cols-2";
-
   const inputClass =
     "h-12 rounded-2xl border-slate-200 bg-white text-sm font-medium text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:border-[#0064E0] focus:ring-[#0064E0]/15";
 
@@ -380,7 +318,7 @@ export function ClientCreateProjectExpanded() {
               </h1>
 
               <p className="mt-3 max-w-[720px] text-sm font-medium leading-6 text-slate-600 sm:text-[15px]">
-                Select a delivery package, provide the project context, and Octalve will structure it into a clear workflow for review, execution and handoff.
+                Select an admin-managed delivery package, provide the project context, and Octalve will structure it into a clear workflow for review, execution and handoff.
               </p>
             </div>
 
@@ -406,96 +344,16 @@ export function ClientCreateProjectExpanded() {
 
         {step === 1 && (
           <>
-            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
-                  Select Package / Suite
-                </h2>
-                <p className="mt-2 max-w-[760px] text-sm leading-6 text-slate-600">
-                  Choose the delivery path that matches the work you want Octalve to manage. Each package includes a structured workflow, review points and client-visible deliverables.
-                </p>
-              </div>
-
-              <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-                {layoutOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => setLayoutMode(option.key)}
-                    className={[
-                      "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition",
-                      layoutMode === option.key
-                        ? "bg-[#0064E0] text-white"
-                        : "text-slate-600 hover:bg-slate-50",
-                    ].join(" ")}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={`grid gap-4 ${gridClass}`}>
-              {packageOptions.map((option) => {
-                const isSelected = selectedOption?.id === option.id;
-                const colorStyle = {
-                  "--package-color": option.color,
-                } as CSSProperties;
-
-                return (
-                  <button
-                    key={option.type}
-                    type="button"
-                    onClick={() => {
-                      setPackageType(option.type);
-                      setFormError("");
-                    }}
-                    style={colorStyle}
-                    className={[
-                      "group relative w-full rounded-[24px] border bg-white p-5 text-left transition",
-                      "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
-                      isSelected
-                        ? "border-[var(--package-color)] ring-4 ring-[color-mix(in_srgb,var(--package-color)_14%,transparent)]"
-                        : "border-slate-200",
-                      layoutMode === "list"
-                        ? "grid min-h-[118px] grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
-                        : "min-h-[166px]",
-                    ].join(" ")}
-                  >
-                    <span className="grid h-13 w-13 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--package-color)_12%,white)] text-[var(--package-color)]">
-                      {iconMap[option.type]}
-                    </span>
-
-                    <span className={layoutMode === "list" ? "block" : "mt-5 block"}>
-                      <span className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--package-color)_10%,white)] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-[var(--package-color)]">
-                        {option.category}
-                      </span>
-
-                      <span className="block text-[17px] font-semibold tracking-[-0.03em] text-slate-950">
-                        {option.title}
-                      </span>
-
-                      <span className="mt-2 block max-w-[620px] text-sm leading-6 text-slate-600">
-                        {option.description}
-                      </span>
-
-                      {option.template ? (
-                        <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                          Admin-managed template
-                        </span>
-                      ) : null}
-                    </span>
-
-                    {isSelected ? (
-                      <span className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[color-mix(in_srgb,var(--package-color)_12%,white)] text-[var(--package-color)]">
-                        <CheckCircle2 size={18} />
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
+            <TemplatePackagePicker
+              templates={state.templates}
+              selectedId={selectedTemplateId}
+              onSelect={selectTemplate}
+              role="client"
+              layout={layoutMode}
+              onLayoutChange={setLayoutMode}
+              heading="Select Package / Suite"
+              description="Choose the admin-managed delivery workflow that matches your project. Each option contains the phases and deliverables configured by Octalve."
+            />
 
             <Card className="mt-6 overflow-hidden border-slate-200">
               <div className="border-b border-slate-200 bg-white px-6 py-5">
@@ -505,10 +363,10 @@ export function ClientCreateProjectExpanded() {
                       Selected Template
                     </Badge>
                     <h3 className="mt-3 text-xl font-semibold tracking-[-0.035em] text-slate-950">
-                      {template?.name || selectedPackage.title}
+                      {template?.name || selectedOption?.title || selectedPackage.title}
                     </h3>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                      {template?.description || selectedPackage.description}
+                      {template?.description || selectedOption?.description || selectedPackage.description}
                     </p>
                   </div>
 
@@ -546,24 +404,6 @@ export function ClientCreateProjectExpanded() {
                         {phase.deliverables.length} deliverables
                       </span>
                     </div>
-
-                    {phase.deliverables.length ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        {phase.deliverables.slice(0, 4).map((deliverable, deliverableIndex) => (
-                          <div
-                            key={`${phase.id}-${deliverableIndex}`}
-                            className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
-                          >
-                            <strong className="block text-xs font-bold text-slate-900">
-                              {deliverable.title}
-                            </strong>
-                            <span className="mt-1 block text-xs leading-5 text-slate-500">
-                              {deliverable.description}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
                   </div>
                 ))}
               </div>
@@ -645,16 +485,18 @@ export function ClientCreateProjectExpanded() {
                   />
                 </Field>
 
-                <Field label="Additional Notes">
-                  <Textarea
-                    className={`${textAreaClass} lg:col-span-2`}
-                    value={form.additionalNotes}
-                    onChange={(event) =>
-                      setForm({ ...form, additionalNotes: event.target.value })
-                    }
-                    placeholder="Add useful links, existing assets, preferences, competitors or special instructions."
-                  />
-                </Field>
+                <div className="lg:col-span-2">
+                  <Field label="Additional Notes">
+                    <Textarea
+                      className={textAreaClass}
+                      value={form.additionalNotes}
+                      onChange={(event) =>
+                        setForm({ ...form, additionalNotes: event.target.value })
+                      }
+                      placeholder="Add useful links, existing assets, preferences, competitors or special instructions."
+                    />
+                  </Field>
+                </div>
               </div>
 
               <div className="mt-6 rounded-3xl bg-[#0064E0] p-4 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
@@ -663,7 +505,7 @@ export function ClientCreateProjectExpanded() {
                     <Sparkles size={13} /> AI recommends {getPackageTitle(aiPackage)}
                   </Badge>
                   <p className="mt-2 text-sm font-medium leading-6 text-white/85">
-                    Structure this brief around the selected package: {getPackageTitle(packageType)}.
+                    Structure this brief around the selected template: {selectedOption?.title || getPackageTitle(packageType)}.
                   </p>
                 </div>
 
@@ -687,7 +529,12 @@ export function ClientCreateProjectExpanded() {
 
             <Card className="card-body stack">
               <div className="timeline-row">
-                <span>Selected Package</span>
+                <span>Selected Template</span>
+                <strong>{selectedOption?.title || getPackageTitle(packageType)}</strong>
+              </div>
+
+              <div className="timeline-row">
+                <span>Package</span>
                 <strong>{getPackageTitle(packageType)}</strong>
               </div>
 
@@ -715,13 +562,6 @@ export function ClientCreateProjectExpanded() {
                 <strong>Brief</strong>
                 <span>{form.projectDescription || "Not provided"}</span>
               </div>
-
-              {form.additionalNotes && (
-                <div className="workspace-card-context">
-                  <strong>Additional Notes</strong>
-                  <span>{form.additionalNotes}</span>
-                </div>
-              )}
             </Card>
           </>
         )}
