@@ -1,5 +1,7 @@
 "use client";
 
+
+import { PhaseMessageThread } from "./PhaseMessageThread";
 import {
   WorkspaceActionCard,
   WorkspaceEmptyPanel,
@@ -489,7 +491,7 @@ export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
             icon={DetailIcons.messages}
           >
             <div className="stack">
-              <MessagePreviewList messages={messages} />
+              <PhaseMessageThread messages={messages} currentUserId={currentUser?.id} />
 
               <Textarea
                 value={msg}

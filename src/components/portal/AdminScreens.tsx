@@ -1,5 +1,7 @@
 "use client";
 
+
+import { PhaseMessageThread } from "./PhaseMessageThread";
 import { AdminPaymentsManager } from "./AdminPaymentsManager";
 
 import {
@@ -980,27 +982,22 @@ export function AdminPhaseDetail({
             </div>
           </Card>
         </div>
-        <Card className="thread">
-          <div className="thread-header">Phase Thread</div>
-          <div className="thread-body">
-            {phase.messages.length ? (
-              phase.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`message ${message.senderRole === "SYSTEM" ? "system" : message.senderId === state.users.find((u) => u.role === "SUPER_ADMIN")?.id ? "mine" : ""}`}
-                >
-                  <small>{message.senderName}</small>
-                  {message.message}
-                </div>
-              ))
-            ) : (
-              <EmptyState
-                title="No messages yet"
-                body="Client, staff, and project manager messages will appear here."
-              />
-            )}
+        <Card className="border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold tracking-[-0.035em] text-slate-950">
+              Phase Thread
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              Messages are separated by sender and receiver with clear identity tracking.
+            </p>
           </div>
-          <div className="thread-input">
+
+          <PhaseMessageThread
+            messages={phase.messages}
+            currentUserId={state.users.find((u) => u.role === "SUPER_ADMIN")?.id}
+          />
+
+          <div className="mt-4 flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-2">
             <Input
               value={msg}
               onChange={(e) => setMsg(e.target.value)}
