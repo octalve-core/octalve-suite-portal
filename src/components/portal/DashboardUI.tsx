@@ -1,7 +1,6 @@
 "use client";
 
 import { useApp } from "./AppContext";
-
 import Link from "next/link";
 import type React from "react";
 import {
@@ -44,9 +43,21 @@ export function DashboardHero({
       ? "admin"
       : role === "STAFF" || lowerEyebrow.includes("staff")
         ? "staff"
-        : role === "CLIENT" || lowerEyebrow.includes("client")
-          ? "client"
-          : "default";
+        : "client";
+
+  const toneClass =
+    tone === "admin"
+      ? "bg-[#E61525]"
+      : tone === "staff"
+        ? "bg-[#29BE3E]"
+        : "bg-[#0064E0]";
+
+  const actionToneClass =
+    tone === "admin"
+      ? "[&_a]:text-[#E61525] [&_button]:text-[#E61525]"
+      : tone === "staff"
+        ? "[&_a]:text-[#29BE3E] [&_button]:text-[#29BE3E]"
+        : "[&_a]:text-[#0064E0] [&_button]:text-[#0064E0]";
 
   const hour = new Date().getHours();
 
@@ -68,46 +79,75 @@ export function DashboardHero({
     lowerEyebrow.includes("workspace") ||
     lowerEyebrow.includes("client");
 
-  const heroTitle =
+  const finalTitle =
     isWelcome && tone === "client"
       ? "Welcome back to your workspace"
       : title;
 
-  const heroSubtitle =
+  const finalSubtitle =
     isWelcome && tone === "client"
-      ? "Track active projects, approvals, payments and delivery timelines from one premium workspace."
+      ? "Track projects, approvals, payments and delivery timelines from one clean workspace."
       : subtitle;
 
   return (
-    <section className={`dashboard-hero-compact dashboard-hero-compact-${tone}`}>
-      <div className="dashboard-hero-glow" />
+    <section
+      className={[
+        "relative isolate overflow-hidden rounded-[28px]",
+        "px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10",
+        "shadow-[0_22px_60px_rgba(15,23,42,0.14)]",
+        toneClass,
+      ].join(" ")}
+    >
+      <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15" />
+      <div className="pointer-events-none absolute right-8 top-10 hidden h-24 w-24 rounded-[28px] bg-white/10 lg:block" />
 
-      <div className="dashboard-hero-compact-content">
-        <div className="dashboard-hero-compact-copy">
-          <span className="dashboard-hero-greeting">
+      <div className="relative z-10 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="min-w-0">
+          <p className="mb-3 text-sm font-semibold tracking-[-0.01em] text-white/80">
             {greeting}, {userLabel}.
-          </span>
+          </p>
 
-          {eyebrow && !isWelcome && (
-            <span className="dashboard-hero-kicker">{eyebrow}</span>
-          )}
+          {!isWelcome && eyebrow ? (
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-white/70">
+              {eyebrow}
+            </p>
+          ) : null}
 
-          <h1>{heroTitle}</h1>
+          <h1 className="max-w-[760px] text-[32px] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-[42px] lg:text-[52px]">
+            {finalTitle}
+          </h1>
 
-          {heroSubtitle && <p>{heroSubtitle}</p>}
+          {finalSubtitle ? (
+            <p className="mt-4 max-w-[680px] text-[15px] font-medium leading-7 text-white/82 sm:text-[16px]">
+              {finalSubtitle}
+            </p>
+          ) : null}
 
-          {meta && <div className="dashboard-hero-compact-meta">{meta}</div>}
+          {meta ? (
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-white [&_.badge]:border-white/20 [&_.badge]:bg-white/10 [&_.badge]:text-white">
+              {meta}
+            </div>
+          ) : null}
         </div>
 
-        {action && (
-          <div className="dashboard-hero-compact-actions">
+        {action ? (
+          <div
+            className={[
+              "flex shrink-0 items-center justify-start lg:justify-end",
+              "[&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center [&_a]:justify-center [&_a]:rounded-2xl [&_a]:border-0 [&_a]:bg-white [&_a]:px-5 [&_a]:font-semibold",
+              "[&_button]:min-h-11 [&_button]:rounded-2xl [&_button]:border-0 [&_button]:bg-white [&_button]:px-5 [&_button]:font-semibold",
+              "[&_a]:shadow-[0_16px_34px_rgba(15,23,42,0.16)] [&_button]:shadow-[0_16px_34px_rgba(15,23,42,0.16)]",
+              actionToneClass,
+            ].join(" ")}
+          >
             {action}
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
 }
+
 
 
 
