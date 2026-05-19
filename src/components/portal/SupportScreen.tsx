@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -13,7 +13,7 @@ import {
 import { useApp } from "./AppContext";
 import { Badge, Card, EmptyState, PageHeader, statusLabel } from "./UI";
 
-const SUPPORT_EMAIL = "support@octalve.com";
+const SUPPORT_EMAIL = "info@octalve.com";
 
 export function SupportScreen() {
   const { selectedProject, state } = useApp();
