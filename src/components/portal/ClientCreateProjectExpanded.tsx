@@ -3,7 +3,6 @@
 import { type CSSProperties, type ReactNode, useMemo, useState } from "react";
 import {
   BadgeCheck,
-  CalendarDays,
   CheckCircle2,
   Code2,
   Gem,
@@ -579,31 +578,25 @@ export function ClientCreateProjectExpanded() {
                 </Field>
 
                 <Field label="Preferred Start Date *">
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-                    <Input
-                      type="date"
-                      className={`${inputClass} pl-11`}
-                      value={form.preferredStartDate}
-                      onChange={(event) =>
-                        setForm({ ...form, preferredStartDate: event.target.value })
-                      }
-                    />
-                  </div>
+                  <Input
+                    type="date"
+                    className={inputClass}
+                    value={form.preferredStartDate}
+                    onChange={(event) =>
+                      setForm({ ...form, preferredStartDate: event.target.value })
+                    }
+                  />
                 </Field>
 
                 <Field label="Target Delivery Date *">
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-                    <Input
-                      type="date"
-                      className={`${inputClass} pl-11`}
-                      value={form.targetDeliveryDate}
-                      onChange={(event) =>
-                        setForm({ ...form, targetDeliveryDate: event.target.value })
-                      }
-                    />
-                  </div>
+                  <Input
+                    type="date"
+                    className={inputClass}
+                    value={form.targetDeliveryDate}
+                    onChange={(event) =>
+                      setForm({ ...form, targetDeliveryDate: event.target.value })
+                    }
+                  />
                 </Field>
 
                 <Field label="Project Goal *">

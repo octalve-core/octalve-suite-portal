@@ -72,7 +72,6 @@ export function DashboardHero({
         : "Good evening";
 
   const userLabel =
-    currentUser?.company ||
     currentUser?.name ||
     currentUser?.email?.split("@")[0] ||
     "there";
