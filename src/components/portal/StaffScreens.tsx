@@ -1,6 +1,8 @@
 "use client";
 
 
+
+import { ProjectWorkspaceList, PhaseWorkspaceDetail } from "./ProjectWorkspace";
 import { PhaseMessageThread } from "./PhaseMessageThread";
 import {
   WorkspaceActionCard,
@@ -212,39 +214,7 @@ export function StaffDashboard() {
   );
 }
 export function StaffProjects() {
-  const { currentUser, state } = useApp();
-
-  const projects = state.projects.filter(
-    (project) =>
-      project.projectManagerId === currentUser?.id ||
-      project.phases.some((phase) => phase.assignedStaffId === currentUser?.id),
-  );
-
-  return (
-    <div className="content">
-      <PageHeader
-        title="Projects"
-        subtitle="Projects connected to your assigned phases"
-      />
-
-      {projects.length ? (
-        <div className="grid-3">
-          {projects.map((project) => (
-            <ProjectSummaryCard
-              key={project.id}
-              project={project}
-              href="/staff/phases"
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No projects assigned"
-          body="Assigned projects will appear here."
-        />
-      )}
-    </div>
-  );
+  return <ProjectWorkspaceList role="staff" />;
 }
 export function StaffPhases() {
   const { currentUser } = useApp();
@@ -344,177 +314,7 @@ function AddDeliverableModal({
 }
 
 export function StaffPhaseDetail({ phaseId }: { phaseId: string }) {
-  const { state, currentUser, requestPhaseApproval, sendPhaseMessage } = useApp();
-
-  const [add, setAdd] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  const phase = state.projects
-    .flatMap((project) => project.phases)
-    .find((item) => item.id === phaseId);
-
-  const project = state.projects.find((item) => item.id === phase?.projectId);
-
-  if (!phase || !project) {
-    return (
-      <div className="content narrow">
-        <WorkspaceEmptyCard
-          title="Phase not found"
-          body="This phase could not be found."
-          icon={DetailIcons.layers}
-        />
-      </div>
-    );
-  }
-
-  const assignee = state.users.find((user) => user.id === phase.assignedStaffId);
-  const isPM =
-    currentUser?.role === "PROJECT_MANAGER" ||
-    project.projectManagerId === currentUser?.id;
-
-  const canManage =
-    isPM || phase.assignedStaffId === currentUser?.id || currentUser?.role === "SUPER_ADMIN";
-
-  const messages = phase.messages.map((message) => ({
-    ...message,
-    author: state.users.find((user) => user.id === message.senderId) ?? null,
-  }));
-
-  async function handleRequestApproval() {
-    setPendingAction("request-approval");
-
-    try {
-      await requestPhaseApproval(phaseId);
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  async function handleSendMessage() {
-    if (!msg.trim()) return;
-
-    setPendingAction("message");
-
-    try {
-      await sendPhaseMessage(phaseId, msg.trim());
-      setMsg("");
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
-  return (
-    <div className="content">
-      <PhaseDetailHero
-        phase={phase}
-        project={project}
-        assignee={assignee}
-        backHref="/staff/phases"
-        backLabel="Back to assigned phases"
-        action={
-          canManage ? (
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {phase.status !== "APPROVED" && (
-                <Button variant="secondary" onClick={() => setAdd(true)}>
-                  Add Deliverable
-                </Button>
-              )}
-
-              {phase.status === "IN_PROGRESS" ||
-              phase.status === "CHANGES_REQUESTED" ? (
-                <Button
-                  loading={pendingAction === "request-approval"}
-                  onClick={handleRequestApproval}
-                >
-                  Request Approval
-                </Button>
-              ) : null}
-            </div>
-          ) : null
-        }
-      />
-
-      <DetailMetricGrid
-        items={[
-          {
-            label: "Project",
-            value: project.title,
-            icon: DetailIcons.layers,
-          },
-          {
-            label: "Assigned Staff",
-            value: assignee?.name ?? "Not assigned",
-            icon: DetailIcons.user,
-          },
-          {
-            label: "Deliverables",
-            value: phase.deliverables.length,
-            icon: DetailIcons.files,
-          },
-          {
-            label: "Messages",
-            value: phase.messages.length,
-            icon: DetailIcons.messages,
-          },
-        ]}
-      />
-
-      <div className="grid-2" style={{ marginTop: 24 }}>
-        <DetailPanel
-          title="Deliverables"
-          subtitle="Add, edit, or manage phase deliverables before approval."
-          icon={DetailIcons.files}
-          action={
-            canManage && phase.status !== "APPROVED" ? (
-              <Button variant="secondary" onClick={() => setAdd(true)}>
-                Add Deliverable
-              </Button>
-            ) : null
-          }
-        >
-          <DeliverableManager phase={phase} />
-        </DetailPanel>
-
-        <div className="stack">
-          <DetailPanel
-            title="Assigned Team"
-            subtitle="Current phase assignee."
-            icon={DetailIcons.user}
-          >
-            <AssigneeBlock user={assignee} />
-          </DetailPanel>
-
-          <DetailPanel
-            title="Messages"
-            subtitle="Send updates or notes for this phase."
-            icon={DetailIcons.messages}
-          >
-            <div className="stack">
-              <PhaseMessageThread messages={messages} currentUserId={currentUser?.id} />
-
-              <Textarea
-                value={msg}
-                onChange={(event) => setMsg(event.target.value)}
-                placeholder="Write a phase update..."
-                disabled={pendingAction === "message"}
-              />
-
-              <Button
-                loading={pendingAction === "message"}
-                onClick={handleSendMessage}
-                disabled={!msg.trim()}
-              >
-                Send Message
-              </Button>
-            </div>
-          </DetailPanel>
-        </div>
-      </div>
-
-      {add && <AddDeliverableModal phase={phase} onClose={() => setAdd(false)} />}
-    </div>
-  );
+  return <PhaseWorkspaceDetail role="staff" phaseId={phaseId} />;
 }
 
 
