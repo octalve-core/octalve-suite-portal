@@ -1,6 +1,8 @@
 "use client";
 
 
+
+import Link from "next/link";
 import { PACKAGE_CATALOG } from "./packageCatalog";
 import { useMemo, useState } from "react";
 import { Copy, LayoutTemplate, Pencil, Plus, Trash2 } from "lucide-react";
@@ -29,7 +31,7 @@ type TemplateForm = {
   phases: TemplatePhaseForm[];
 };
 
-const PACKAGE_OPTIONS: PackageType[] = ["Launch", "Impact", "Growth", "Partner", "Custom"];
+const PACKAGE_OPTIONS = PACKAGE_CATALOG.map((item) => item.type) as PackageType[];
 
 const EMPTY_PHASE: TemplatePhaseForm = {
   title: "",
@@ -277,7 +279,7 @@ export function AdminTemplatesManager() {
       <div className="grid-2">
         <WorkspaceListPanel
           title="Template Library"
-          subtitle="Select a template to edit or duplicate it."
+          subtitle="Open a template to manage its package, phases and deliverables."
         >
           {state.templates.length ? (
             state.templates.map((template) => (
@@ -305,10 +307,12 @@ export function AdminTemplatesManager() {
                 }
                 action={
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button variant="secondary" onClick={() => editTemplate(template)}>
-                      <Pencil size={15} />
-                      Edit
-                    </Button>
+                    <Link href={`/admin/templates/${template.id}`}>
+                      <Button variant="secondary">
+                        <Pencil size={15} />
+                        Edit
+                      </Button>
+                    </Link>
                     <Button variant="secondary" onClick={() => duplicateTemplate(template)}>
                       <Copy size={15} />
                       Copy
@@ -333,7 +337,7 @@ export function AdminTemplatesManager() {
         <Card className="workspace-list-panel">
           <div className="workspace-list-panel-head">
             <div>
-              <h2>{mode === "edit" ? "Edit Template" : "Create Template"}</h2>
+              <h2>Create Template</h2>
               <p>
                 {editingTemplate
                   ? `Editing ${editingTemplate.name}`
