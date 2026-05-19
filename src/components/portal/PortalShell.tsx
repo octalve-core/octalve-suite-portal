@@ -2,7 +2,7 @@
 
 import type React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   BarChart3,
@@ -157,6 +157,39 @@ export function PortalShell({
   children: React.ReactNode;
   role: Role;
 }) {
+  const router = useRouter();
+  
+
+  async function handlePortalLogout() {
+    try {
+      await logout();
+    } catch {
+      try {
+        await fetch("/api/auth/sign-out", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        // Continue redirect even if logout request fails.
+      }
+    }
+
+    try {
+      localStorage.removeItem("octalve-session");
+      localStorage.removeItem("octalve-user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
+    } catch {
+      // Storage may be unavailable in restricted browsers.
+    }
+
+    router.replace("/login");
+
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 80);
+  }
+
   const pathname = usePathname();
   const {
     currentUser,
@@ -278,7 +311,7 @@ export function PortalShell({
           </div>
           <button
             className="icon-btn logout-btn"
-            onClick={handleLogout}
+            onClick={handlePortalLogout}
             title="Logout"
             type="button"
             aria-label="Logout"
