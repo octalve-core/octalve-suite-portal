@@ -1,5 +1,7 @@
 "use client";
 
+
+import { getPackageTitle } from "./packageCatalog";
 import {
   WorkspaceActionCard,
   WorkspaceEmptyPanel,
@@ -86,7 +88,7 @@ function ProjectSwitcher() {
                 <span>{projectProgress(project)}% complete</span>
               </div>
               <Badge className={packageClass(project.packageType)}>
-                {project.packageType}
+                {getPackageTitle(project.packageType)}
               </Badge>
             </button>
           ))}
@@ -283,7 +285,7 @@ export function ClientDashboard() {
         meta={
           <>
             <Badge className={packageClass(project.packageType)}>
-              {project.packageType} Suite
+              {getPackageTitle(project.packageType)}
             </Badge>
             <Badge className={statusClass(project.status)}>
               {statusLabel(project.status)}
@@ -530,7 +532,7 @@ export function ClientProjectDetail({ projectId }: { projectId: string }) {
         >
           <div>
             <Badge className={packageClass(project.packageType)}>
-              {project.packageType}
+              {getPackageTitle(project.packageType)}
             </Badge>
             <h1>{project.title}</h1>
             <p>{project.businessName}</p>
@@ -671,7 +673,7 @@ export function ClientCreateProject() {
                   >
                     <div className="package-icon">{pkg[0]}</div>
                     <div>
-                      <h3>{pkg} Suite</h3>
+                      <h3>{getPackageTitle(pkg)}</h3>
                       <p>
                         {
                           state.templates.find((t) => t.packageType === pkg)
@@ -776,7 +778,7 @@ export function ClientCreateProject() {
                 }}
               >
                 <Badge className={packageClass(aiPackage)}>
-                  AI recommends {aiPackage} Suite
+                  AI recommends {getPackageTitle(aiPackage)}
                 </Badge>
                 <Button
                   variant="secondary"

@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   CheckCircle2,
@@ -141,6 +141,7 @@ export function ClientCreateProjectExpanded() {
   const [step, setStep] = useState(1);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
   const [packageType, setPackageType] = useState<PackageType>("Launch");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -155,23 +156,39 @@ export function ClientCreateProjectExpanded() {
   });
 
   const packageOptions = useMemo(() => {
-    return PACKAGE_CATALOG.map((item) => {
-      const template = state.templates.find(
-        (template) => template.packageType === item.type,
-      );
+    if (state.templates.length > 0) {
+      return state.templates.map((template) => {
+        const catalog = getPackageCatalogItem(template.packageType);
 
-      return {
-        ...item,
-        title: item.title,
-        description: template?.description || item.description,
-        template,
-      };
-    });
+        return {
+          ...catalog,
+          id: template.id,
+          type: template.packageType,
+          title: template.name || catalog.title,
+          description: template.description || catalog.description,
+          template,
+          isLiveTemplate: true,
+        };
+      });
+    }
+
+    return PACKAGE_CATALOG.map((item) => ({
+      ...item,
+      id: `catalog-${item.type}`,
+      template: null,
+      isLiveTemplate: false,
+    }));
   }, [state.templates]);
 
-  const selectedPackage = getPackageCatalogItem(packageType);
+  const selectedOption =
+    packageOptions.find((option) => option.id === selectedTemplateId) ??
+    packageOptions[0];
+
+  const selectedPackage = getPackageCatalogItem(selectedOption?.type ?? packageType);
 
   const template =
+    selectedOption?.template ??
+    state.templates.find((template) => template.id === selectedTemplateId) ??
     state.templates.find((template) => template.packageType === packageType) ??
     null;
 
@@ -200,6 +217,13 @@ export function ClientCreateProjectExpanded() {
       ...phase,
     }));
   }, [packageType, selectedPackage.phases, template]);
+
+  useEffect(() => {
+    if (!selectedTemplateId && packageOptions[0]) {
+      setSelectedTemplateId(packageOptions[0].id);
+      setPackageType(packageOptions[0].type);
+    }
+  }, [packageOptions, selectedTemplateId]);
 
   const aiPackage = useMemo(
     () => recommendPackageLocal(`${form.projectGoal} ${form.projectDescription}`),
@@ -414,7 +438,7 @@ export function ClientCreateProjectExpanded() {
 
             <div className={`grid gap-4 ${gridClass}`}>
               {packageOptions.map((option) => {
-                const isSelected = packageType === option.type;
+                const isSelected = selectedOption?.id === option.id;
                 const colorStyle = {
                   "--package-color": option.color,
                 } as CSSProperties;
@@ -458,7 +482,7 @@ export function ClientCreateProjectExpanded() {
 
                       {option.template ? (
                         <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                          Admin template connected
+                          Admin-managed template
                         </span>
                       ) : null}
                     </span>

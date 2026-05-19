@@ -29,7 +29,7 @@ import {
 } from "./WorkspaceCards";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bar,
@@ -99,6 +99,7 @@ import {
   statusLabel,
   Textarea,
 } from "./UI";
+import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
 
 function toneForPhase(status: ProjectPhase["status"]) {
   if (status === "APPROVED") return "phase-approved";
@@ -198,7 +199,7 @@ function RecentProjects() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
               <Badge className={packageClass(project.packageType)} style={{ minWidth: 70, textAlign: 'center' }}>
-                {project.packageType}
+                {getPackageTitle(project.packageType)}
               </Badge>
               <div style={{ textAlign: 'right', minWidth: 40 }}>
                 <strong style={{ fontSize: 13 }}>
@@ -329,7 +330,7 @@ export function AdminOverview() {
                   key={project.id}
                   href={`/admin/projects/${project.id}`}
                   title={project.title}
-                  subtitle={`${project.businessName} â€¢ ${project.packageType} Suite`}
+                  subtitle={`${project.businessName} â€¢ ${getPackageTitle(project.packageType)}`}
                   icon={DashboardIcons.project}
                   badge={
                     <Badge className={statusClass(project.status)}>
@@ -372,7 +373,7 @@ export function AdminOverview() {
                     key={request.id}
                     href="/admin/project-requests"
                     title={(request as any).projectName}
-                    subtitle={`${request.businessName} â€¢ ${request.packageType} Suite`}
+                    subtitle={`${request.businessName} â€¢ ${getPackageTitle(request.packageType)}`}
                     icon={DashboardIcons.clock}
                     badge={<Badge className="badge-orange">New</Badge>}
                   />
@@ -1032,294 +1033,450 @@ export function AdminPhaseDetail({
 export function AdminCreateProject() {
   const { state, createAdminProject, dataLoading } = useApp();
   const router = useRouter();
+
+  const liveTemplates = useMemo(
+    () =>
+      [...state.templates].sort((a, b) =>
+        getPackageTitle(a.packageType).localeCompare(getPackageTitle(b.packageType)),
+      ),
+    [state.templates],
+  );
+
   const [step, setStep] = useState(1);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [packageType, setPackageType] = useState<PackageType>("Launch");
   const [createError, setCreateError] = useState("");
 
-  if (state.templates.length === 0) {
-    if (dataLoading) return <PageLoading />;
+  const selectedTemplate =
+    liveTemplates.find((template) => template.id === selectedTemplateId) ??
+    liveTemplates[0];
 
-    return (
-      <div className="content">
-        <BackLink href="/admin/projects" />
-        <EmptyState
-          title="No Templates Found"
-          body="You need to create at least one project template before you can create a new project."
-        />
-      </div>
-    );
-  }
+  const selectedCatalog = getPackageCatalogItem(selectedTemplate?.packageType);
+  const packageType = selectedTemplate?.packageType ?? "Launch";
 
-  const template =
-    state.templates.find((t) => t.packageType === packageType) ??
-    state.templates[0];
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [form, setForm] = useState({
-    templateId: template?.id ?? "",
     title: "",
     clientName: "",
     clientEmail: "",
     targetDate: "",
     totalAmount: 750000,
-    depositAmount: 350000,
-    balanceAmount: 400000,
-    projectManagerId:
-      state.users.find((u) => u.role === "PROJECT_MANAGER")?.id ?? "",
+    depositAmount: 375000,
+    balanceAmount: 375000,
+    projectManagerId: "",
     internalNotes: "",
   });
-  const selectedTemplate =
-    state.templates.find((t) => t.id === form.templateId) ?? template;
-  return (
-    <div className="content wizard">
-      <BackLink href="/admin/projects" label={step === 1 ? "Cancel" : "Back"} />
-      <h1>Create New Project</h1>
-      <p style={{ color: "var(--muted)" }}>Step {step} of 4</p>
-      <div className="wizard-progress">
-        <span className={step >= 1 ? "active" : ""} />
-        <span className={step >= 2 ? "active" : ""} />
-        <span className={step >= 3 ? "active" : ""} />
-        <span className={step >= 4 ? "active" : ""} />
-      </div>
-      {step === 1 && (
-        <>
-          <h2>Select Package Type</h2>
-          <div className="grid-2-even">
-            {(["Launch", "Impact", "Growth", "Partner"] as PackageType[]).map(
-              (pkg) => (
-                <Card
-                  key={pkg}
-                  onClick={() => {
-                    setPackageType(pkg);
-                    const tpl = state.templates.find(
-                      (t) => t.packageType === pkg,
-                    );
-                    if (tpl)
-                      setForm((prev) => ({ ...prev, templateId: tpl.id }));
-                  }}
-                  className={`package-card ${packageType === pkg ? "selected" : ""}`}
-                >
-                  <div className="package-icon">{pkg[0]}</div>
-                  <div>
-                    <h3>{pkg}</h3>
-                    <p>
-                      {
-                        state.templates.find((t) => t.packageType === pkg)
-                          ?.description
-                      }
-                    </p>
-                  </div>
-                  {packageType === pkg && (
-                    <span
-                      style={{ marginLeft: "auto", color: "var(--primary)" }}
-                    >
-                      Ã¢Å“â€œ
-                    </span>
-                  )}
-                </Card>
-              ),
-            )}
+
+  useEffect(() => {
+    if (!selectedTemplateId && liveTemplates[0]) {
+      setSelectedTemplateId(liveTemplates[0].id);
+    }
+  }, [liveTemplates, selectedTemplateId]);
+
+  if (dataLoading && state.templates.length === 0) {
+    return <PageLoading />;
+  }
+
+  if (state.templates.length === 0) {
+    return (
+      <div className="content narrow">
+        <Card className="border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <Badge className="badge-orange">Templates required</Badge>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+            Create or sync templates first
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
+            Admin project creation now uses the same delivery templates shown to clients. Go to Templates and sync the official Octalve workflows or create a custom template.
+          </p>
+          <div className="mt-6">
+            <Button onClick={() => router.push("/admin/templates")}>
+              Go to Templates
+            </Button>
           </div>
-          <Card className="template-preview">
-            <h3>Template Preview</h3>
-            <ol>
-              {selectedTemplate?.phases?.map((p) => (
-                <li key={p.id}>{p.title}</li>
-              ))}
-            </ol>
-          </Card>
-        </>
-      )}
-      {step === 2 && (
-        <>
-          <h2>Project Details</h2>
-          <Card className="card-body">
-            <div className="form-grid">
-              <Field label="Project Name *">
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g., Brand Redesign Q1"
-                />
-              </Field>
-              <Field label="Client Name *">
-                <Input
-                  value={form.clientName}
-                  onChange={(e) =>
-                    setForm({ ...form, clientName: e.target.value })
-                  }
-                  placeholder="Company name"
-                />
-              </Field>
-              <Field label="Client Email *">
-                <Input
-                  value={form.clientEmail}
-                  onChange={(e) =>
-                    setForm({ ...form, clientEmail: e.target.value })
-                  }
-                  placeholder="client@company.com"
-                />
-              </Field>
-              <Field label="Target Completion Date">
-                <Input
-                  type="date"
-                  value={form.targetDate}
-                  onChange={(e) =>
-                    setForm({ ...form, targetDate: e.target.value })
-                  }
-                  placeholder="Select date"
-                />
-              </Field>
+        </Card>
+      </div>
+    );
+  }
+
+  const staffOptions = state.users.filter(
+    (user) => user.role === "PROJECT_MANAGER" || user.role === "STAFF",
+  );
+
+  function validateStep(targetStep = step) {
+    if (targetStep !== 2 && targetStep !== 3) return "";
+
+    if (!form.title.trim()) return "Project title is required.";
+    if (!form.clientName.trim()) return "Client name is required.";
+    if (!form.clientEmail.trim()) return "Client email is required.";
+    if (!form.totalAmount || form.totalAmount <= 0) return "Total amount must be greater than zero.";
+    if (form.depositAmount < 0 || form.balanceAmount < 0) return "Payment amounts cannot be negative.";
+
+    return "";
+  }
+
+  function goNext() {
+    const error = step === 2 ? validateStep(2) : "";
+
+    if (error) {
+      setCreateError(error);
+      return;
+    }
+
+    setCreateError("");
+    setStep((value) => Math.min(value + 1, 3));
+  }
+
+  async function submitProject() {
+    const error = validateStep(3);
+
+    if (error) {
+      setCreateError(error);
+      setStep(2);
+      return;
+    }
+
+    setLoading(true);
+    setCreateError("");
+
+    try {
+      const id = await createAdminProject({
+        ...form,
+        packageType,
+        templateId: selectedTemplate?.id ?? "",
+      });
+
+      router.push(`/admin/projects/${id}`);
+    } catch (err: any) {
+      setCreateError(err?.message || "Failed to create project");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="content narrow">
+      <div className="mx-auto max-w-[1160px] pb-10">
+        <BackLink href="/admin/projects" label={step === 1 ? "Cancel" : "Back"} />
+
+        <section className="mb-7 mt-2 rounded-[30px] bg-[#E61525] px-6 py-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.14)] sm:px-8 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+              <Badge className="border-white/20 bg-white/15 text-white">
+                Step {step} of 3
+              </Badge>
+              <h1 className="mt-4 max-w-3xl text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[46px]">
+                Create Managed Project
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/82 sm:text-[15px]">
+                Select an admin-managed template, assign client details, and open a structured project with the right phases and deliverables.
+              </p>
             </div>
-          </Card>
-        </>
-      )}
-      {step === 3 && (
-        <>
-          <h2>Payment & Team</h2>
-          <Card className="card-body">
-            <div className="form-grid">
-              <Field label="Total Amount">
-                <Input
-                  type="number"
-                  value={form.totalAmount}
-                  onChange={(e) =>
-                    setForm({ ...form, totalAmount: Number(e.target.value) })
-                  }
+
+            <div className="flex gap-2 lg:justify-end">
+              {[1, 2, 3].map((item) => (
+                <span
+                  key={item}
+                  className={[
+                    "h-2.5 w-16 rounded-full",
+                    step >= item ? "bg-white" : "bg-white/25",
+                  ].join(" ")}
                 />
-              </Field>
-              <Field label="Deposit Amount">
-                <Input
-                  type="number"
-                  value={form.depositAmount}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      depositAmount: Number(e.target.value),
-                      balanceAmount: form.totalAmount - Number(e.target.value),
-                    })
-                  }
-                />
-              </Field>
-              <Field label="Balance Amount">
-                <Input
-                  type="number"
-                  value={form.balanceAmount}
-                  onChange={(e) =>
-                    setForm({ ...form, balanceAmount: Number(e.target.value) })
-                  }
-                />
-              </Field>
-              <Field label="Project Manager">
-                <Select
-                  value={form.projectManagerId}
-                  onChange={(e) =>
-                    setForm({ ...form, projectManagerId: e.target.value })
-                  }
-                >
-                  {state.users
-                    .filter((u) => u.role === "PROJECT_MANAGER")
-                    .map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {createError && (
+          <div className="mb-5 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {createError}
+          </div>
+        )}
+
+        {step === 1 && (
+          <>
+            <div className="mb-5">
+              <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+                Select Template
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                These templates come directly from Admin Templates. Editing or syncing templates updates the options used for project creation.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {liveTemplates.map((template) => {
+                const catalog = getPackageCatalogItem(template.packageType);
+                const isSelected = selectedTemplate?.id === template.id;
+                const deliverableCount = template.phases.reduce(
+                  (total, phase) => total + (phase.deliverables?.length ?? 0),
+                  0,
+                );
+
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTemplateId(template.id);
+                      setCreateError("");
+                    }}
+                    className={[
+                      "group w-full rounded-[24px] border bg-white p-5 text-left transition",
+                      "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
+                      isSelected ? "border-[#E61525] ring-4 ring-red-100" : "border-slate-200",
+                    ].join(" ")}
+                  >
+                    <div className="flex gap-4">
+                      <span
+                        className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
+                        style={{
+                          backgroundColor: `${catalog.color}14`,
+                          color: catalog.color,
+                        }}
+                      >
+                        {template.name.slice(0, 1)}
+                      </span>
+
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-semibold tracking-[-0.03em] text-slate-950">
+                            {template.name}
+                          </h3>
+
+                          <Badge className={packageClass(template.packageType)}>
+                            {catalog.title}
+                          </Badge>
+                        </div>
+
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {template.description || catalog.description}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                          <span>{template.phases.length} phases</span>
+                          <span>{deliverableCount} deliverables</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedTemplate && (
+              <Card className="mt-6 overflow-hidden border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+                <div className="border-b border-slate-200 px-6 py-5">
+                  <Badge className={packageClass(selectedTemplate.packageType)}>
+                    Selected workflow
+                  </Badge>
+                  <h3 className="mt-3 text-xl font-semibold tracking-[-0.035em] text-slate-950">
+                    {selectedTemplate.name}
+                  </h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                    {selectedTemplate.description || selectedCatalog.description}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 bg-slate-50 p-4 sm:p-5">
+                  {selectedTemplate.phases.map((phase, index) => (
+                    <div key={phase.id || index} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">
+                            Phase {index + 1}
+                          </span>
+                          <h4 className="mt-1 text-base font-semibold text-slate-950">
+                            {phase.title}
+                          </h4>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            {phase.description}
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                          {phase.deliverables?.length ?? 0} deliverables
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <h2 className="mb-3 text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+              Project Details
+            </h2>
+
+            <Card className="border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-7">
+              <div className="grid gap-5 lg:grid-cols-2">
+                <Field label="Project Title *">
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Octalve website launch system"
+                    className="h-12 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                  />
+                </Field>
+
+                <Field label="Client Name *">
+                  <Input
+                    value={form.clientName}
+                    onChange={(e) => setForm({ ...form, clientName: e.target.value })}
+                    placeholder="Client or business contact name"
+                    className="h-12 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                  />
+                </Field>
+
+                <Field label="Client Email *">
+                  <Input
+                    type="email"
+                    value={form.clientEmail}
+                    onChange={(e) => setForm({ ...form, clientEmail: e.target.value })}
+                    placeholder="client@example.com"
+                    className="h-12 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                  />
+                </Field>
+
+                <Field label="Target Delivery Date">
+                  <Input
+                    type="date"
+                    value={form.targetDate}
+                    onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
+                    className="h-12 rounded-2xl border-slate-200 text-sm"
+                  />
+                </Field>
+
+                <Field label="Total Amount">
+                  <Input
+                    type="number"
+                    value={form.totalAmount}
+                    onChange={(e) =>
+                      setForm({ ...form, totalAmount: Number(e.target.value) })
+                    }
+                    className="h-12 rounded-2xl border-slate-200 text-sm"
+                  />
+                </Field>
+
+                <Field label="Deposit Amount">
+                  <Input
+                    type="number"
+                    value={form.depositAmount}
+                    onChange={(e) =>
+                      setForm({ ...form, depositAmount: Number(e.target.value) })
+                    }
+                    className="h-12 rounded-2xl border-slate-200 text-sm"
+                  />
+                </Field>
+
+                <Field label="Balance Amount">
+                  <Input
+                    type="number"
+                    value={form.balanceAmount}
+                    onChange={(e) =>
+                      setForm({ ...form, balanceAmount: Number(e.target.value) })
+                    }
+                    className="h-12 rounded-2xl border-slate-200 text-sm"
+                  />
+                </Field>
+
+                <Field label="Project Manager / Staff">
+                  <Select
+                    value={form.projectManagerId}
+                    onChange={(e) =>
+                      setForm({ ...form, projectManagerId: e.target.value })
+                    }
+                    className="h-12 rounded-2xl border-slate-200 text-sm"
+                  >
+                    <option value="">Unassigned</option>
+                    {staffOptions.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} — {user.role}
                       </option>
                     ))}
-                </Select>
-              </Field>
-              <Field label="Internal Notes">
-                <Textarea
-                  value={form.internalNotes}
-                  onChange={(e) =>
-                    setForm({ ...form, internalNotes: e.target.value })
-                  }
-                />
-              </Field>
-            </div>
-          </Card>
-        </>
-      )}
-      {step === 4 && (
-        <>
-          <h2>Summary</h2>
-          <Card className="card-body stack">
-            <div className="timeline-row">
-              <span>Package</span>
-              <strong>{packageType}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Project</span>
-              <strong>{form.title}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Client</span>
-              <strong>{form.clientName}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Phases</span>
-              <strong>{selectedTemplate?.phases?.length ?? 0}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Deposit</span>
-              <strong>{formatNaira(form.depositAmount)}</strong>
-            </div>
-          </Card>
-        </>
-      )}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 32,
-        }}
-      >
-        <Button
-          variant="secondary"
-          onClick={() =>
-            step === 1 ? router.push("/admin/projects") : setStep(step - 1)
-          }
-        >
-          {step === 1 ? "Cancel" : "Back"}
-        </Button>
-        {step < 4 ? (
-          <Button
-            disabled={
-              (step === 2 &&
-                (!form.title.trim() ||
-                  !form.clientName.trim() ||
-                  !form.clientEmail.trim())) ||
-              (step === 3 && (form.totalAmount <= 0 || form.depositAmount <= 0))
-            }
-            onClick={() => setStep(step + 1)}
-          >
-            Continue {Icons.arrow}
-          </Button>
-        ) : (
-          <Button
-            loading={loading}
-            disabled={!form.title.trim() || loading}
-            onClick={async () => {
-              try {
-                setLoading(true);
-                const id = await createAdminProject({
-                  ...form,
-                  packageType,
-                  templateId: selectedTemplate?.id ?? "",
-                });
-                router.push(`/admin/projects/${id}`);
-              } catch (err: any) {
-                setCreateError(err?.message || "Failed to create project");
-                setLoading(false);
-              }
-            }}
-          >
-            Create Project Ã¢Å“â€œ
-          </Button>
+                  </Select>
+                </Field>
+
+                <div className="lg:col-span-2">
+                  <Field label="Internal Notes">
+                    <Textarea
+                      value={form.internalNotes}
+                      onChange={(e) =>
+                        setForm({ ...form, internalNotes: e.target.value })
+                      }
+                      placeholder="Private admin notes for delivery context."
+                      className="min-h-[110px] rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                    />
+                  </Field>
+                </div>
+              </div>
+            </Card>
+          </>
         )}
+
+        {step === 3 && selectedTemplate && (
+          <>
+            <h2 className="mb-3 text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
+              Review & Create
+            </h2>
+
+            <Card className="border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] sm:p-7">
+              <div className="grid gap-4">
+                <div className="timeline-row">
+                  <span>Template</span>
+                  <strong>{selectedTemplate.name}</strong>
+                </div>
+                <div className="timeline-row">
+                  <span>Package</span>
+                  <strong>{getPackageTitle(selectedTemplate.packageType)}</strong>
+                </div>
+                <div className="timeline-row">
+                  <span>Project</span>
+                  <strong>{form.title || "Not provided"}</strong>
+                </div>
+                <div className="timeline-row">
+                  <span>Client</span>
+                  <strong>{form.clientName || "Not provided"}</strong>
+                </div>
+                <div className="timeline-row">
+                  <span>Amount</span>
+                  <strong>₦{form.totalAmount.toLocaleString()}</strong>
+                </div>
+                <div className="timeline-row">
+                  <span>Workflow</span>
+                  <strong>{selectedTemplate.phases.length} phases</strong>
+                </div>
+              </div>
+            </Card>
+          </>
+        )}
+
+        <div className="sticky bottom-0 z-10 mt-5 flex justify-between gap-3 border-t border-slate-200 bg-[rgba(248,250,252,0.88)] py-4 backdrop-blur">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setCreateError("");
+              setStep((value) => Math.max(value - 1, 1));
+            }}
+            disabled={step === 1 || loading}
+          >
+            Back
+          </Button>
+
+          {step < 3 ? (
+            <Button onClick={goNext}>Continue</Button>
+          ) : (
+            <Button loading={loading} onClick={submitProject}>
+              Create Project
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
 
 export function AdminRequests() {
   const { state, approveProjectRequest } = useApp();
@@ -1337,7 +1494,7 @@ export function AdminRequests() {
             <Card key={req.id} className="payment-card">
               <div>
                 <Badge className={packageClass(req.packageType)}>
-                  {req.packageType}
+                  {getPackageTitle(req.packageType)}
                 </Badge>
                 <h2>{req.projectName}</h2>
                 <p style={{ color: "var(--muted)" }}>
@@ -1785,7 +1942,7 @@ export function AdminTemplates() {
                 meta={
                   <>
                     <span>{phaseCount} phases</span>
-                    <span>{template.packageType ?? template.type ?? "General"} Suite</span>
+                    <span>{getPackageTitle(template.packageType ?? template.type ?? "Launch")}</span>
                   </>
                 }
               />
@@ -2266,7 +2423,7 @@ export function AdminAnalytics() {
                 <div className="dashboard-list-item" key={name}>
                   <div className="dashboard-list-main">
                     <div>
-                      <strong>{name} Suite</strong>
+                      <strong>{getPackageTitle(name)}</strong>
                       <p>{count} project{count > 1 ? "s" : ""}</p>
                     </div>
                   </div>
