@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -278,37 +278,37 @@ function AuthShell({
             <BrandLockup dark />
           </div>
 
-          <div className="relative z-10 my-auto max-w-[560px] py-16">
+          <div className="relative z-10 my-auto max-w-140 py-16">
             <p className="mb-7 text-xs font-medium uppercase tracking-[0.32em] text-white/45">
               Octalve Workspace
             </p>
             <h1 className="text-[52px] font-medium leading-[1.02] tracking-[-0.055em] text-white xl:text-[64px]">
               {leftTitle}
             </h1>
-            <p className="mt-7 max-w-[490px] text-[18px] font-medium leading-8 text-white/62">
+            <p className="mt-7 max-w-122.5 text-[18px] font-medium leading-8 text-white/62">
               {leftBody}
             </p>
           </div>
 
           <div className="relative z-10 border-t border-white/10 pt-7">
-            <p className="max-w-[420px] text-sm font-medium leading-6 text-white/45">
+            <p className="max-w-105 text-sm font-medium leading-6 text-white/45">
               Structured project delivery, powered by Octalve.
             </p>
           </div>
         </section>
 
         <section className="flex min-h-screen items-center justify-center bg-white px-5 py-10 sm:px-8">
-          <div className="w-full max-w-[540px]">
+          <div className="w-full max-w-135">
             <div className="mb-10 flex justify-center lg:hidden">
               <BrandLockup />
             </div>
 
-            <div className="mx-auto mb-7 grid h-[74px] w-[74px] place-items-center rounded-[24px] bg-[#EAF3FF] text-[#0064E0]">
+            <div className="mx-auto mb-7 grid h-18.5 w-18.5 place-items-center rounded-3xl bg-[#EAF3FF] text-[#0064E0]">
               {icon}
             </div>
 
             <div className="text-center">
-              <h2 className="text-[36px] font-medium leading-tight tracking-[-0.05em] text-[#06142E] sm:text-[44px]">
+              <h2 className="text-[36px] font-medium leading-tight tracking-tighter text-[#06142E] sm:text-[44px]">
                 {title}
               </h2>
               <p className="mt-4 text-[16px] font-medium leading-7 text-slate-500">

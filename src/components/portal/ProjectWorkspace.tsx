@@ -281,7 +281,7 @@ function ProjectCard({
       href={href}
       className="group block rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(15,23,42,0.08)]"
     >
-      <div className="flex min-h-[210px] flex-col justify-between">
+      <div className="flex min-h-52.5 flex-col justify-between">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <ProjectBadge project={project} />
@@ -1106,7 +1106,7 @@ function PhaseDeliverables({
                   setForm({ ...form, description: event.target.value })
                 }
                 placeholder="Briefly describe what this deliverable contains."
-                className="mt-2 min-h-[95px] rounded-2xl border-slate-200 bg-white text-sm placeholder:text-slate-400"
+                className="mt-2 min-h-23.75 rounded-2xl border-slate-200 bg-white text-sm placeholder:text-slate-400"
               />
             </label>
           </div>
@@ -1456,7 +1456,7 @@ export function PhaseWorkspaceDetail({
                   value={changeMessage}
                   onChange={(event) => setChangeMessage(event.target.value)}
                   placeholder="Tell the delivery team what should be adjusted..."
-                  className="mt-2 min-h-[100px] rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                  className="mt-2 min-h-25 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
                 />
                 <div className="mt-3 flex justify-end">
                   <Button

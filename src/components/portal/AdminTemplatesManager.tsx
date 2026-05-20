@@ -157,7 +157,7 @@ export function AdminTemplatesManager() {
 
   return (
     <div className="content narrow">
-      <div className="mx-auto max-w-[1240px] pb-10">
+      <div className="mx-auto max-w-310 pb-10">
         <section className="relative overflow-hidden rounded-[30px] bg-[#E61525] px-6 py-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.14)] sm:px-8 lg:px-10">
           <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/14" />
           <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -227,7 +227,7 @@ export function AdminTemplatesManager() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0]">
               <Layers3 size={18} />
             </span>
-            <strong className="mt-4 block text-3xl tracking-[-0.05em] text-slate-950">
+            <strong className="mt-4 block text-3xl tracking-tighter text-slate-950">
               {state.templates.length}
             </strong>
             <span className="text-sm font-semibold text-slate-500">
@@ -239,7 +239,7 @@ export function AdminTemplatesManager() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-purple-50 text-[#5300D9]">
               <Layers3 size={18} />
             </span>
-            <strong className="mt-4 block text-3xl tracking-[-0.05em] text-slate-950">
+            <strong className="mt-4 block text-3xl tracking-tighter text-slate-950">
               {totalPhases}
             </strong>
             <span className="text-sm font-semibold text-slate-500">
@@ -251,7 +251,7 @@ export function AdminTemplatesManager() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-[#29BE3E]">
               <Layers3 size={18} />
             </span>
-            <strong className="mt-4 block text-3xl tracking-[-0.05em] text-slate-950">
+            <strong className="mt-4 block text-3xl tracking-tighter text-slate-950">
               {totalDeliverables}
             </strong>
             <span className="text-sm font-semibold text-slate-500">
@@ -263,7 +263,7 @@ export function AdminTemplatesManager() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-50 text-[#FC7E24]">
               <Layers3 size={18} />
             </span>
-            <strong className="mt-4 block text-3xl tracking-[-0.05em] text-slate-950">
+            <strong className="mt-4 block text-3xl tracking-tighter text-slate-950">
               {catalogCoverage}/{PACKAGE_CATALOG.length}
             </strong>
             <span className="text-sm font-semibold text-slate-500">

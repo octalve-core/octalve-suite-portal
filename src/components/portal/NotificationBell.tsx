@@ -118,7 +118,7 @@ export function NotificationBell() {
       {open ? (
         <section
           aria-label="Notifications"
-          className="fixed left-3 right-3 top-[76px] z-[90] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:w-[390px]"
+          className="fixed left-3 right-3 top-19 z-90 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:w-97.5"
         >
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
             <div>
@@ -234,7 +234,7 @@ export function NotificationBell() {
               </div>
             </>
           ) : (
-            <div className="grid min-h-[210px] place-items-center px-6 py-10 text-center">
+            <div className="grid min-h-52.5 place-items-center px-6 py-10 text-center">
               <div>
                 <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
                   <Inbox size={22} />

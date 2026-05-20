@@ -139,7 +139,7 @@ export function ProjectDateCountdown({
 
   if (!parts) {
     return (
-      <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 text-slate-600">
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-slate-600">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#0064E0] ring-1 ring-slate-200">
             <CalendarClock size={18} />
@@ -167,7 +167,7 @@ export function ProjectDateCountdown({
   return (
     <div
       className={[
-        "rounded-[24px] border p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]",
+        "rounded-3xl border p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]",
         tone.card,
       ].join(" ")}
     >
@@ -198,7 +198,7 @@ export function ProjectDateCountdown({
             key={label}
             className="rounded-2xl border border-white/70 bg-white p-4 text-center shadow-sm"
           >
-            <strong className={["block text-2xl font-semibold tracking-[-0.05em]", tone.value].join(" ")}>
+            <strong className={["block text-2xl font-semibold tracking-tighter", tone.value].join(" ")}>
               {String(value).padStart(2, "0")}
             </strong>
             <span className="mt-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">

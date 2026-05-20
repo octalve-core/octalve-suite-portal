@@ -194,10 +194,10 @@ export function ClientPaymentsManager() {
   }, [projectFilter, query, rows, statusFilter]);
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-375 px-4 py-6 sm:px-6 lg:px-8">
       <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-        <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-slate-50 p-6 sm:p-8">
-          <div className="absolute right-[-80px] top-[-110px] h-64 w-64 rounded-full bg-[#0064E0]/10 blur-2xl" />
+        <div className="relative overflow-hidden bg-linear-to-br from-blue-50 via-white to-slate-50 p-6 sm:p-8">
+          <div className="absolute -right-20 -top-27.5 h-64 w-64 rounded-full bg-[#0064E0]/10 blur-2xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -263,7 +263,7 @@ export function ClientPaymentsManager() {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[820px]">
+            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-205">
               <label className="block">
                 <span className="sr-only">Search payments</span>
                 <div className="relative">
@@ -321,7 +321,7 @@ export function ClientPaymentsManager() {
                 <Link
                   key={payment.id}
                   href={`/client/payments/${payment.id}`}
-                  className="group rounded-[24px] border border-slate-200 bg-white p-5 text-left shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_18px_45px_rgba(0,100,224,0.10)]"
+                  className="group rounded-3xl border border-slate-200 bg-white p-5 text-left shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_18px_45px_rgba(0,100,224,0.10)]"
                 >
                   <div className="flex items-start gap-4">
                     <span
@@ -397,7 +397,7 @@ export function ClientPaymentsManager() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
                 <WalletCards size={24} />
               </div>

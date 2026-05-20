@@ -233,7 +233,7 @@ export function AdminTemplateEditPage() {
       <div className="content narrow">
         <Card className="border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <Badge className="badge-red">Template not found</Badge>
-          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tighter text-slate-950">
             This template could not be opened
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
@@ -251,7 +251,7 @@ export function AdminTemplateEditPage() {
 
   return (
     <div className="content narrow">
-      <div className="mx-auto max-w-[1180px] pb-10">
+      <div className="mx-auto max-w-295 pb-10">
         <button
           type="button"
           onClick={() => router.push("/admin/templates")}
@@ -278,19 +278,19 @@ export function AdminTemplateEditPage() {
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl bg-white/12 px-4 py-3">
-                  <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-white/65">
+                  <span className="block text-[11px] font-black uppercase tracking-widest text-white/65">
                     Package
                   </span>
                   <strong className="mt-1 block text-sm">{selectedCatalog.shortTitle}</strong>
                 </div>
                 <div className="rounded-2xl bg-white/12 px-4 py-3">
-                  <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-white/65">
+                  <span className="block text-[11px] font-black uppercase tracking-widest text-white/65">
                     Phases
                   </span>
                   <strong className="mt-1 block text-sm">{form.phases.length}</strong>
                 </div>
                 <div className="rounded-2xl bg-white/12 px-4 py-3">
-                  <span className="block text-[11px] font-black uppercase tracking-[0.1em] text-white/65">
+                  <span className="block text-[11px] font-black uppercase tracking-widest text-white/65">
                     Deliverables
                   </span>
                   <strong className="mt-1 block text-sm">{totalDeliverables}</strong>
@@ -357,7 +357,7 @@ export function AdminTemplateEditPage() {
                         setForm({ ...form, description: event.target.value })
                       }
                       placeholder="Explain when this template should be used and what outcome it supports."
-                      className="min-h-[120px] rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                      className="min-h-30 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
                     />
                   </Field>
                 </div>
@@ -507,7 +507,7 @@ export function AdminTemplateEditPage() {
                                 })
                               }
                               placeholder={"One deliverable per line\nProject brief\nWebsite preview\nFinal handoff note"}
-                              className="min-h-[128px] rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                              className="min-h-32 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
                             />
                           </Field>
                         </div>

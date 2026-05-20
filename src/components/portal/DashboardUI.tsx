@@ -116,12 +116,12 @@ export function DashboardHero({
             </p>
           ) : null}
 
-          <h1 className="max-w-[820px] text-[32px] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-[42px] lg:text-[52px]">
+          <h1 className="max-w-205 text-[32px] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-[42px] lg:text-[52px]">
             {finalTitle}
           </h1>
 
           {finalSubtitle ? (
-            <p className="mt-4 max-w-[700px] text-[15px] font-medium leading-7 text-white/85 sm:text-[16px]">
+            <p className="mt-4 max-w-175 text-[15px] font-medium leading-7 text-white/85 sm:text-[16px]">
               {finalSubtitle}
             </p>
           ) : null}
@@ -137,10 +137,10 @@ export function DashboardHero({
           <div
             className={[
               "flex shrink-0 items-center justify-start lg:justify-end",
-              "[&_a]:!bg-transparent [&_a]:!p-0 [&_a]:!shadow-none",
-              "[&_button]:!min-h-12 [&_button]:!rounded-2xl [&_button]:!border-0",
-              "[&_button]:!bg-white [&_button]:!px-6 [&_button]:!font-semibold",
-              "[&_button]:!shadow-[0_16px_34px_rgba(15,23,42,0.16)]",
+              "[&_a]:bg-transparent! [&_a]:p-0! [&_a]:shadow-none!",
+              "[&_button]:min-h-12! [&_button]:rounded-2xl! [&_button]:border-0!",
+              "[&_button]:bg-white! [&_button]:px-6! [&_button]:font-semibold!",
+              "[&_button]:shadow-[0_16px_34px_rgba(15,23,42,0.16)]!",
               actionToneClass,
             ].join(" ")}
           >

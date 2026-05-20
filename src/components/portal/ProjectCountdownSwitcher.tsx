@@ -40,7 +40,7 @@ export function ProjectCountdownSwitcher() {
 
   if (!projects.length) {
     return (
-      <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+      <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
           <CalendarClock size={22} />
         </div>

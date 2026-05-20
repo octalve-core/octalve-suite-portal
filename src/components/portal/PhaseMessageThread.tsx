@@ -77,7 +77,7 @@ export function PhaseMessageThread({
   }
 
   return (
-    <div className="max-h-[520px] space-y-4 overflow-y-auto rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+    <div className="max-h-130 space-y-4 overflow-y-auto rounded-3xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
       {sortedMessages.map((message) => {
         const role = getSenderRole(message);
         const name = getSenderName(message);

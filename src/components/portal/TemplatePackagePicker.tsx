@@ -170,7 +170,7 @@ export function TemplatePackagePicker({
           <h2 className="text-[22px] font-semibold tracking-[-0.035em] text-slate-950">
             {heading}
           </h2>
-          <p className="mt-2 max-w-[760px] text-sm leading-6 text-slate-600">
+          <p className="mt-2 max-w-190 text-sm leading-6 text-slate-600">
             {description}
           </p>
         </div>
@@ -212,11 +212,11 @@ export function TemplatePackagePicker({
               type="button"
               onClick={() => onSelect(option)}
               className={[
-                "group relative w-full rounded-[24px] border bg-white p-5 text-left transition",
+                "group relative w-full rounded-3xl border bg-white p-5 text-left transition",
                 "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
                 layout === "list"
-                  ? "grid min-h-[118px] grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
-                  : "min-h-[166px]",
+                  ? "grid min-h-29.5 grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
+                  : "min-h-41.5",
               ].join(" ")}
               style={{
                 borderColor: selected ? option.color : OCTALVE_COLORS.border,
@@ -237,7 +237,7 @@ export function TemplatePackagePicker({
 
               <span className={layout === "list" ? "block" : "mt-5 block"}>
                 <span
-                  className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]"
+                  className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
                   style={{
                     backgroundColor: `${option.color}14`,
                     color: option.color,
@@ -250,7 +250,7 @@ export function TemplatePackagePicker({
                   {option.title}
                 </span>
 
-                <span className="mt-2 block max-w-[640px] text-sm leading-6 text-slate-600">
+                <span className="mt-2 block max-w-160 text-sm leading-6 text-slate-600">
                   {option.description}
                 </span>
 

@@ -186,7 +186,7 @@ function PaymentHero({
               </p>
             </div>
 
-            <div className="grid h-20 min-w-20 place-items-center rounded-[24px] bg-white/10 px-5 text-right ring-1 ring-white/15">
+            <div className="grid h-20 min-w-20 place-items-center rounded-3xl bg-white/10 px-5 text-right ring-1 ring-white/15">
               <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/50">
                 Amount
               </span>
@@ -203,7 +203,7 @@ function PaymentHero({
 
 function NotFound({ backHref }: { backHref: string }) {
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-295 px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href={backHref}
         className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#0064E0]"
@@ -216,7 +216,7 @@ function NotFound({ backHref }: { backHref: string }) {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
           <XCircle size={24} />
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tighter text-slate-950">
           Payment not found
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -380,7 +380,7 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-330 px-4 py-6 sm:px-6 lg:px-8">
       <PaymentHero payment={payment} project={project} backHref="/admin/payments" />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_minmax(380px,0.88fr)]">
@@ -431,7 +431,7 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
                 disabled={!canReview}
                 onChange={(event) => setRejectNote(event.target.value)}
                 placeholder="Optional reason shown to the client when payment is rejected."
-                className="mt-2 min-h-[110px] rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+                className="mt-2 min-h-27.5 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
               />
             </label>
 
@@ -524,7 +524,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-330 px-4 py-6 sm:px-6 lg:px-8">
       <PaymentHero payment={payment} project={project} backHref="/client/payments" />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_minmax(380px,0.88fr)]">
