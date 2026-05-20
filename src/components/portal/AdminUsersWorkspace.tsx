@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -334,13 +334,25 @@ export function AdminUsersDirectory({ mode }: { mode: DirectoryMode }) {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
 
-  const allUsers = (state.users ?? []) as UserWithMeta[];
+  useEffect(() => {
+    setQuery("");
+    setRoleFilter("ALL");
+  }, [mode]);
+
+  const allUsers = useMemo(
+    () =>
+      ((state.users ?? []) as UserWithMeta[]).map((user) => ({
+        ...user,
+        role: normalizeUserRole(user),
+      })),
+    [state.users],
+  );
 
   const users = useMemo(() => {
     const base =
       mode === "clients"
-        ? allUsers.filter((user) => user.role === "CLIENT")
-        : allUsers.filter((user) => user.role !== "CLIENT");
+        ? allUsers.filter(isClientUser)
+        : allUsers.filter(isTeamUser);
 
     return base
       .filter((user) => (roleFilter === "ALL" ? true : normalizeUserRole(user) === roleFilter))
@@ -507,7 +519,7 @@ export function AdminUsersDirectory({ mode }: { mode: DirectoryMode }) {
                   onChange={(event) => setRoleFilter(event.target.value as RoleFilter)}
                   className="h-12 rounded-2xl border-slate-200 px-4 text-sm"
                 >
-                  <option value="ALL">All Roles</option>
+                  <option value="ALL">{mode === "clients" ? "All Clients" : "All Roles"}</option>
                   {mode === "clients" ? (
                     <option value="CLIENT">Client</option>
                   ) : (
