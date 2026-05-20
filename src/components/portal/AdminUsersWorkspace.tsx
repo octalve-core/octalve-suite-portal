@@ -62,6 +62,52 @@ const ROLE_ICON_CLASSES: Record<Role, string> = {
 };
 
 const ROLE_OPTIONS: Role[] = ["CLIENT", "STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
+const TEAM_ROLES: Role[] = ["STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
+
+function normalizeUserRole(
+  userOrRole?: { role?: Role | string | null } | Role | string | null,
+): Role {
+  const raw =
+    typeof userOrRole === "object" && userOrRole !== null && "role" in userOrRole
+      ? userOrRole.role
+      : userOrRole;
+
+  const value = String(raw ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (value === "SUPER_ADMIN" || value === "SUPERADMIN" || value === "ADMIN") {
+    return "SUPER_ADMIN";
+  }
+
+  if (
+    value === "PROJECT_MANAGER" ||
+    value === "PROJECTMANAGER" ||
+    value === "PROJECT_LEAD" ||
+    value === "PM"
+  ) {
+    return "PROJECT_MANAGER";
+  }
+
+  if (value === "STAFF" || value === "TEAM" || value === "TEAM_MEMBER") {
+    return "STAFF";
+  }
+
+  if (value === "CLIENT" || value === "CUSTOMER" || value === "USER" || !value) {
+    return "CLIENT";
+  }
+
+  return "CLIENT";
+}
+
+function isClientUser(user: { role?: Role | string | null }) {
+  return normalizeUserRole(user) === "CLIENT";
+}
+
+function isTeamUser(user: { role?: Role | string | null }) {
+  return TEAM_ROLES.includes(normalizeUserRole(user));
+}
 
 function cn(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(" ");
@@ -218,7 +264,7 @@ function DirectoryCard({
         <span
           className={cn(
             "grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-sm font-black ring-1",
-            ROLE_ICON_CLASSES[user.role],
+            ROLE_ICON_CLASSES[normalizeUserRole(user)],
           )}
         >
           {getInitials(user.name)}
@@ -235,7 +281,7 @@ function DirectoryCard({
               </p>
             </div>
 
-            <RoleChip role={user.role} />
+            <RoleChip role={normalizeUserRole(user)} />
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -297,16 +343,16 @@ export function AdminUsersDirectory({ mode }: { mode: DirectoryMode }) {
         : allUsers.filter((user) => user.role !== "CLIENT");
 
     return base
-      .filter((user) => (roleFilter === "ALL" ? true : user.role === roleFilter))
+      .filter((user) => (roleFilter === "ALL" ? true : normalizeUserRole(user) === roleFilter))
       .filter((user) => userMatchesSearch(user, query))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [allUsers, mode, query, roleFilter]);
 
-  const clients = allUsers.filter((user) => user.role === "CLIENT");
-  const team = allUsers.filter((user) => user.role !== "CLIENT");
-  const staff = allUsers.filter((user) => user.role === "STAFF");
-  const managers = allUsers.filter((user) => user.role === "PROJECT_MANAGER");
-  const admins = allUsers.filter((user) => user.role === "SUPER_ADMIN");
+  const clients = allUsers.filter(isClientUser);
+  const team = allUsers.filter(isTeamUser);
+  const staff = allUsers.filter((user) => normalizeUserRole(user) === "STAFF");
+  const managers = allUsers.filter((user) => normalizeUserRole(user) === "PROJECT_MANAGER");
+  const admins = allUsers.filter((user) => normalizeUserRole(user) === "SUPER_ADMIN");
 
   const activeClients = clients.filter((client) =>
     state.projects.some((project) => project.clientId === client.id),
@@ -442,14 +488,14 @@ export function AdminUsersDirectory({ mode }: { mode: DirectoryMode }) {
                 <span className="sr-only">Search users</span>
                 <div className="relative">
                   <Search
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-slate-400"
                     size={17}
                   />
                   <Input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder={mode === "clients" ? "Search clients..." : "Search team..."}
-                    className="h-12 rounded-2xl border-slate-200 pl-11 text-sm placeholder:text-slate-400"
+                    className="h-12 rounded-2xl border-slate-200 !pl-12 text-sm placeholder:text-slate-400"
                   />
                 </div>
               </label>
@@ -606,7 +652,7 @@ export function AdminUserDetailPage({
     name: user?.name ?? "",
     email: user?.email ?? "",
     specialty: user?.specialty ?? "",
-    role: user?.role ?? "CLIENT",
+    role: normalizeUserRole(user),
   }));
 
   const [loadingAction, setLoadingAction] = useState<"save" | "delete" | null>(null);
@@ -639,7 +685,7 @@ export function AdminUserDetailPage({
 
   const data = getUserProjects(activeUser, state.projects);
   const backHref = mode === "clients" ? "/admin/clients" : "/admin/team";
-  const canDelete = activeUser.role !== "CLIENT" && currentUser?.id !== activeUser.id;
+  const canDelete = normalizeUserRole(activeUser) !== "CLIENT" && currentUser?.id !== activeUser.id;
   const canChangeRole = currentUser?.id !== activeUser.id;
 
   async function saveUser() {
@@ -661,7 +707,7 @@ export function AdminUserDetailPage({
         name: form.name.trim(),
         email: form.email.trim(),
         specialty: form.specialty.trim() || undefined,
-        role: canChangeRole ? form.role : activeUser.role,
+        role: canChangeRole ? form.role : normalizeUserRole(activeUser),
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to update user.");
@@ -705,7 +751,7 @@ export function AdminUserDetailPage({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <RoleChip role={user.role} />
+                <RoleChip role={normalizeUserRole(user)} />
                 {user.company ? (
                   <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-white">
                     {user.company}
