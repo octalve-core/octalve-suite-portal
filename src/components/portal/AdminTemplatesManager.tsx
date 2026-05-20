@@ -66,7 +66,9 @@ export function AdminTemplatesManager() {
     ).length;
   }, [state.templates]);
 
-  async function syncDefaultTemplates() {
+  
+  const canSyncDefaultTemplates = process.env.NODE_ENV !== "production";
+async function syncDefaultTemplates() {
     const ok = window.confirm(
       "Sync the official Octalve package workflows? This will create missing templates and update existing package templates with the latest phases and deliverables.",
     );
@@ -189,16 +191,20 @@ export function AdminTemplatesManager() {
             </div>
 
             <div className="flex flex-wrap gap-3 lg:justify-end">
-              <Button
-                type="button"
+              {canSyncDefaultTemplates ? (
+
+                <Button type="button"
                 variant="secondary"
                 loading={loadingAction === "sync"}
                 onClick={syncDefaultTemplates}
                 className="bg-white text-[#E61525]"
               >
-                <RefreshCw size={16} />
+<RefreshCw size={16} />
                 Sync Default Templates
-              </Button>
+
+                </Button>
+
+              ) : null}
 
               <Link href="/admin/templates/new">
                 <Button className="bg-white text-[#E61525]">
@@ -384,14 +390,18 @@ export function AdminTemplatesManager() {
                   Sync the official Octalve templates or create a custom delivery workflow.
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  <Button
-                    variant="secondary"
+                  {canSyncDefaultTemplates ? (
+
+                    <Button variant="secondary"
                     loading={loadingAction === "sync"}
                     onClick={syncDefaultTemplates}
                   >
-                    <RefreshCw size={16} />
+<RefreshCw size={16} />
                     Sync Default Templates
-                  </Button>
+
+                    </Button>
+
+                  ) : null}
 
                   <Link href="/admin/templates/new">
                     <Button>
