@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import { getSessionOrThrow, requireRoles, errorResponse, makeProjectCode, makePaymentRef } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
@@ -55,9 +56,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const code = makeProjectCode();
-  const bankName = process.env.OCTALVE_BANK_NAME ?? "Octalve Bank";
-  const accountName = process.env.OCTALVE_ACCOUNT_NAME ?? "Octalve";
-  const accountNumber = process.env.OCTALVE_ACCOUNT_NUMBER ?? "0000000000";
+  const paymentBank = resolvePaymentBankDetails();
 
   // Atomic transaction: update request + create project + phases + deliverables + payments
   const project = await prisma.$transaction(async (tx) => {
@@ -120,9 +119,9 @@ export async function POST(request: Request, { params }: Params) {
           amount: depositAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "DEP"),
-          bankName,
-          accountName,
-          accountNumber,
+          bankName: paymentBank.bankName,
+          accountName: paymentBank.accountName,
+          accountNumber: paymentBank.accountNumber,
         },
         {
           projectId: proj.id,
@@ -130,9 +129,9 @@ export async function POST(request: Request, { params }: Params) {
           amount: balanceAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "BAL"),
-          bankName,
-          accountName,
-          accountNumber,
+          bankName: paymentBank.bankName,
+          accountName: paymentBank.accountName,
+          accountNumber: paymentBank.accountNumber,
         },
       ],
     });

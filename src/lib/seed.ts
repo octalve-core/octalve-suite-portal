@@ -130,8 +130,8 @@ export const initialState: AppState = {
       balanceAmount: 400000,
       phases: buildPhases("project_chatgpt", "tpl_launch", ["APPROVED", "IN_PROGRESS", "LOCKED", "LOCKED", "LOCKED"]),
       payments: [
-        { id: "pay_chatgpt_dep", projectId: "project_chatgpt", type: "DEPOSIT", amount: 400000, status: "CONFIRMED", reference: "OCT-3KRT26-DEP", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000", confirmedAt: now },
-        { id: "pay_chatgpt_bal", projectId: "project_chatgpt", type: "BALANCE", amount: 400000, status: "UNPAID", reference: "OCT-3KRT26-BAL", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000" }
+        { id: "pay_chatgpt_dep", projectId: "project_chatgpt", type: "DEPOSIT", amount: 400000, status: "CONFIRMED", reference: "OCT-3KRT26-DEP", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612", confirmedAt: now },
+        { id: "pay_chatgpt_bal", projectId: "project_chatgpt", type: "BALANCE", amount: 400000, status: "UNPAID", reference: "OCT-3KRT26-BAL", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612" }
       ],
       clientBrief: "A clean launch project for an AI-related product experience.",
       createdAt: now
@@ -152,8 +152,8 @@ export const initialState: AppState = {
       balanceAmount: 300000,
       phases: buildPhases("project_brandde", "tpl_impact", ["LOCKED", "LOCKED", "LOCKED", "LOCKED"]),
       payments: [
-        { id: "pay_brandde_dep", projectId: "project_brandde", type: "DEPOSIT", amount: 300000, status: "UNPAID", reference: "OCT-BRD920-DEP", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000" },
-        { id: "pay_brandde_bal", projectId: "project_brandde", type: "BALANCE", amount: 300000, status: "UNPAID", reference: "OCT-BRD920-BAL", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000" }
+        { id: "pay_brandde_dep", projectId: "project_brandde", type: "DEPOSIT", amount: 300000, status: "UNPAID", reference: "OCT-BRD920-DEP", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612" },
+        { id: "pay_brandde_bal", projectId: "project_brandde", type: "BALANCE", amount: 300000, status: "UNPAID", reference: "OCT-BRD920-BAL", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612" }
       ],
       clientBrief: "Impact suite request for brand and marketing activation.",
       createdAt: now
@@ -174,8 +174,8 @@ export const initialState: AppState = {
       balanceAmount: 600000,
       phases: buildPhases("project_sfx_money", "tpl_impact", ["APPROVED", "AWAITING_APPROVAL", "NOT_STARTED", "NOT_STARTED"]),
       payments: [
-        { id: "pay_sfx_dep", projectId: "project_sfx_money", type: "DEPOSIT", amount: 600000, status: "CONFIRMED", reference: "OCT-SFX114-DEP", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000", confirmedAt: now },
-        { id: "pay_sfx_bal", projectId: "project_sfx_money", type: "BALANCE", amount: 600000, status: "UNPAID", reference: "OCT-SFX114-BAL", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000" }
+        { id: "pay_sfx_dep", projectId: "project_sfx_money", type: "DEPOSIT", amount: 600000, status: "CONFIRMED", reference: "OCT-SFX114-DEP", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612", confirmedAt: now },
+        { id: "pay_sfx_bal", projectId: "project_sfx_money", type: "BALANCE", amount: 600000, status: "UNPAID", reference: "OCT-SFX114-BAL", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612" }
       ],
       clientBrief: "Money app brand, campaign and launch support.",
       createdAt: now
@@ -196,7 +196,7 @@ export const initialState: AppState = {
       balanceAmount: 250000,
       phases: buildPhases("project_adecrown", "tpl_growth", ["NOT_STARTED", "LOCKED", "LOCKED", "LOCKED"]),
       payments: [
-        { id: "pay_lite_dep", projectId: "project_adecrown", type: "DEPOSIT", amount: 250000, status: "CONFIRMED", reference: "OCT-LITE01-DEP", bankName: "Octalve Bank", accountName: "Octalve Consult", accountNumber: "0000000000", confirmedAt: now }
+        { id: "pay_lite_dep", projectId: "project_adecrown", type: "DEPOSIT", amount: 250000, status: "CONFIRMED", reference: "OCT-LITE01-DEP", bankName: "PROVIDUS BANK", accountName: "OCTALVE LTD", accountNumber: "1308342612", confirmedAt: now }
       ],
       createdAt: now
     }

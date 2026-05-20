@@ -240,9 +240,9 @@ async function seedDemoProjects() {
     return;
   }
 
-  const bankName = process.env.OCTALVE_BANK_NAME ?? "Octalve Bank";
-  const accountName = process.env.OCTALVE_ACCOUNT_NAME ?? "Octalve Consult";
-  const accountNumber = process.env.OCTALVE_ACCOUNT_NUMBER ?? "0000000000";
+  const bankName = process.env.NEXT_PUBLIC_OCTALVE_BANK_NAME ?? "PROVIDUS BANK";
+  const accountName = process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NAME ?? "OCTALVE LTD";
+  const accountNumber = process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NUMBER ?? "1308342612";
 
   // Get templates
   const launchTemplate = await prisma.projectTemplate.findFirst({

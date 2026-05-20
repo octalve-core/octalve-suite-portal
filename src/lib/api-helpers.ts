@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -42,14 +43,16 @@ export function requireRoles(userRole: Role, ...allowed: Role[]): NextResponse |
  * Generate a unique project code, e.g. "OCT-A3F92B"
  */
 export function makeProjectCode(): string {
-  return `OCT-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  return `OCT-${randomBytes(4).toString("hex").toUpperCase()}`;
 }
 
 /**
  * Generate a payment reference, e.g. "OCT-A3F92B-DEP"
  */
 export function makePaymentRef(code: string, type: "DEP" | "BAL"): string {
-  return `${code}-${type}`;
+  const normalizedCode = code.startsWith("OCT-") ? code : `OCT-${code}`;
+
+  return `${normalizedCode}-${type}`;
 }
 
 /**

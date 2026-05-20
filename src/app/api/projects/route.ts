@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import { getSessionOrThrow, requireRoles, errorResponse, makeProjectCode, makePaymentRef } from "@/lib/api-helpers";
 import type { Prisma } from "@prisma/client";
 
@@ -106,9 +107,7 @@ export async function POST(request: Request) {
   if (!template) return errorResponse("Template not found", 400);
 
   const code = makeProjectCode();
-  const bankName = process.env.OCTALVE_BANK_NAME ?? "Octalve Bank";
-  const accountName = process.env.OCTALVE_ACCOUNT_NAME ?? "Octalve";
-  const accountNumber = process.env.OCTALVE_ACCOUNT_NUMBER ?? "0000000000";
+  const paymentBank = resolvePaymentBankDetails();
 
   const project = await prisma.$transaction(async (tx) => {
     // Find or create client user
@@ -173,9 +172,9 @@ export async function POST(request: Request) {
           amount: depositAmount ?? 0,
           status: "UNPAID",
           reference: makePaymentRef(code, "DEP"),
-          bankName,
-          accountName,
-          accountNumber,
+          bankName: paymentBank.bankName,
+          accountName: paymentBank.accountName,
+          accountNumber: paymentBank.accountNumber,
         },
         {
           projectId: proj.id,
@@ -183,9 +182,9 @@ export async function POST(request: Request) {
           amount: balanceAmount ?? 0,
           status: "UNPAID",
           reference: makePaymentRef(code, "BAL"),
-          bankName,
-          accountName,
-          accountNumber,
+          bankName: paymentBank.bankName,
+          accountName: paymentBank.accountName,
+          accountNumber: paymentBank.accountNumber,
         },
       ],
     });
