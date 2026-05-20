@@ -5,6 +5,7 @@
 import { ProjectWorkspaceList, ProjectWorkspaceDetail, PhaseWorkspaceDetail } from "./ProjectWorkspace";
 import { PhaseMessageThread } from "./PhaseMessageThread";
 import { AdminPaymentsManager } from "./AdminPaymentsManager";
+import { AdminSystemSettings } from "./AdminSystemSettings";
 
 import {
   WorkspaceActionCard,
@@ -1842,66 +1843,9 @@ export function AdminTeam() {
   );
 }
 export function AdminSettings() {
-  return (
-    <div className="content narrow">
-      <PageHeader
-        title="Settings"
-        subtitle="Manage your account and preferences"
-      />
-      <div className="stack">
-        <Card className="card-body">
-          <h2>Profile</h2>
-          <div className="form-grid">
-            <Field label="Name">
-              <Input defaultValue="Octa Ive" />
-            </Field>
-            <Field label="Email">
-              <Input defaultValue="octalve0@gmail.com" />
-            </Field>
-            <Field label="Role">
-              <Input defaultValue="Administrator" />
-            </Field>
-          </div>
-        </Card>
-        <Card className="card-body">
-          <h2>Notifications</h2>
-          {[
-            "Email notifications",
-            "Approval requests",
-            "Project updates",
-            "Weekly digest",
-          ].map((item) => (
-            <div
-              className="timeline-row"
-              key={item}
-              style={{
-                padding: "18px 0",
-                borderBottom: "1px solid var(--line)",
-              }}
-            >
-              <div>
-                <strong>{item}</strong>
-                <p style={{ margin: 4, color: "var(--muted)" }}>
-                  Configure how you receive updates
-                </p>
-              </div>
-              <input type="checkbox" defaultChecked />
-            </div>
-          ))}
-        </Card>
-        <Card className="card-body">
-          <h2>Security</h2>
-          <Button variant="secondary">Change Password</Button>
-          <p style={{ color: "var(--muted)" }}>Last password change: Never</p>
-        </Card>
-        <Card className="card-body" style={{ borderColor: "#fecdd3" }}>
-          <h2 style={{ color: "#e11d48" }}>Danger Zone</h2>
-          <Button variant="danger">Delete Account</Button>
-        </Card>
-      </div>
-    </div>
-  );
+  return <AdminSystemSettings />;
 }
+
 export function AdminAnalytics() {
   const { state } = useApp();
 

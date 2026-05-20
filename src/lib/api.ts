@@ -172,6 +172,23 @@ export const api = {
     list: () => fetchJson<(User & { _count: { clientProjects: number }; clientProjects: { id: string; status: string; packageType: string }[] })[]>("/api/clients"),
   },
 
+  // System Settings
+  systemSettings: {
+    paymentBank: {
+      get: () =>
+        fetchJson<{
+          bankName: string;
+          accountName: string;
+          accountNumber: string;
+        }>("/api/system-settings/payment-bank"),
+      update: (data: { bankName: string; accountName: string; accountNumber: string }) =>
+        patch<{
+          bankName: string;
+          accountName: string;
+          accountNumber: string;
+        }>("/api/system-settings/payment-bank", data),
+    },
+  },
   // Notifications
   notifications: {
     list: () => fetchJson<NotificationItem[]>("/api/notifications"),
