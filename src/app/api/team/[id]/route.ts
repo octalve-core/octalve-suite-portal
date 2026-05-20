@@ -22,6 +22,15 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!existing) return errorResponse("Team member not found", 404);
   if (existing.role === "CLIENT") return errorResponse("Cannot edit client via team endpoint", 400);
 
+  const validRoles = ["CLIENT", "STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
+  if (role !== undefined && !validRoles.includes(role)) {
+    return errorResponse("Invalid role", 400);
+  }
+
+  if (id === result.user.id && role !== undefined && role !== existing.role) {
+    return errorResponse("You cannot change your own role", 400);
+  }
+
   // If changing email, check uniqueness
   if (email && email.toLowerCase() !== existing.email) {
     const emailTaken = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -35,6 +44,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(email !== undefined && { email: email.toLowerCase().trim() }),
       ...(specialty !== undefined && { specialty }),
       ...(role !== undefined && { role }),
+      ...(specialty !== undefined && { specialty: specialty || null }),
     },
     select: {
       id: true,
