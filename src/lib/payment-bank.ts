@@ -1,7 +1,7 @@
 export type PaymentBankDetails = {
+  accountNumber: string;
   bankName: string;
   accountName: string;
-  accountNumber: string;
 };
 
 export const OCTALVE_PAYMENT_BANK: PaymentBankDetails = {
@@ -10,28 +10,21 @@ export const OCTALVE_PAYMENT_BANK: PaymentBankDetails = {
   accountName: process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NAME?.trim() || "OCTALVE LTD",
 } as const;
 
-const OLD_OR_PLACEHOLDER_VALUES = new Set([
-  "",
-  "Octalve Bank",
-  "Octalve Consult",
-  "Octalve",
-  "0000000000",
-]);
-
-function cleanPaymentValue(value: string | null | undefined) {
-  const cleaned = value?.trim() ?? "";
-
-  return OLD_OR_PLACEHOLDER_VALUES.has(cleaned) ? "" : cleaned;
-}
-
-export function resolvePaymentBankDetails(payment?: {
+/**
+ * Returns the official Octalve payment account used across the portal.
+ *
+ * We intentionally do not trust per-payment stored bank fields for display,
+ * because older payment rows may contain legacy/demo account values.
+ * New backend/system-settings support can later update this one central source.
+ */
+export function resolvePaymentBankDetails(_payment?: {
   bankName?: string | null;
   accountName?: string | null;
   accountNumber?: string | null;
 }): PaymentBankDetails {
   return {
-    bankName: cleanPaymentValue(payment?.bankName) || OCTALVE_PAYMENT_BANK.bankName,
-    accountName: cleanPaymentValue(payment?.accountName) || OCTALVE_PAYMENT_BANK.accountName,
-    accountNumber: cleanPaymentValue(payment?.accountNumber) || OCTALVE_PAYMENT_BANK.accountNumber,
+    bankName: OCTALVE_PAYMENT_BANK.bankName,
+    accountName: OCTALVE_PAYMENT_BANK.accountName,
+    accountNumber: OCTALVE_PAYMENT_BANK.accountNumber,
   };
 }
