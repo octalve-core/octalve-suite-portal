@@ -8,6 +8,9 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Edit3,
+  Eye,
+  EyeOff,
   FileText,
   Layers3,
   Mail,
@@ -17,17 +20,28 @@ import {
   Search,
   Send,
   ShieldCheck,
+  Trash2,
   UserPlus,
   UsersRound,
 } from "lucide-react";
 
-import type { Project, ProjectPhase, Role, User } from "@/lib/types";
+import type { Deliverable, Project, ProjectPhase, Role, User } from "@/lib/types";
 import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
 import { useApp } from "./AppContext";
 import { PhaseMessageThread } from "./PhaseMessageThread";
 import { Button, Input, Select, Textarea } from "./UI";
 
 type WorkspaceRole = "admin" | "staff" | "client";
+type DeliverableLinkType = NonNullable<Deliverable["linkType"]>;
+type DeliverablePayload = Pick<Deliverable, "name" | "description" | "link" | "linkType">;
+
+const DELIVERABLE_LINK_TYPES: DeliverableLinkType[] = [
+  "Figma",
+  "Google Drive",
+  "Web Preview",
+  "Document",
+  "Other",
+];
 type ProjectTab = "phases" | "team" | "notes";
 
 const COLORS = {
@@ -873,50 +887,378 @@ export function ProjectWorkspaceDetail({
 function PhaseDeliverables({
   phase,
   role,
+  addDeliverable,
+  updateDeliverable,
+  deleteDeliverable,
 }: {
   phase: ProjectPhase;
   role: WorkspaceRole;
+  addDeliverable: (
+    phaseId: string,
+    payload: Pick<Deliverable, "name" | "description" | "link" | "linkType">,
+  ) => Promise<void>;
+  updateDeliverable: (
+    deliverableId: string,
+    payload: Partial<
+      Pick<
+        Deliverable,
+        "name" | "description" | "link" | "linkType" | "visibleToClient" | "status"
+      >
+    >,
+  ) => Promise<void>;
+  deleteDeliverable: (deliverableId: string) => Promise<void>;
 }) {
+  const canManage = role !== "client" && phase.status !== "APPROVED";
+
+  const [openForm, setOpenForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState("");
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    link: string;
+    linkType: DeliverableLinkType;
+  }>({
+    name: "",
+    description: "",
+    link: "",
+    linkType: "Web Preview",
+  });
+
   const items =
     role === "client"
       ? phase.deliverables.filter((deliverable) => deliverable.visibleToClient)
       : phase.deliverables;
 
-  if (!items.length) {
-    return (
-      <EmptyPanel
-        title="No deliverables visible"
-        body={role === "client" ? "Deliverables will appear once the team makes them visible." : "Add deliverables to prepare this phase for review."}
-        icon={<FileText size={22} />}
-      />
-    );
+  function resetForm() {
+    setEditingId(null);
+    setForm({
+      name: "",
+      description: "",
+      link: "",
+      linkType: "Web Preview",
+    });
+  }
+
+  function beginAdd() {
+    resetForm();
+    setOpenForm(true);
+  }
+
+  function beginEdit(deliverable: ProjectPhase["deliverables"][number]) {
+    setEditingId(deliverable.id);
+    setForm({
+      name: deliverable.name ?? "",
+      description: deliverable.description ?? "",
+      link: deliverable.link ?? "",
+      linkType: deliverable.linkType ?? "Web Preview",
+    });
+    setOpenForm(true);
+  }
+
+  async function saveDeliverable() {
+    const payload: DeliverablePayload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      link: form.link.trim(),
+      linkType: form.linkType,
+    };
+
+    if (!payload.name) return;
+
+    setLoadingId(editingId || "new");
+
+    try {
+      if (editingId) {
+        await updateDeliverable(editingId, payload);
+      } else {
+        await addDeliverable(phase.id, payload);
+      }
+
+      resetForm();
+      setOpenForm(false);
+    } finally {
+      setLoadingId("");
+    }
+  }
+
+  async function toggleClientVisibility(deliverable: ProjectPhase["deliverables"][number]) {
+    if (deliverable.status === "APPROVED" || phase.status === "APPROVED") return;
+
+    setLoadingId(deliverable.id);
+
+    try {
+      await updateDeliverable(deliverable.id, {
+        visibleToClient: !deliverable.visibleToClient,
+      });
+    } finally {
+      setLoadingId("");
+    }
+  }
+
+  async function markReadyForReview(deliverable: ProjectPhase["deliverables"][number]) {
+    if (deliverable.status === "APPROVED" || phase.status === "APPROVED") return;
+
+    setLoadingId(deliverable.id);
+
+    try {
+      await updateDeliverable(deliverable.id, {
+        status: "READY_FOR_REVIEW",
+        visibleToClient: true,
+      });
+    } finally {
+      setLoadingId("");
+    }
+  }
+
+  async function removeDeliverable(deliverable: ProjectPhase["deliverables"][number]) {
+    if (deliverable.status === "APPROVED" || phase.status === "APPROVED") return;
+
+    const ok = window.confirm(`Delete "${deliverable.name}"?`);
+
+    if (!ok) return;
+
+    setLoadingId(deliverable.id);
+
+    try {
+      await deleteDeliverable(deliverable.id);
+    } finally {
+      setLoadingId("");
+    }
   }
 
   return (
     <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
-      <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-        Deliverables
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+            Deliverables
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            {role === "client"
+              ? "Client-visible deliverables prepared for your review."
+              : "Add, update and manage phase deliverables before client approval."}
+          </p>
+        </div>
 
-      <div className="mt-5 space-y-3">
-        {items.map((deliverable) => (
-          <div key={deliverable.id} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
-                <FileText size={18} />
-              </span>
-              <div className="min-w-0">
-                <strong className="block truncate text-sm text-slate-950">{deliverable.name}</strong>
-                {deliverable.description ? (
-                  <span className="block truncate text-xs font-medium text-slate-500">{deliverable.description}</span>
-                ) : null}
-              </div>
-            </div>
-
-            <StatusBadge status={deliverable.status} />
-          </div>
-        ))}
+        {canManage ? (
+          <Button onClick={beginAdd}>
+            <Plus size={16} />
+            Add Deliverable
+          </Button>
+        ) : null}
       </div>
+
+      {openForm && canManage ? (
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-bold text-slate-800">
+                Deliverable Name *
+              </span>
+              <Input
+                value={form.name}
+                onChange={(event) => setForm({ ...form, name: event.target.value })}
+                placeholder="e.g. Homepage design preview"
+                className="mt-2 h-12 rounded-2xl border-slate-200 bg-white text-sm placeholder:text-slate-400"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-slate-800">
+                Link Type
+              </span>
+              <Select
+                value={form.linkType}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    linkType: event.target.value as DeliverableLinkType,
+                  })
+                }
+                className="mt-2 h-12 rounded-2xl border-slate-200 bg-white text-sm"
+              >
+                {DELIVERABLE_LINK_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            <label className="block lg:col-span-2">
+              <span className="text-sm font-bold text-slate-800">
+                Link
+              </span>
+              <Input
+                value={form.link}
+                onChange={(event) => setForm({ ...form, link: event.target.value })}
+                placeholder="https://..."
+                className="mt-2 h-12 rounded-2xl border-slate-200 bg-white text-sm placeholder:text-slate-400"
+              />
+            </label>
+
+            <label className="block lg:col-span-2">
+              <span className="text-sm font-bold text-slate-800">
+                Description
+              </span>
+              <Textarea
+                value={form.description}
+                onChange={(event) =>
+                  setForm({ ...form, description: event.target.value })
+                }
+                placeholder="Briefly describe what this deliverable contains."
+                className="mt-2 min-h-[95px] rounded-2xl border-slate-200 bg-white text-sm placeholder:text-slate-400"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap justify-end gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                resetForm();
+                setOpenForm(false);
+              }}
+              disabled={Boolean(loadingId)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={saveDeliverable}
+              loading={loadingId === "new" || loadingId === editingId}
+              disabled={!form.name.trim()}
+            >
+              {editingId ? "Save Changes" : "Add Deliverable"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {items.length ? (
+        <div className="mt-5 space-y-3">
+          {items.map((deliverable) => {
+            const locked =
+              phase.status === "APPROVED" || deliverable.status === "APPROVED";
+            const canEdit = canManage && !locked;
+
+            return (
+              <div
+                key={deliverable.id}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
+                      <FileText size={18} />
+                    </span>
+
+                    <div className="min-w-0">
+                      <strong className="block text-sm text-slate-950">
+                        {deliverable.name}
+                      </strong>
+
+                      {deliverable.description ? (
+                        <span className="mt-1 block text-sm leading-6 text-slate-500">
+                          {deliverable.description}
+                        </span>
+                      ) : null}
+
+                      {deliverable.link ? (
+                        <a
+                          href={deliverable.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex text-sm font-bold text-[#0064E0] hover:underline"
+                        >
+                          Open deliverable link
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <StatusBadge status={deliverable.status} />
+
+                    {role !== "client" ? (
+                      <span
+                        className={[
+                          "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
+                          deliverable.visibleToClient
+                            ? "border-blue-200 bg-blue-50 text-[#0064E0]"
+                            : "border-slate-200 bg-white text-slate-500",
+                        ].join(" ")}
+                      >
+                        {deliverable.visibleToClient ? "Client visible" : "Hidden"}
+                      </span>
+                    ) : null}
+
+                    {canEdit ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          loading={loadingId === deliverable.id}
+                          onClick={() => toggleClientVisibility(deliverable)}
+                        >
+                          {deliverable.visibleToClient ? (
+                            <EyeOff size={15} />
+                          ) : (
+                            <Eye size={15} />
+                          )}
+                          {deliverable.visibleToClient ? "Hide" : "Show"}
+                        </Button>
+
+                        {deliverable.status === "DRAFT" ||
+                        deliverable.status === "NEEDS_CHANGES" ? (
+                          <Button
+                            variant="secondary"
+                            loading={loadingId === deliverable.id}
+                            onClick={() => markReadyForReview(deliverable)}
+                          >
+                            Ready
+                          </Button>
+                        ) : null}
+
+                        <Button
+                          variant="secondary"
+                          onClick={() => beginEdit(deliverable)}
+                        >
+                          <Edit3 size={15} />
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="danger"
+                          loading={loadingId === deliverable.id}
+                          onClick={() => removeDeliverable(deliverable)}
+                        >
+                          <Trash2 size={15} />
+                          Delete
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-400">
+            <FileText size={22} />
+          </div>
+          <h3 className="mt-4 text-base font-semibold tracking-[-0.03em] text-slate-950">
+            No deliverables yet
+          </h3>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+            {role === "client"
+              ? "Deliverables will appear once the delivery team makes them visible."
+              : "Add deliverables for this phase before requesting client approval."}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -931,12 +1273,15 @@ export function PhaseWorkspaceDetail({
   projectId?: string;
 }) {
   const {
-    state,
-    currentUser,
-    sendPhaseMessage,
-    requestPhaseApproval,
+    addDeliverable,
     approvePhase,
+    currentUser,
+    deleteDeliverable,
     requestChanges,
+    requestPhaseApproval,
+    sendPhaseMessage,
+    state,
+    updateDeliverable,
   } = useApp();
 
   const project =
@@ -1063,7 +1408,13 @@ export function PhaseWorkspaceDetail({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
         <div className="space-y-6">
-          <PhaseDeliverables phase={phase} role={role} />
+          <PhaseDeliverables
+            phase={phase}
+            role={role}
+            addDeliverable={addDeliverable}
+            updateDeliverable={updateDeliverable}
+            deleteDeliverable={deleteDeliverable}
+          />
 
           <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
             <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
