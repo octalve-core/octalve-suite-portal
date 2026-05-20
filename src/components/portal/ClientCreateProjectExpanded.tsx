@@ -274,7 +274,14 @@ export function ClientCreateProjectExpanded() {
         preferredTimeline,
         projectGoal: form.projectGoal,
         projectDescription: form.projectDescription,
-        additionalNotes: form.additionalNotes,
+        additionalNotes: [
+          form.additionalNotes,
+          selectedOption?.isLiveTemplate && selectedTemplateId
+            ? `Selected admin template: ${template?.name || selectedOption?.title || selectedTemplateId} (${selectedTemplateId})`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
         packageType,
       });
 
