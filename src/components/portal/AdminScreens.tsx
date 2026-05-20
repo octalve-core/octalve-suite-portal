@@ -486,30 +486,44 @@ function AssignModal({
 }) {
   const { state } = useApp();
   const [loading, setLoading] = useState(false);
-  const team = state.users.filter(
-    (u) => u.role !== "CLIENT" && u.role !== "SUPER_ADMIN",
-  );
-  const [staffId, setStaffId] = useState(
-    phase.assignedStaffId ?? team[0]?.id ?? "",
-  );
+
+  const team = (state.users ?? []).filter(isPortalDeliveryTeamUser);
+  const initialStaffId =
+    phase.assignedStaffId && team.some((user) => user.id === phase.assignedStaffId)
+      ? phase.assignedStaffId
+      : team[0]?.id ?? "";
+
+  const [staffId, setStaffId] = useState(initialStaffId);
+
   return (
     <Modal title={`Assign ${phase.title}`} onClose={onClose}>
       <div className="stack">
         <Field label="Team Member">
-          <Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>
-            {team.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} Ã¢â‚¬â€ {u.specialty ?? u.role}
-              </option>
-            ))}
+          <Select
+            value={staffId}
+            onChange={(e) => setStaffId(e.target.value)}
+            disabled={!team.length || loading}
+          >
+            {team.length ? (
+              team.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name} — {user.specialty ?? getPortalRoleLabel(user)}
+                </option>
+              ))
+            ) : (
+              <option value="">No staff or project manager available</option>
+            )}
           </Select>
         </Field>
+
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
           <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
+
           <Button
             loading={loading}
+            disabled={!staffId || !team.length}
             onClick={async () => {
               setLoading(true);
               try {
@@ -1039,7 +1053,7 @@ export function AdminCreateProject() {
                     <option value="">Unassigned</option>
                     {staffOptions.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.name} — {user.role}
+                        {user.name} — {getPortalRoleLabel(user)}
                       </option>
                     ))}
                   </Select>
