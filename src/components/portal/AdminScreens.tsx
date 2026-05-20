@@ -1122,12 +1122,14 @@ export function AdminReviews() {
   const reviews = ((state.reviews ?? []) as any[]).slice();
 
   const published = reviews.filter(
-    (review) => review.status === "PUBLISHED" || review.isPublished === true || review.published === true,
+    (review) =>
+      review.permissionToPublish === true ||
+      review.status === "PUBLISHED" ||
+      review.isPublished === true ||
+      review.published === true,
   ).length;
 
-  const pending = reviews.filter(
-    (review) => review.status === "PENDING" || review.status === "PENDING_REVIEW" || review.isPublished === false,
-  ).length;
+  const pending = reviews.length - published;
 
   const ratings = reviews
     .map((review) => Number(review.rating ?? review.score ?? 0))
@@ -1196,27 +1198,25 @@ export function AdminReviews() {
 
                 <Badge
                   className={
-                    review.status === "PUBLISHED" || review.isPublished || review.published
+                    review.permissionToPublish || review.status === "PUBLISHED" || review.isPublished || review.published
                       ? "badge-green"
                       : "badge-orange"
                   }
                 >
-                  {review.status
-                    ? readableStatus(review.status)
-                    : review.isPublished || review.published
-                      ? "Published"
-                      : "Pending"}
+                  {review.permissionToPublish || review.status === "PUBLISHED" || review.isPublished || review.published
+                    ? "Permission Granted"
+                    : "Private Feedback"}
                 </Badge>
               </div>
 
               <div className="workspace-card-main">
-                <h3>{review.name ?? review.clientName ?? "Client Review"}</h3>
-                <p>{review.projectTitle ?? review.businessName ?? review.email ?? "Octalve Workspace feedback"}</p>
+                <h3>{review.client?.name ?? review.name ?? review.clientName ?? "Client Review"}</h3>
+                <p>{review.project?.title ?? review.projectTitle ?? review.businessName ?? review.client?.email ?? review.email ?? "Octalve Workspace feedback"}</p>
               </div>
 
               <div className="workspace-card-context">
                 <strong>Rating: {review.rating ?? review.score ?? "Not rated"}</strong>
-                <span>{review.message ?? review.comment ?? review.testimonial ?? "No review message was provided."}</span>
+                <span>{review.comment ?? review.message ?? review.testimonial ?? "No review message was provided."}</span>
               </div>
 
               <div className="workspace-card-footer">

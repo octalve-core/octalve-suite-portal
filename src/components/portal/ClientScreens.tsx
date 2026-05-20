@@ -238,9 +238,118 @@ return (
   );
 }
 
+function ClientReviewModal({
+  project,
+  onClose,
+}: {
+  project: Project;
+  onClose: () => void;
+}) {
+  const { addReview } = useApp();
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [permissionToPublish, setPermissionToPublish] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submitReview() {
+    if (!comment.trim()) {
+      setError("Please write a short review before submitting.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      await addReview(project.id, rating, comment.trim(), permissionToPublish);
+      onClose();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to submit review.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Modal title={`Review ${project.title}`} onClose={onClose}>
+      <div className="stack">
+        <Card className="card-body" style={{ background: "#f8fafc", borderColor: "#e2e8f0", boxShadow: "none" }}>
+          <strong>Project completed</strong>
+          <p style={{ color: "var(--muted)", marginBottom: 0 }}>
+            Share your experience with this completed project. Your feedback helps Octalve improve delivery quality.
+          </p>
+        </Card>
+
+        <Field label="Rating">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[1, 2, 3, 4, 5].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setRating(item)}
+                disabled={loading}
+                className="btn btn-secondary"
+                style={{
+                  borderColor: rating === item ? "#0064E0" : undefined,
+                  color: rating === item ? "#0064E0" : undefined,
+                }}
+              >
+                {item} Star{item === 1 ? "" : "s"}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Review Comment">
+          <Textarea
+            value={comment}
+            disabled={loading}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Tell us what worked well and what could be improved."
+            className="min-h-30 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
+          />
+        </Field>
+
+        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700">
+          <input
+            type="checkbox"
+            checked={permissionToPublish}
+            disabled={loading}
+            onChange={(event) => setPermissionToPublish(event.target.checked)}
+            className="mt-1"
+          />
+          <span>
+            I permit Octalve to publish this review as a testimonial.
+            <small className="mt-1 block font-medium text-slate-500">
+              Uncheck this if you want it kept as private feedback only.
+            </small>
+          </span>
+        </label>
+
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button loading={loading} disabled={loading} onClick={submitReview}>
+            Submit Review
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function ClientDashboard() {
   const { currentUser, clientProjects, selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
 
   if (!clientProjects.length) {
     return (
@@ -492,6 +601,27 @@ export function ClientDashboard() {
           )}
         </div>
       </DashboardPanel>
+      {project.status === "COMPLETED" ? (
+        <Card className="card-body" style={{ borderColor: "#bbf7d0", background: "#f0fdf4" }}>
+          <div className="timeline-row" style={{ alignItems: "center" }}>
+            <div>
+              <strong>Leave a project review</strong>
+              <p style={{ color: "var(--muted)", marginBottom: 0 }}>
+                This project is completed. Share your feedback and help us improve future delivery.
+              </p>
+            </div>
+            <Button onClick={() => setReviewProjectId(project.id)}>
+              Leave Review
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+      {reviewProjectId ? (
+        <ClientReviewModal
+          project={project}
+          onClose={() => setReviewProjectId(null)}
+        />
+      ) : null}
 
       {paymentId && (
         <ManualPaymentModal
@@ -788,6 +918,7 @@ export function ClientApprovals() {
 export function ClientPayments() {
   const { selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
 
   if (!selectedProject) {
     return (
@@ -819,6 +950,27 @@ export function ClientPayments() {
           />
         ))}
       </div>
+      {selectedProject.status === "COMPLETED" ? (
+        <Card className="card-body" style={{ borderColor: "#bbf7d0", background: "#f0fdf4" }}>
+          <div className="timeline-row" style={{ alignItems: "center" }}>
+            <div>
+              <strong>Leave a project review</strong>
+              <p style={{ color: "var(--muted)", marginBottom: 0 }}>
+                This project is completed. Share your feedback and help us improve future delivery.
+              </p>
+            </div>
+            <Button onClick={() => setReviewProjectId(selectedProject.id)}>
+              Leave Review
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+      {reviewProjectId ? (
+        <ClientReviewModal
+          project={selectedProject}
+          onClose={() => setReviewProjectId(null)}
+        />
+      ) : null}
 
       {paymentId && (
         <ManualPaymentModal
