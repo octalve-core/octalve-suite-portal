@@ -104,6 +104,16 @@ function ProjectSwitcher() {
   );
 }
 
+function canMarkProjectPayment(project: Project, payment: Project["payments"][number]) {
+  if (payment.status !== "UNPAID") return false;
+
+  if (payment.type === "DEPOSIT") {
+    return project.status === "APPROVED_AWAITING_DEPOSIT";
+  }
+
+  return project.status === "AWAITING_BALANCE";
+}
+
 function paymentBlock(project: Project) {
   const deposit = project.payments.find(
     (payment) => payment.type === "DEPOSIT",

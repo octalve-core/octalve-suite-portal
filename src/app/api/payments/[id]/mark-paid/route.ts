@@ -6,7 +6,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * POST /api/payments/[id]/mark-paid — Client marks payment as paid.
- * Role: CLIENT (must own the project).
+ * Role: CLIENT only, and the payment must be due for the project's current state.
  */
 export async function POST(_request: Request, { params }: Params) {
   const { id } = await params;
@@ -22,27 +22,36 @@ export async function POST(_request: Request, { params }: Params) {
   if (payment.project.clientId !== result.user.id) return errorResponse("Forbidden", 403);
   if (payment.status !== "UNPAID") return errorResponse("Payment is not in UNPAID status", 400);
 
+  const expectedProjectStatus =
+    payment.type === "DEPOSIT" ? "APPROVED_AWAITING_DEPOSIT" : "AWAITING_BALANCE";
+
+  if (payment.project.status !== expectedProjectStatus) {
+    return errorResponse(
+      payment.type === "DEPOSIT"
+        ? "Deposit payment is not currently due for this project."
+        : "Balance payment is not currently due for this project.",
+      400,
+    );
+  }
+
   await prisma.$transaction(async (tx) => {
-    // Mark payment as pending confirmation
     await tx.projectPayment.update({
       where: { id },
       data: {
         status: "PENDING_CONFIRMATION",
         clientMarkedPaidAt: new Date(),
+        note: null,
       },
     });
 
-    // Update project status
-    const newStatus = payment.type === "DEPOSIT"
-      ? "DEPOSIT_PENDING_CONFIRMATION" as const
-      : "BALANCE_PENDING_CONFIRMATION" as const;
+    const newStatus =
+      payment.type === "DEPOSIT" ? "DEPOSIT_PENDING_CONFIRMATION" : "BALANCE_PENDING_CONFIRMATION";
 
     await tx.project.update({
       where: { id: payment.projectId },
       data: { status: newStatus },
     });
 
-    // Notify admin
     await tx.notification.create({
       data: {
         role: "SUPER_ADMIN",

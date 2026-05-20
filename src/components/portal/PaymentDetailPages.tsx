@@ -73,6 +73,16 @@ function formatDate(value?: string) {
   });
 }
 
+function canMarkPaymentForProject(project: Project, payment: ProjectPayment) {
+  if (payment.status !== "UNPAID") return false;
+
+  if (payment.type === "DEPOSIT") {
+    return project.status === "APPROVED_AWAITING_DEPOSIT";
+  }
+
+  return project.status === "AWAITING_BALANCE";
+}
+
 function paymentTypeLabel(type: ProjectPayment["type"]) {
   return type === "DEPOSIT" ? "Deposit Payment" : "Balance Payment";
 }
@@ -501,7 +511,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
   if (!row) return <NotFound backHref="/client/payments" />;
 
   const { payment, project } = row;
-  const canMarkPaid = payment.status === "UNPAID";
+  const canMarkPaid = canMarkPaymentForProject(project, payment);
 
   async function handleMarkPaid() {
     if (!canMarkPaid) return;
