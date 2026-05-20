@@ -167,7 +167,7 @@ function userMatchesSearch(user: UserWithMeta, query: string) {
     user.phone,
     user.company,
     user.specialty,
-    getRoleLabel(user.role),
+    getRoleLabel(normalizeUserRole(user)),
   ]
     .filter(Boolean)
     .join(" ")
