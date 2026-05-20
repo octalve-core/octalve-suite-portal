@@ -4,8 +4,19 @@ export type NormalizedWorkspaceRole =
   | "PROJECT_MANAGER"
   | "SUPER_ADMIN";
 
+type RoleLike = {
+  id?: string | null;
+  role?: string | null;
+  specialty?: string | null;
+  company?: string | null;
+};
+
+type ProjectClientLike = {
+  clientId?: string | null;
+};
+
 export function normalizePortalRole(
-  userOrRole?: { role?: string | null } | string | null,
+  userOrRole?: RoleLike | string | null,
 ): NormalizedWorkspaceRole {
   const raw =
     typeof userOrRole === "object" && userOrRole !== null && "role" in userOrRole
@@ -45,15 +56,7 @@ export function normalizePortalRole(
   return "CLIENT";
 }
 
-export function isPortalDeliveryTeamUser(user: { role?: string | null }) {
-  const role = normalizePortalRole(user);
-
-  return role === "STAFF" || role === "PROJECT_MANAGER";
-}
-
-export function getPortalRoleLabel(
-  userOrRole?: { role?: string | null } | string | null,
-) {
+export function getPortalRoleLabel(userOrRole?: RoleLike | string | null) {
   const role = normalizePortalRole(userOrRole);
 
   if (role === "SUPER_ADMIN") return "Super Admin";
@@ -61,4 +64,36 @@ export function getPortalRoleLabel(
   if (role === "STAFF") return "Staff";
 
   return "Client";
+}
+
+export function isPortalDeliveryTeamUser(user: RoleLike) {
+  const role = normalizePortalRole(user);
+
+  return role === "STAFF" || role === "PROJECT_MANAGER";
+}
+
+export function getCleanDeliveryTeam<TUser extends RoleLike>(
+  users: TUser[] = [],
+  projects: ProjectClientLike[] = [],
+): TUser[] {
+  const projectClientIds = new Set(
+    projects.map((project) => project.clientId).filter(Boolean),
+  );
+
+  return users.filter((user) => {
+    const specialty = String(user.specialty ?? "").trim().toLowerCase();
+    const company = String(user.company ?? "").trim().toLowerCase();
+    const roleLabel = getPortalRoleLabel(user).trim().toLowerCase();
+
+    const linkedAsProjectClient = user.id ? projectClientIds.has(user.id) : false;
+
+    const labelledAsClient =
+      roleLabel === "client" ||
+      specialty === "client" ||
+      specialty === "customer" ||
+      specialty === "client user" ||
+      company === "client";
+
+    return isPortalDeliveryTeamUser(user) && !linkedAsProjectClient && !labelledAsClient;
+  });
 }

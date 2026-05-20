@@ -51,3 +51,5 @@ prisma/generated.next/
 node_modules/
 .env.local
 tsconfig.tsbuildinfo
+
+_audit/
