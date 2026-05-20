@@ -41,6 +41,115 @@ export async function GET(_request: Request, { params }: Params) {
  * DELETE /api/projects/[id] — Delete a project.
  * Role: SUPER_ADMIN only.
  */
+/**
+ * PATCH /api/projects/[id] — Update project settings.
+ * Role: SUPER_ADMIN or assigned PROJECT_MANAGER.
+ */
+export async function PATCH(request: Request, { params }: Params) {
+  const { id } = await params;
+  const result = await getSessionOrThrow();
+  if (result.error) return result.error;
+
+  const forbidden = requireRoles(result.role, "SUPER_ADMIN", "PROJECT_MANAGER");
+  if (forbidden) return forbidden;
+
+  const existing = await prisma.project.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      projectManagerId: true,
+    },
+  });
+
+  if (!existing) return errorResponse("Project not found", 404);
+
+  const isAdmin = result.role === "SUPER_ADMIN";
+  const isAssignedManager =
+    result.role === "PROJECT_MANAGER" && existing.projectManagerId === result.user.id;
+
+  if (!isAdmin && !isAssignedManager) {
+    return errorResponse("Forbidden", 403);
+  }
+
+  const body = await request.json();
+
+  const data: {
+    title?: string;
+    targetDate?: Date | null;
+    internalNotes?: string | null;
+    projectManagerId?: string | null;
+  } = {};
+
+  if (typeof body.title === "string") {
+    const title = body.title.trim();
+
+    if (!title) {
+      return errorResponse("Project title cannot be empty", 400);
+    }
+
+    data.title = title;
+  }
+
+  if (typeof body.targetDate === "string") {
+    const rawDate = body.targetDate.trim();
+
+    if (!rawDate) {
+      data.targetDate = null;
+    } else {
+      const parsed = new Date(rawDate.includes("T") ? rawDate : `${rawDate}T00:00:00.000`);
+
+      if (Number.isNaN(parsed.getTime())) {
+        return errorResponse("Invalid target date", 400);
+      }
+
+      data.targetDate = parsed;
+    }
+  }
+
+  if (typeof body.internalNotes === "string") {
+    data.internalNotes = body.internalNotes.trim() || null;
+  }
+
+  if (isAdmin && typeof body.projectManagerId === "string") {
+    const managerId = body.projectManagerId.trim();
+
+    if (!managerId) {
+      data.projectManagerId = null;
+    } else {
+      const manager = await prisma.user.findUnique({
+        where: { id: managerId },
+        select: { id: true, role: true },
+      });
+
+      if (!manager || !["PROJECT_MANAGER", "SUPER_ADMIN"].includes(manager.role)) {
+        return errorResponse("Invalid project manager", 400);
+      }
+
+      data.projectManagerId = managerId;
+    }
+  }
+
+  if (!Object.keys(data).length) {
+    return errorResponse("No valid project settings supplied", 400);
+  }
+
+  const updated = await prisma.project.update({
+    where: { id },
+    data,
+    include: {
+      phases: {
+        orderBy: { phaseNumber: "asc" },
+        include: {
+          deliverables: { orderBy: { createdAt: "asc" } },
+          messages: { orderBy: { createdAt: "asc" } },
+        },
+      },
+      payments: true,
+    },
+  });
+
+  return NextResponse.json(updated);
+}
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
   const result = await getSessionOrThrow();

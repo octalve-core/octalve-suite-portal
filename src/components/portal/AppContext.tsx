@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, {
   createContext,
@@ -64,6 +64,10 @@ type AppContextValue = {
     projectManagerId?: string;
     internalNotes?: string;
   }) => Promise<string>;
+  updateProject: (
+    projectId: string,
+    payload: Partial<Pick<Project, "title" | "targetDate" | "internalNotes" | "projectManagerId">>,
+  ) => Promise<void>;
   createTemplate: (payload: Omit<ProjectTemplate, "id">) => Promise<string>;
   updateTemplate: (
     templateId: string,
@@ -285,7 +289,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncPortalData();
     return res.id;
   }
-
   async function createAdminProject(payload: {
     packageType: PackageType;
     templateId: string;
@@ -303,6 +306,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncPortalData();
     return res.id;
   }
+
+  async function updateProject(
+    projectId: string,
+    payload: Partial<Pick<Project, "title" | "targetDate" | "internalNotes" | "projectManagerId">>,
+  ) {
+    const updated = await api.projects.update(projectId, payload);
+    await syncPortalData();
+
+    if (updated?.id) {
+      setSelectedProjectIdState(updated.id);
+    }
+  }
+
 
   async function createTemplate(payload: Omit<ProjectTemplate, "id">) {
     const res = await api.templates.create(payload);
@@ -437,6 +453,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     createProjectRequest,
     approveProjectRequest,
     createAdminProject,
+    updateProject,
     createTemplate,
     updateTemplate,
     deleteTemplate,

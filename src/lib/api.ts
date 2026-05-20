@@ -84,8 +84,23 @@ export const api = {
   projects: {
     list: () => fetchJson<Project[]>("/api/projects"),
     get: (id: string) => fetchJson<Project>(`/api/projects/${id}`),
-    create: (data: { packageType: PackageType; templateId: string; title: string; clientName: string; clientEmail: string; targetDate?: string; totalAmount: number; depositAmount: number; balanceAmount: number; projectManagerId?: string; internalNotes?: string }) =>
-      post<Project>("/api/projects", data),
+    create: (data: {
+      packageType: PackageType;
+      templateId: string;
+      title: string;
+      clientName: string;
+      clientEmail: string;
+      targetDate?: string;
+      totalAmount: number;
+      depositAmount: number;
+      balanceAmount: number;
+      projectManagerId?: string;
+      internalNotes?: string;
+    }) => post<Project>("/api/projects", data),
+    update: (
+      id: string,
+      data: Partial<Pick<Project, "title" | "targetDate" | "internalNotes" | "projectManagerId">>,
+    ) => patch<Project>(`/api/projects/${id}`, data),
     delete: (id: string) => del(`/api/projects/${id}`),
   },
 

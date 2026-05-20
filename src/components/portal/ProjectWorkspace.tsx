@@ -29,6 +29,7 @@ import type { Deliverable, Project, ProjectPhase, Role, User } from "@/lib/types
 import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
 import { useApp } from "./AppContext";
 import { PhaseMessageThread } from "./PhaseMessageThread";
+import { ProjectDeadlineEditor } from "./ProjectDeadlineEditor";
 import { Button, Input, Select, Textarea } from "./UI";
 
 type WorkspaceRole = "admin" | "staff" | "client";
@@ -489,10 +490,7 @@ function ProjectHero({
           </strong>
         </div>
 
-        <div>
-          <span className="text-sm font-semibold text-slate-500">Target Date</span>
-          <strong className="mt-1 block text-slate-950">{formatDate(project.targetDate)}</strong>
-        </div>
+        <ProjectDeadlineEditor project={project} role={role} />
 
         <div>
           <span className="text-sm font-semibold text-slate-500">Project Code</span>
