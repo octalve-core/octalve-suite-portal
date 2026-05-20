@@ -120,6 +120,33 @@ function DetailBlock({
   );
 }
 
+function CopyInlineValue({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="inline-flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-left text-sm font-bold text-slate-900 transition hover:border-blue-200 hover:text-[#0064E0]"
+      title="Copy"
+    >
+      <span className="truncate">{value}</span>
+      <small className={copied ? "shrink-0 text-emerald-600" : "shrink-0 text-slate-400"}>
+        {copied ? "Copied" : "Copy"}
+      </small>
+    </button>
+  );
+}
 function PaymentHero({
   payment,
   project,
@@ -284,10 +311,10 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
       </div>
 
       <div className="mt-5 grid gap-3">
-        <DetailBlock label="Bank Name" value={bank.bankName} icon={<Landmark size={17} />} />
-        <DetailBlock label="Account Name" value={bank.accountName} icon={<UserRound size={17} />} />
-        <DetailBlock label="Account Number" value={bank.accountNumber} icon={<Banknote size={17} />} />
-        <DetailBlock label="Payment Reference" value={payment.reference} icon={<FileText size={17} />} />
+        <DetailBlock label="Bank Name" value={<CopyInlineValue value={bank.bankName} />} icon={<Landmark size={17} />} />
+        <DetailBlock label="Account Name" value={<CopyInlineValue value={bank.accountName} />} icon={<UserRound size={17} />} />
+        <DetailBlock label="Account Number" value={<CopyInlineValue value={bank.accountNumber} />} icon={<Banknote size={17} />} />
+        <DetailBlock label="Payment Reference" value={<CopyInlineValue value={payment.reference} />} icon={<FileText size={17} />} />
       </div>
     </Card>
   );

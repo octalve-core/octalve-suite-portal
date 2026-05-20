@@ -16,6 +16,7 @@ import {
   LockKeyhole,
   UserRound,
 } from "lucide-react";
+import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import type { Project, ProjectPayment, ProjectPhase, User } from "@/lib/types";
 import { ProjectDateCountdown } from "./ProjectDateCountdown";
 import {
@@ -260,7 +261,7 @@ export function PaymentSummaryCard({
 
       <div className="workspace-card-context">
         <strong>{payment.reference}</strong>
-        <span>{payment.bankName || "Bank transfer"}</span>
+        <span>{resolvePaymentBankDetails(payment).bankName}</span>
       </div>
 
       <div className="workspace-card-footer">

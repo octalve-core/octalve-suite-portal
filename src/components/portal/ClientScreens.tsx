@@ -1,5 +1,7 @@
 "use client";
 
+import { resolvePaymentBankDetails } from "@/lib/payment-bank";
+
 
 
 
@@ -136,6 +138,36 @@ function paymentBlock(project: Project) {
   return null;
 }
 
+function PaymentCopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="timeline-row">
+      <span>{label}</span>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-right text-sm font-bold text-slate-900 transition hover:border-blue-200 hover:text-[#0064E0]"
+        title={`Copy ${label}`}
+      >
+        <strong>{value}</strong>
+        <small className={copied ? "text-emerald-600" : "text-slate-400"}>
+          {copied ? "Copied" : "Copy"}
+        </small>
+      </button>
+    </div>
+  );
+}
 function ManualPaymentModal({
   project,
   paymentId,
@@ -149,7 +181,8 @@ function ManualPaymentModal({
   const [loading, setLoading] = useState(false);
   const payment = project.payments.find((item) => item.id === paymentId);
   if (!payment) return null;
-  return (
+      const bank = resolvePaymentBankDetails(payment);
+return (
     <Modal
       title={`${payment.type === "DEPOSIT" ? "Deposit" : "Balance"} Payment`}
       onClose={onClose}
@@ -165,22 +198,10 @@ function ManualPaymentModal({
               <span>Amount</span>
               <strong>{formatNaira(payment.amount)}</strong>
             </div>
-            <div className="timeline-row">
-              <span>Bank Name</span>
-              <strong>{payment.bankName}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Account Name</span>
-              <strong>{payment.accountName}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Account Number</span>
-              <strong>{payment.accountNumber}</strong>
-            </div>
-            <div className="timeline-row">
-              <span>Reference</span>
-              <strong>{payment.reference}</strong>
-            </div>
+            <PaymentCopyRow label="Bank Name" value={bank.bankName} />
+            <PaymentCopyRow label="Account Name" value={bank.accountName} />
+            <PaymentCopyRow label="Account Number" value={bank.accountNumber} />
+            <PaymentCopyRow label="Reference" value={payment.reference} />
           </div>
         </Card>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
