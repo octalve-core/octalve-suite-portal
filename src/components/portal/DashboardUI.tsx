@@ -104,10 +104,11 @@ export function DashboardHero({
       <div className="pointer-events-none absolute right-8 top-10 hidden h-24 w-24 rounded-[28px] bg-white/10 lg:block" />
 
       <div className="relative z-10 grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="min-w-0">
-          <p className="mb-3 text-sm font-semibold tracking-[-0.01em] text-white/80">
-            {greeting}, {userLabel}.
-          </p>
+        <div className="min-w-0">          {!lowerEyebrow.includes("team operations") ? (
+            <p className="mb-3 text-sm font-semibold tracking-[-0.01em] text-white/80">
+              {greeting}, {userLabel}.
+            </p>
+          ) : null}
 
           {!isWelcome && eyebrow ? (
             <p className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-white/70">

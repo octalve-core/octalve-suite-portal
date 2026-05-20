@@ -1,3 +1,10 @@
 import { PortalShell } from "@/components/portal/PortalShell";
-import { AdminTeam } from "@/components/portal/AdminScreens";
-export default function Page() { return <PortalShell role="SUPER_ADMIN"><AdminTeam /></PortalShell>; }
+import { AdminUsersDirectory } from "@/components/portal/AdminUsersWorkspace";
+
+export default function Page() {
+  return (
+    <PortalShell role="SUPER_ADMIN">
+      <AdminUsersDirectory mode="team" />
+    </PortalShell>
+  );
+}

@@ -268,7 +268,7 @@ export function AdminOverview() {
   return (
     <div className="content">
       <DashboardHero
-        eyebrow="Admin Command Center"
+        eyebrow=""
         title="Overview"
         subtitle="Monitor project movement, pending requests, payments, and team workload from one clean workspace."
         action={
@@ -413,7 +413,7 @@ export function AdminOverview() {
             const loadTone = phases > 7 ? "red" : phases > 4 ? "orange" : "blue";
 
             return (
-              <Link href="/admin/team" key={user.id} className="workload-card">
+              <Link href={`/admin/team/${user.id}`} key={user.id} className="workload-card">
                 <div
                   className="avatar"
                   style={{
