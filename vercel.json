@@ -1,0 +1,3 @@
+﻿{
+  "buildCommand": "pnpm db:generate && pnpm db:push && next build"
+}
