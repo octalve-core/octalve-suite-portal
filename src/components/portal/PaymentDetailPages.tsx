@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import type { PaymentStatus, Project, ProjectPayment, User } from "@/lib/types";
+import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import { getPackageTitle } from "./packageCatalog";
 import { useApp } from "./AppContext";
 import { Button, Card, Textarea } from "./UI";
