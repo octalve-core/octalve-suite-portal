@@ -798,9 +798,7 @@ export function AdminCreateProject() {
     );
   }
 
-  const staffOptions = state.users.filter(
-    (user) => user.role === "PROJECT_MANAGER" || user.role === "STAFF",
-  );
+  const staffOptions = state.users.filter(isPortalDeliveryTeamUser);
 
   function selectTemplate(option: TemplatePickerOption) {
     setSelectedTemplateId(option.id);
