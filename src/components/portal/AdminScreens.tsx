@@ -6,6 +6,11 @@ import { ProjectWorkspaceList, ProjectWorkspaceDetail, PhaseWorkspaceDetail } fr
 import { PhaseMessageThread } from "./PhaseMessageThread";
 import { AdminPaymentsManager } from "./AdminPaymentsManager";
 import { AdminSystemSettings } from "./AdminSystemSettings";
+import {
+  getPortalRoleLabel,
+  isPortalDeliveryTeamUser,
+  normalizePortalRole,
+} from "./workspaceRoleUtils";
 
 import {
   WorkspaceActionCard,
@@ -431,7 +436,7 @@ export function AdminOverview() {
                   <div className="timeline-row" style={{ alignItems: "flex-start" }}>
                     <div>
                       <strong>{user.name}</strong>
-                      <p>{user.specialty ?? statusLabel(user.role)}</p>
+                      <p>{user.specialty ?? getPortalRoleLabel(user)}</p>
                     </div>
                     <Badge className={`badge-${loadTone}`}>
                       {phases > 7 ? "High" : phases > 4 ? "Busy" : "Optimal"}
@@ -1193,7 +1198,7 @@ function RequestReviewModal({
     depositAmount: 350000,
     balanceAmount: 400000,
     projectManagerId:
-      state.users.find((u) => u.role === "PROJECT_MANAGER")?.id ?? "",
+      state.users.find((u) => normalizePortalRole(u) === "PROJECT_MANAGER")?.id ?? "",
     targetDate: "",
     internalNotes: "",
   });
@@ -1849,188 +1854,477 @@ export function AdminSettings() {
 export function AdminAnalytics() {
   const { state } = useApp();
 
-  const projects = state.projects;
-  const phases = projects.flatMap((project) => project.phases);
-  const payments = projects.flatMap((project) => project.payments);
+  const [packageFilter, setPackageFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [dateWindow, setDateWindow] = useState("ALL");
 
-  const activeProjects = projects.filter((project) =>
-    ["ACTIVE", "AWAITING_BALANCE"].includes(project.status),
-  ).length;
+  const projects = state.projects ?? [];
+  const reviews = state.reviews ?? [];
+  const requests = state.requests ?? [];
 
-  const completedProjects = projects.filter(
-    (project) => project.status === "COMPLETED",
-  ).length;
-
-  const approvedPhases = phases.filter((phase) => phase.status === "APPROVED").length;
-  const awaitingApproval = phases.filter(
-    (phase) => phase.status === "AWAITING_APPROVAL",
-  ).length;
-
-  const confirmedRevenue = payments
-    .filter((payment) => payment.status === "CONFIRMED")
-    .reduce((total, payment) => total + payment.amount, 0);
-
-  const pendingRevenue = payments
-    .filter(
-      (payment) =>
-        payment.status === "UNPAID" ||
-        payment.status === "PENDING_CONFIRMATION",
-    )
-    .reduce((total, payment) => total + payment.amount, 0);
-
-  const deliveryRate = phases.length
-    ? Math.round((approvedPhases / phases.length) * 100)
-    : 0;
-
-  const paymentRate = payments.length
-    ? Math.round(
-        (payments.filter((payment) => payment.status === "CONFIRMED").length /
-          payments.length) *
-          100,
-      )
-    : 0;
-
-  const formatMoney = (amount: number) =>
-    new Intl.NumberFormat("en-NG", {
+  function formatMoney(amount: number) {
+    return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency: "NGN",
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(Number.isFinite(amount) ? amount : 0);
+  }
 
-  const packageCounts = projects.reduce<Record<string, number>>((acc, project) => {
+  function formatPercent(value: number) {
+    return `${Number.isFinite(value) ? Math.round(value) : 0}%`;
+  }
+
+  function formatStatus(value: string) {
+    return value
+      .split("_")
+      .map((item) => item.charAt(0) + item.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function projectDateValue(project: any) {
+    const raw = project.createdAt ?? project.updatedAt ?? "";
+    const parsed = new Date(raw).getTime();
+
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  function isInsideDateWindow(project: any) {
+    if (dateWindow === "ALL") return true;
+
+    const days = Number(dateWindow);
+    if (!Number.isFinite(days)) return true;
+
+    const value = projectDateValue(project);
+    if (!value) return true;
+
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    return value >= cutoff;
+  }
+
+  const packageOptions = Array.from(new Set(projects.map((project) => project.packageType))).sort();
+  const statusOptions = Array.from(new Set(projects.map((project) => project.status))).sort();
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      const packageOk = packageFilter === "ALL" || project.packageType === packageFilter;
+      const statusOk = statusFilter === "ALL" || project.status === statusFilter;
+      const paymentOk =
+        paymentFilter === "ALL" ||
+        project.payments.some((payment) => payment.status === paymentFilter);
+
+      return packageOk && statusOk && paymentOk && isInsideDateWindow(project);
+    });
+  }, [projects, packageFilter, statusFilter, paymentFilter, dateWindow]);
+
+  const filteredProjectIds = new Set(filteredProjects.map((project) => project.id));
+  const filteredPhases = filteredProjects.flatMap((project) => project.phases);
+  const filteredPayments = filteredProjects.flatMap((project) => project.payments);
+  const filteredReviews = reviews.filter((review) => filteredProjectIds.has((review as any).projectId));
+
+  const confirmedPayments = filteredPayments.filter((payment) => payment.status === "CONFIRMED");
+  const pendingPayments = filteredPayments.filter((payment) => payment.status === "PENDING_CONFIRMATION");
+  const unpaidPayments = filteredPayments.filter((payment) => payment.status === "UNPAID");
+  const rejectedPayments = filteredPayments.filter((payment) => payment.status === "REJECTED");
+
+  const depositDue = filteredPayments
+    .filter((payment) => payment.type === "DEPOSIT" && payment.status !== "CONFIRMED")
+    .reduce((total, payment) => total + payment.amount, 0);
+
+  const balanceDue = filteredPayments
+    .filter((payment) => payment.type === "BALANCE" && payment.status !== "CONFIRMED")
+    .reduce((total, payment) => total + payment.amount, 0);
+
+  const confirmedRevenue = confirmedPayments.reduce((total, payment) => total + payment.amount, 0);
+  const pendingRevenue = [...pendingPayments, ...unpaidPayments].reduce(
+    (total, payment) => total + payment.amount,
+    0,
+  );
+
+  const totalRevenue = filteredPayments.reduce((total, payment) => total + payment.amount, 0);
+  const collectionRate = totalRevenue > 0 ? (confirmedRevenue / totalRevenue) * 100 : 0;
+
+  const approvedPhases = filteredPhases.filter((phase) => phase.status === "APPROVED").length;
+  const activePhases = filteredPhases.filter((phase) =>
+    ["IN_PROGRESS", "AWAITING_APPROVAL", "CHANGES_REQUESTED"].includes(phase.status),
+  ).length;
+
+  const lockedPhases = filteredPhases.filter((phase) => phase.status === "LOCKED").length;
+  const awaitingApproval = filteredPhases.filter((phase) => phase.status === "AWAITING_APPROVAL").length;
+  const changesRequested = filteredPhases.filter((phase) => phase.status === "CHANGES_REQUESTED").length;
+
+  const deliveryRate = filteredPhases.length > 0 ? (approvedPhases / filteredPhases.length) * 100 : 0;
+  const paymentRate = filteredPayments.length > 0 ? (confirmedPayments.length / filteredPayments.length) * 100 : 0;
+
+  const completedProjects = filteredProjects.filter((project) => project.status === "COMPLETED").length;
+  const activeProjects = filteredProjects.filter((project) =>
+    ["ACTIVE", "AWAITING_BALANCE", "BALANCE_PENDING_CONFIRMATION", "DEPOSIT_PENDING_CONFIRMATION"].includes(project.status),
+  ).length;
+
+  const awaitingDeposit = filteredProjects.filter(
+    (project) =>
+      project.status === "APPROVED_AWAITING_DEPOSIT" ||
+      project.status === "DEPOSIT_PENDING_CONFIRMATION",
+  ).length;
+
+  const awaitingBalance = filteredProjects.filter(
+    (project) =>
+      project.status === "AWAITING_BALANCE" ||
+      project.status === "BALANCE_PENDING_CONFIRMATION",
+  ).length;
+
+  const averageProgress = filteredProjects.length
+    ? filteredProjects.reduce((total, project) => total + projectProgress(project), 0) / filteredProjects.length
+    : 0;
+
+  const packageCounts = filteredProjects.reduce<Record<string, number>>((acc, project) => {
     acc[project.packageType] = (acc[project.packageType] ?? 0) + 1;
     return acc;
   }, {});
 
+  const statusCounts = filteredProjects.reduce<Record<string, number>>((acc, project) => {
+    acc[project.status] = (acc[project.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const paymentCounts = filteredPayments.reduce<Record<string, number>>((acc, payment) => {
+    acc[payment.status] = (acc[payment.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const phaseCounts = filteredPhases.reduce<Record<string, number>>((acc, phase) => {
+    acc[phase.status] = (acc[phase.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const recentRequests = requests.filter((request) => request.status === "PENDING_REVIEW").length;
+
+  const topProjects = [...filteredProjects]
+    .sort((a, b) => projectProgress(b) - projectProgress(a))
+    .slice(0, 6);
+
+  const deliveryTeam = state.users.filter(isPortalDeliveryTeamUser).map((user) => {
+    const assignedPhases = filteredPhases.filter((phase) => phase.assignedStaffId === user.id);
+    const approved = assignedPhases.filter((phase) => phase.status === "APPROVED").length;
+    const loadPercent = Math.min(100, (assignedPhases.length / 10) * 100);
+
+    return {
+      user,
+      assigned: assignedPhases.length,
+      approved,
+      loadPercent,
+    };
+  });
+
   return (
     <div className="content">
-      <section className="dashboard-hero">
-        <div className="dashboard-hero-main">
-          <span className="dashboard-eyebrow">Workspace Intelligence</span>
-          <h1>Analytics</h1>
-          <p>
-            Review project volume, delivery health, payment movement and package
-            distribution across Octalve Workspace.
-          </p>
+      <section className="rounded-[30px] border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50 px-6 py-7 shadow-[0_22px_65px_rgba(15,23,42,0.08)] sm:px-8 lg:px-10">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-end">
+          <div>
+            <span className="text-xs font-black uppercase tracking-[0.28em] text-[#0064E0]">
+              Workspace Intelligence
+            </span>
+            <h1 className="mt-4 text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] text-slate-950 sm:text-[46px]">
+              Data
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm font-medium leading-7 text-slate-600 sm:text-[15px]">
+              Track revenue, payment movement, delivery progress, project health, package performance and team workload from live workspace records.
+            </p>
 
-          <div className="dashboard-hero-meta">
-            <span className="badge badge-blue">{projects.length} Projects</span>
-            <span className="badge badge-green">{completedProjects} Completed</span>
-            <span className="badge badge-orange">{awaitingApproval} Awaiting Approval</span>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Badge className="badge-blue">{filteredProjects.length} Filtered Projects</Badge>
+              <Badge className="badge-green">{formatPercent(collectionRate)} Collection Rate</Badge>
+              <Badge className="badge-orange">{awaitingApproval} Awaiting Approval</Badge>
+              <Badge className="badge-purple">{filteredReviews.length} Reviews</Badge>
+            </div>
           </div>
+
+          <Card className="border-slate-200 bg-white/80 p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)] backdrop-blur">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Package</span>
+                <Select value={packageFilter} onChange={(event) => setPackageFilter(event.target.value)} className="h-11 rounded-2xl border-slate-200 text-sm">
+                  <option value="ALL">All Packages</option>
+                  {packageOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {getPackageTitle(item as any)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Project Status</span>
+                <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-11 rounded-2xl border-slate-200 text-sm">
+                  <option value="ALL">All Status</option>
+                  {statusOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {formatStatus(item)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Payment</span>
+                <Select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value)} className="h-11 rounded-2xl border-slate-200 text-sm">
+                  <option value="ALL">All Payments</option>
+                  <option value="UNPAID">Unpaid</option>
+                  <option value="PENDING_CONFIRMATION">Pending Confirmation</option>
+                  <option value="CONFIRMED">Confirmed</option>
+                  <option value="REJECTED">Rejected</option>
+                </Select>
+              </label>
+
+              <label>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Date Window</span>
+                <Select value={dateWindow} onChange={(event) => setDateWindow(event.target.value)} className="h-11 rounded-2xl border-slate-200 text-sm">
+                  <option value="ALL">All Time</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                  <option value="365">Last 12 Months</option>
+                </Select>
+              </label>
+            </div>
+          </Card>
         </div>
       </section>
 
-      <div className="dashboard-stats">
-        <div className="card dashboard-stat-card">
-          <div>
-            <span>Confirmed Revenue</span>
-            <strong>{formatMoney(confirmedRevenue)}</strong>
-            <p>Payments confirmed by admin</p>
-          </div>
-        </div>
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <span className="text-sm font-bold text-slate-500">Confirmed Revenue</span>
+          <strong className="mt-3 block text-3xl font-semibold tracking-[-0.055em] text-slate-950">{formatMoney(confirmedRevenue)}</strong>
+          <p className="mt-2 text-sm font-medium text-slate-500">{confirmedPayments.length} confirmed payments</p>
+        </Card>
 
-        <div className="card dashboard-stat-card">
-          <div>
-            <span>Pending Revenue</span>
-            <strong>{formatMoney(pendingRevenue)}</strong>
-            <p>Unpaid or awaiting confirmation</p>
-          </div>
-        </div>
+        <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <span className="text-sm font-bold text-slate-500">Pending Revenue</span>
+          <strong className="mt-3 block text-3xl font-semibold tracking-[-0.055em] text-slate-950">{formatMoney(pendingRevenue)}</strong>
+          <p className="mt-2 text-sm font-medium text-slate-500">{unpaidPayments.length + pendingPayments.length} unpaid or pending</p>
+        </Card>
 
-        <div className="card dashboard-stat-card">
-          <div>
-            <span>Delivery Rate</span>
-            <strong>{deliveryRate}%</strong>
-            <p>Approved phases against total phases</p>
-          </div>
-        </div>
+        <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <span className="text-sm font-bold text-slate-500">Delivery Rate</span>
+          <strong className="mt-3 block text-3xl font-semibold tracking-[-0.055em] text-slate-950">{formatPercent(deliveryRate)}</strong>
+          <p className="mt-2 text-sm font-medium text-slate-500">{approvedPhases}/{filteredPhases.length} phases approved</p>
+        </Card>
 
-        <div className="card dashboard-stat-card">
-          <div>
-            <span>Payment Rate</span>
-            <strong>{paymentRate}%</strong>
-            <p>Confirmed payments against total payments</p>
-          </div>
-        </div>
-      </div>
+        <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <span className="text-sm font-bold text-slate-500">Payment Rate</span>
+          <strong className="mt-3 block text-3xl font-semibold tracking-[-0.055em] text-slate-950">{formatPercent(paymentRate)}</strong>
+          <p className="mt-2 text-sm font-medium text-slate-500">{confirmedPayments.length}/{filteredPayments.length} payment records</p>
+        </Card>
+      </section>
 
-      <div className="grid-2">
-        <div className="card dashboard-panel">
-          <div className="dashboard-panel-head">
-            <h2>Project Health</h2>
+      <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-slate-200 bg-white p-5">
+          <span className="text-sm font-bold text-slate-500">Active Projects</span>
+          <strong className="mt-3 block text-2xl tracking-[-0.04em] text-slate-950">{activeProjects}</strong>
+          <p className="mt-2 text-sm text-slate-500">Currently moving through delivery</p>
+        </Card>
+
+        <Card className="border-slate-200 bg-white p-5">
+          <span className="text-sm font-bold text-slate-500">Awaiting Deposit</span>
+          <strong className="mt-3 block text-2xl tracking-[-0.04em] text-slate-950">{awaitingDeposit}</strong>
+          <p className="mt-2 text-sm text-slate-500">Not fully opened yet</p>
+        </Card>
+
+        <Card className="border-slate-200 bg-white p-5">
+          <span className="text-sm font-bold text-slate-500">Awaiting Balance</span>
+          <strong className="mt-3 block text-2xl tracking-[-0.04em] text-slate-950">{awaitingBalance}</strong>
+          <p className="mt-2 text-sm text-slate-500">Final phase payment gate</p>
+        </Card>
+
+        <Card className="border-slate-200 bg-white p-5">
+          <span className="text-sm font-bold text-slate-500">Average Progress</span>
+          <strong className="mt-3 block text-2xl tracking-[-0.04em] text-slate-950">{formatPercent(averageProgress)}</strong>
+          <p className="mt-2 text-sm text-slate-500">{completedProjects} completed projects</p>
+        </Card>
+      </section>
+
+      <section className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Project Health</h2>
+            <p className="mt-1 text-sm text-slate-500">Filtered operational movement across delivery, approval and payment gates.</p>
           </div>
 
-          <div className="dashboard-panel-body stack">
-            <div className="dashboard-list-item">
-              <div className="dashboard-list-main">
+          <div className="grid gap-0 divide-y divide-slate-100">
+            {[
+              ["Active Phases", activePhases, "Work currently moving through delivery."],
+              ["Locked Phases", lockedPhases, "Usually waiting for deposit, balance or previous approval."],
+              ["Awaiting Approval", awaitingApproval, "Client review is required before movement continues."],
+              ["Changes Requested", changesRequested, "Client requested adjustment or revision."],
+              ["Deposit Due", formatMoney(depositDue), "Deposit not confirmed yet."],
+              ["Balance Due", formatMoney(balanceDue), "Balance not confirmed yet."],
+              ["Pending Requests", recentRequests, "Project requests waiting for admin action."],
+            ].map(([label, value, helper]) => (
+              <div key={String(label)} className="grid gap-3 px-6 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
-                  <strong>Active Projects</strong>
-                  <p>Projects currently moving through delivery.</p>
+                  <strong className="text-sm font-bold text-slate-900">{label}</strong>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{helper}</p>
                 </div>
+                <strong className="text-lg font-semibold tracking-[-0.035em] text-slate-950">{value}</strong>
               </div>
-              <div className="dashboard-list-side">
-                <strong>{activeProjects}</strong>
-              </div>
+            ))}
+          </div>
+        </Card>
+
+        <div className="grid gap-5">
+          <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+            <div className="border-b border-slate-100 px-6 py-5">
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Payment Breakdown</h2>
             </div>
 
-            <div className="dashboard-list-item">
-              <div className="dashboard-list-main">
-                <div>
-                  <strong>Approved Phases</strong>
-                  <p>Client-approved delivery phases.</p>
-                </div>
-              </div>
-              <div className="dashboard-list-side">
-                <strong>{approvedPhases}/{phases.length}</strong>
-              </div>
-            </div>
+            <div className="grid gap-3 p-5">
+              {["UNPAID", "PENDING_CONFIRMATION", "CONFIRMED", "REJECTED"].map((status) => {
+                const count = paymentCounts[status] ?? 0;
+                const width = filteredPayments.length ? Math.round((count / filteredPayments.length) * 100) : 0;
 
-            <div className="dashboard-list-item">
-              <div className="dashboard-list-main">
-                <div>
-                  <strong>Awaiting Approval</strong>
-                  <p>Phases currently waiting for client review.</p>
-                </div>
-              </div>
-              <div className="dashboard-list-side">
-                <strong>{awaitingApproval}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card dashboard-panel">
-          <div className="dashboard-panel-head">
-            <h2>Package Distribution</h2>
-          </div>
-
-          <div className="dashboard-panel-body stack">
-            {Object.keys(packageCounts).length ? (
-              Object.entries(packageCounts).map(([name, count]) => (
-                <div className="dashboard-list-item" key={name}>
-                  <div className="dashboard-list-main">
-                    <div>
-                      <strong>{getPackageTitle(name)}</strong>
-                      <p>{count} project{count > 1 ? "s" : ""}</p>
+                return (
+                  <div key={status} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm font-bold text-slate-700">{formatStatus(status)}</span>
+                      <strong className="text-sm text-slate-950">{count}</strong>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-[#0064E0]" style={{ width: `${width}%` }} />
                     </div>
                   </div>
-                  <div className="dashboard-list-side">
-                    <strong>{count}</strong>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+            <div className="border-b border-slate-100 px-6 py-5">
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Package Distribution</h2>
+            </div>
+
+            <div className="grid gap-3 p-5">
+              {Object.entries(packageCounts).length ? (
+                Object.entries(packageCounts).map(([name, count]) => (
+                  <div key={name} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div>
+                      <strong className="block text-sm text-slate-950">{getPackageTitle(name as any)}</strong>
+                      <span className="text-sm text-slate-500">{count} project{count > 1 ? "s" : ""}</span>
+                    </div>
+                    <strong className="text-slate-950">{count}</strong>
                   </div>
-                </div>
-              ))
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No package data in this filter.</p>
+              )}
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-5 xl:grid-cols-2">
+        <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Top Project Movement</h2>
+          </div>
+
+          <div className="grid gap-3 p-5">
+            {topProjects.length ? (
+              topProjects.map((project) => {
+                const progress = projectProgress(project);
+
+                return (
+                  <Link key={project.id} href={`/admin/projects/${project.id}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/40">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <strong className="block text-sm text-slate-950">{project.title}</strong>
+                        <span className="mt-1 block text-sm text-slate-500">{project.businessName} • {getPackageTitle(project.packageType)}</span>
+                      </div>
+                      <Badge className={statusClass(project.status)}>{statusLabel(project.status)}</Badge>
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                        <div className="h-full rounded-full bg-[#0064E0]" style={{ width: `${progress}%` }} />
+                      </div>
+                      <strong className="text-sm text-slate-900">{progress}%</strong>
+                    </div>
+                  </Link>
+                );
+              })
             ) : (
-              <p style={{ color: "var(--muted)", margin: 0 }}>
-                No package data yet.
-              </p>
+              <p className="text-sm text-slate-500">No project matches this filter.</p>
             )}
           </div>
-        </div>
-      </div>
+        </Card>
+
+        <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Team Delivery Load</h2>
+            <p className="mt-1 text-sm text-slate-500">Clients are excluded. Only staff and project managers appear here.</p>
+          </div>
+
+          <div className="grid gap-3 p-5">
+            {deliveryTeam.length ? (
+              deliveryTeam.map(({ user, assigned, approved, loadPercent }) => (
+                <Link key={user.id} href={`/admin/team/${user.id}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/40">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <strong className="block text-sm text-slate-950">{user.name}</strong>
+                      <span className="mt-1 block text-sm text-slate-500">{user.specialty ?? getPortalRoleLabel(user)}</span>
+                    </div>
+                    <strong className="text-sm text-slate-900">{assigned} phase{assigned === 1 ? "" : "s"}</strong>
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-[#0064E0]" style={{ width: `${loadPercent}%` }} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-500">{approved} approved</span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No delivery team members found in this filter.</p>
+            )}
+          </div>
+        </Card>
+      </section>
+
+      <section className="mt-6 grid gap-5 xl:grid-cols-2">
+        <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Phase Status Distribution</h2>
+          </div>
+
+          <div className="grid gap-3 p-5">
+            {Object.entries(phaseCounts).map(([status, count]) => (
+              <div key={status} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <span className="text-sm font-bold text-slate-700">{formatStatus(status)}</span>
+                <strong className="text-slate-950">{count}</strong>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-slate-100 px-6 py-5">
+            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">Project Status Distribution</h2>
+          </div>
+
+          <div className="grid gap-3 p-5">
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div key={status} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <span className="text-sm font-bold text-slate-700">{formatStatus(status)}</span>
+                <strong className="text-slate-950">{count}</strong>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
     </div>
   );
 }
+
 export function AdminPayments() {
   return <AdminPaymentsManager />;
 }
