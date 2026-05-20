@@ -265,6 +265,8 @@ function PaymentDetailsGrid({
 }
 
 function BankDetails({ payment }: { payment: ProjectPayment }) {
+  const bank = resolvePaymentBankDetails(payment);
+
   return (
     <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
       <div className="flex items-center gap-3">
@@ -276,15 +278,15 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
             Bank transfer details
           </h2>
           <p className="text-sm font-medium text-slate-500">
-            Use these details for manual transfer and include the reference.
+            Use these official Octalve account details for manual transfer and include the payment reference.
           </p>
         </div>
       </div>
 
       <div className="mt-5 grid gap-3">
-        <DetailBlock label="Bank Name" value={payment.bankName} icon={<Landmark size={17} />} />
-        <DetailBlock label="Account Name" value={payment.accountName} icon={<UserRound size={17} />} />
-        <DetailBlock label="Account Number" value={payment.accountNumber} icon={<Banknote size={17} />} />
+        <DetailBlock label="Bank Name" value={bank.bankName} icon={<Landmark size={17} />} />
+        <DetailBlock label="Account Name" value={bank.accountName} icon={<UserRound size={17} />} />
+        <DetailBlock label="Account Number" value={bank.accountNumber} icon={<Banknote size={17} />} />
         <DetailBlock label="Payment Reference" value={payment.reference} icon={<FileText size={17} />} />
       </div>
     </Card>
