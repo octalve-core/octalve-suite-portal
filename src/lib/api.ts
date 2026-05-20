@@ -175,7 +175,10 @@ export const api = {
   // Notifications
   notifications: {
     list: () => fetchJson<NotificationItem[]>("/api/notifications"),
-    markRead: (id: string) => patch<{ success: boolean }>(`/api/notifications/${id}`, { read: true }),
+    markRead: (id: string) =>
+      patch<{ success: boolean }>(`/api/notifications/${id}`, { read: true }),
+    markAllRead: () =>
+      post<{ success: boolean; count: number }>("/api/notifications/mark-all-read"),
   },
 };
 
