@@ -20,6 +20,7 @@ import type { ProjectRequest, Role } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { getPackageTitle } from "./packageCatalog";
 import { Badge, Button, Card, Input, Select, Textarea, statusClass, statusLabel } from "./UI";
+import { calculateProjectPaymentSplit, DEFAULT_PROJECT_DEPOSIT_PERCENTAGE } from "@/lib/payment-policy";
 
 type RequestWithClient = ProjectRequest & {
   client?: {
@@ -38,9 +39,12 @@ type ApprovalForm = {
   internalNotes: string;
 };
 
+const DEFAULT_APPROVAL_AMOUNT = 750000;
+const DEFAULT_APPROVAL_SPLIT = calculateProjectPaymentSplit(DEFAULT_APPROVAL_AMOUNT);
+
 const DEFAULT_APPROVAL_FORM: ApprovalForm = {
-  totalAmount: 750000,
-  depositAmount: 350000,
+  totalAmount: DEFAULT_APPROVAL_SPLIT.totalAmount,
+  depositAmount: DEFAULT_APPROVAL_SPLIT.depositAmount,
   projectManagerId: "",
   targetDate: "",
   internalNotes: "",
@@ -149,10 +153,13 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
   const [loadingAction, setLoadingAction] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState("");
 
-  const balanceAmount = useMemo(
-    () => Math.max(Number(form.totalAmount || 0) - Number(form.depositAmount || 0), 0),
-    [form.depositAmount, form.totalAmount],
+  const paymentSplit = useMemo(
+    () => calculateProjectPaymentSplit(form.totalAmount),
+    [form.totalAmount],
   );
+
+  const depositAmount = paymentSplit.depositAmount;
+  const balanceAmount = paymentSplit.balanceAmount;
 
   if (!request) {
     return (
@@ -182,13 +189,8 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
   async function approveRequest() {
     if (!request) return;
 
-    if (form.totalAmount <= 0 || form.depositAmount <= 0) {
-      setError("Enter a valid total amount and deposit amount.");
-      return;
-    }
-
-    if (form.depositAmount > form.totalAmount) {
-      setError("Deposit cannot be higher than total project amount.");
+    if (paymentSplit.totalAmount <= 0 || paymentSplit.depositAmount <= 0) {
+      setError("Enter a valid total amount. Deposit and balance will be calculated automatically.");
       return;
     }
 
@@ -197,8 +199,8 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
 
     try {
       const projectId = await approveProjectRequest(request.id, {
-        totalAmount: Number(form.totalAmount),
-        depositAmount: Number(form.depositAmount),
+        totalAmount: paymentSplit.totalAmount,
+        depositAmount,
         balanceAmount,
         projectManagerId: form.projectManagerId || undefined,
         targetDate: form.targetDate || undefined,
@@ -374,29 +376,29 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
                   value={form.totalAmount}
                   disabled={!isPending}
                   onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      totalAmount: Number(event.target.value),
-                    }))
+                    setForm((current) => {
+                      const split = calculateProjectPaymentSplit(Number(event.target.value));
+
+                      return {
+                        ...current,
+                        totalAmount: split.totalAmount,
+                        depositAmount: split.depositAmount,
+                      };
+                    })
                   }
                   className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
                 />
               </label>
 
               <label className="block">
-                <span className="text-sm font-bold text-slate-800">Deposit Amount</span>
+                <span className="text-sm font-bold text-slate-800">Deposit Amount ({DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)</span>
                 <Input
                   type="number"
                   min={0}
-                  value={form.depositAmount}
+                  value={depositAmount}
+                  readOnly
                   disabled={!isPending}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      depositAmount: Number(event.target.value),
-                    }))
-                  }
-                  className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
+                  className="mt-2 h-12 rounded-2xl border-slate-200 bg-slate-50 text-sm"
                 />
               </label>
 

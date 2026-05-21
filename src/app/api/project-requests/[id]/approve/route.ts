@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolvePaymentBankDetails } from "@/lib/payment-bank";
+import { validateProjectPaymentSplit } from "@/lib/payment-policy";
 import {
   getSessionOrThrow,
   requireRoles,
@@ -95,17 +96,17 @@ export async function POST(request: Request, { params }: Params) {
     internalNotes,
   } = body;
 
-  if (totalAmount == null || depositAmount == null || balanceAmount == null) {
-    return errorResponse("Payment amounts are required", 400);
+  const paymentValidation = validateProjectPaymentSplit({
+    totalAmount,
+    depositAmount,
+    balanceAmount,
+  });
+
+  if (!paymentValidation.ok) {
+    return errorResponse(paymentValidation.message, 400);
   }
 
-  if (Number(totalAmount) <= 0) {
-    return errorResponse("Total amount must be greater than zero", 400);
-  }
-
-  if (Number(depositAmount) < 0 || Number(balanceAmount) < 0) {
-    return errorResponse("Payment amounts cannot be negative", 400);
-  }
+  const paymentSplit = paymentValidation.split;
 
   const projectRequest = await prisma.projectRequest.findUnique({
     where: { id },
@@ -170,9 +171,9 @@ export async function POST(request: Request, { params }: Params) {
         targetDate: targetDate ? new Date(targetDate) : null,
         projectCode: code,
         projectManagerId: projectManagerId || null,
-        totalAmount: Number(totalAmount),
-        depositAmount: Number(depositAmount),
-        balanceAmount: Number(balanceAmount),
+        totalAmount: paymentSplit.totalAmount,
+        depositAmount: paymentSplit.depositAmount,
+        balanceAmount: paymentSplit.balanceAmount,
         internalNotes: internalNotes ?? projectRequest.additionalNotes ?? null,
         clientBrief: projectRequest.projectDescription,
         requestId: projectRequest.id,
@@ -205,7 +206,7 @@ export async function POST(request: Request, { params }: Params) {
         {
           projectId: proj.id,
           type: "DEPOSIT",
-          amount: Number(depositAmount),
+          amount: paymentSplit.depositAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "DEP"),
           bankName: paymentBank.bankName,
@@ -215,7 +216,7 @@ export async function POST(request: Request, { params }: Params) {
         {
           projectId: proj.id,
           type: "BALANCE",
-          amount: Number(balanceAmount),
+          amount: paymentSplit.balanceAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "BAL"),
           bankName: paymentBank.bankName,

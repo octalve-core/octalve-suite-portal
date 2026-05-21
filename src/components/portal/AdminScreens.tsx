@@ -44,6 +44,7 @@ import {
   statusLabel,
 } from "./UI";
 import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
+import { calculateProjectPaymentSplit, DEFAULT_PROJECT_DEPOSIT_PERCENTAGE } from "@/lib/payment-policy";
 
 type WorkspaceRole = "CLIENT" | "STAFF" | "PROJECT_MANAGER" | "SUPER_ADMIN";
 
@@ -403,16 +404,20 @@ export function AdminCreateProject() {
 
   const packageType = selectedTemplate?.packageType ?? "Launch";
 
-  const [form, setForm] = useState({
-    title: "",
-    clientName: "",
-    clientEmail: "",
-    targetDate: "",
-    totalAmount: 750000,
-    depositAmount: 375000,
-    balanceAmount: 375000,
-    projectManagerId: "",
-    internalNotes: "",
+  const [form, setForm] = useState(() => {
+    const split = calculateProjectPaymentSplit(750000);
+
+    return {
+      title: "",
+      clientName: "",
+      clientEmail: "",
+      targetDate: "",
+      totalAmount: split.totalAmount,
+      depositAmount: split.depositAmount,
+      balanceAmount: split.balanceAmount,
+      projectManagerId: "",
+      internalNotes: "",
+    };
   });
 
   const [loading, setLoading] = useState(false);
@@ -543,25 +548,33 @@ export function AdminCreateProject() {
                 <Input
                   type="number"
                   value={form.totalAmount}
-                  onChange={(event) => setForm({ ...form, totalAmount: Number(event.target.value) })}
+                  onChange={(event) => {
+                    const split = calculateProjectPaymentSplit(Number(event.target.value));
+                    setForm({
+                      ...form,
+                      totalAmount: split.totalAmount,
+                      depositAmount: split.depositAmount,
+                      balanceAmount: split.balanceAmount,
+                    });
+                  }}
                   className="h-12 rounded-2xl border-slate-200 text-sm"
                 />
               </Field>
 
-              <Field label="Deposit Amount">
+              <Field label={`Deposit Amount (${DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)`}>
                 <Input
                   type="number"
                   value={form.depositAmount}
-                  onChange={(event) => setForm({ ...form, depositAmount: Number(event.target.value) })}
+                  readOnly
                   className="h-12 rounded-2xl border-slate-200 text-sm"
                 />
               </Field>
 
-              <Field label="Balance Amount">
+              <Field label="Balance Amount (Auto)">
                 <Input
                   type="number"
                   value={form.balanceAmount}
-                  onChange={(event) => setForm({ ...form, balanceAmount: Number(event.target.value) })}
+                  readOnly
                   className="h-12 rounded-2xl border-slate-200 text-sm"
                 />
               </Field>
@@ -696,13 +709,17 @@ function RequestReviewModal({
   const isPending = request.status === "PENDING_REVIEW";
 
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    totalAmount: 750000,
-    depositAmount: 350000,
-    balanceAmount: 400000,
-    projectManagerId: staffOptions[0]?.id ?? "",
-    targetDate: "",
-    internalNotes: "",
+  const [form, setForm] = useState(() => {
+    const split = calculateProjectPaymentSplit(750000);
+
+    return {
+      totalAmount: split.totalAmount,
+      depositAmount: split.depositAmount,
+      balanceAmount: split.balanceAmount,
+      projectManagerId: staffOptions[0]?.id ?? "",
+      targetDate: "",
+      internalNotes: "",
+    };
   });
 
   async function approve() {
@@ -735,25 +752,33 @@ function RequestReviewModal({
               type="number"
               value={form.totalAmount}
               disabled={!isPending}
-              onChange={(event) => setForm({ ...form, totalAmount: Number(event.target.value) })}
+              onChange={(event) => {
+                    const split = calculateProjectPaymentSplit(Number(event.target.value));
+                    setForm({
+                      ...form,
+                      totalAmount: split.totalAmount,
+                      depositAmount: split.depositAmount,
+                      balanceAmount: split.balanceAmount,
+                    });
+                  }}
             />
           </Field>
 
-          <Field label="Deposit Amount">
+          <Field label={`Deposit Amount (${DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)`}>
             <Input
               type="number"
               value={form.depositAmount}
               disabled={!isPending}
-              onChange={(event) => setForm({ ...form, depositAmount: Number(event.target.value) })}
+              readOnly
             />
           </Field>
 
-          <Field label="Balance Amount">
+          <Field label="Balance Amount (Auto)">
             <Input
               type="number"
               value={form.balanceAmount}
               disabled={!isPending}
-              onChange={(event) => setForm({ ...form, balanceAmount: Number(event.target.value) })}
+              readOnly
             />
           </Field>
 

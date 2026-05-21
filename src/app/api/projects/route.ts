@@ -8,6 +8,7 @@ import {
   makeProjectCode,
   makePaymentRef,
 } from "@/lib/api-helpers";
+import { validateProjectPaymentSplit } from "@/lib/payment-policy";
 import type { Prisma } from "@prisma/client";
 
 const projectIncludes = {
@@ -103,6 +104,18 @@ export async function POST(request: Request) {
   if (!title?.trim()) return errorResponse("Project title is required", 400);
   if (!clientEmail?.trim()) return errorResponse("Client email is required", 400);
 
+  const paymentValidation = validateProjectPaymentSplit({
+    totalAmount,
+    depositAmount,
+    balanceAmount,
+  });
+
+  if (!paymentValidation.ok) {
+    return errorResponse(paymentValidation.message, 400);
+  }
+
+  const paymentSplit = paymentValidation.split;
+
   const templateInclude = {
     phases: {
       orderBy: { order: "asc" as const },
@@ -155,9 +168,9 @@ export async function POST(request: Request) {
         targetDate: targetDate ? new Date(targetDate) : null,
         projectCode: code,
         projectManagerId: projectManagerId ?? null,
-        totalAmount: totalAmount ?? 0,
-        depositAmount: depositAmount ?? 0,
-        balanceAmount: balanceAmount ?? 0,
+        totalAmount: paymentSplit.totalAmount,
+        depositAmount: paymentSplit.depositAmount,
+        balanceAmount: paymentSplit.balanceAmount,
         internalNotes: internalNotes ?? null,
       },
     });
@@ -188,7 +201,7 @@ export async function POST(request: Request) {
         {
           projectId: proj.id,
           type: "DEPOSIT",
-          amount: depositAmount ?? 0,
+          amount: paymentSplit.depositAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "DEP"),
           bankName: paymentBank.bankName,
@@ -198,7 +211,7 @@ export async function POST(request: Request) {
         {
           projectId: proj.id,
           type: "BALANCE",
-          amount: balanceAmount ?? 0,
+          amount: paymentSplit.balanceAmount,
           status: "UNPAID",
           reference: makePaymentRef(code, "BAL"),
           bankName: paymentBank.bankName,
