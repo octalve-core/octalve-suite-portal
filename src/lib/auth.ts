@@ -1,4 +1,4 @@
-﻿import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
@@ -9,6 +9,21 @@ import {
   projectManagerRole,
   superAdminRole,
 } from "@/lib/permissions";
+
+
+const OCTALVE_AUTH_BASE_URL =
+  process.env.BETTER_AUTH_URL || "https://workspace.octalve.com";
+
+const OCTALVE_AUTH_TRUSTED_ORIGINS = Array.from(
+  new Set(
+    [
+      OCTALVE_AUTH_BASE_URL,
+      "https://workspace.octalve.com",
+      "https://octalve-suite-portal.vercel.app",
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+    ].filter(Boolean),
+  ),
+);
 
 const hasGoogleOAuth =
   Boolean(process.env.GOOGLE_CLIENT_ID) &&
@@ -35,6 +50,8 @@ async function sendVerificationEmail({
 }
 
 export const auth = betterAuth({
+  baseURL: OCTALVE_AUTH_BASE_URL,
+  trustedOrigins: OCTALVE_AUTH_TRUSTED_ORIGINS,
   database: prismaAdapter(prisma, {
     provider: (process.env.DATABASE_URL ?? "").startsWith("file:")
       ? "sqlite"
