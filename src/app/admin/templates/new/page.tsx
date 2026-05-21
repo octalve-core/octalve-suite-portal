@@ -1,10 +1,10 @@
 import { PortalShell } from "@/components/portal/PortalShell";
-import { AdminTemplateNewPage } from "@/components/portal/AdminTemplateNewPage";
+import { AdminTemplateEditPage } from "@/components/portal/AdminTemplateEditPage";
 
 export default function Page() {
   return (
     <PortalShell role="SUPER_ADMIN">
-      <AdminTemplateNewPage />
+      <AdminTemplateEditPage />
     </PortalShell>
   );
 }
