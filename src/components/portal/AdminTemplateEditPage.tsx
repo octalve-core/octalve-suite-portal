@@ -30,6 +30,13 @@ type TemplatePhaseForm = {
 type TemplateForm = {
   name: string;
   packageType: PackageType;
+  slug: string;
+  category: string;
+  color: string;
+  iconKey: string;
+  sortOrder: number;
+  isOfficial: boolean;
+  isActive: boolean;
   description: string;
   phases: TemplatePhaseForm[];
 };
@@ -40,15 +47,45 @@ const EMPTY_PHASE: TemplatePhaseForm = {
   deliverablesText: "",
 };
 
+const ICON_OPTIONS = [
+  { value: "Launch", label: "Launch / Rocket" },
+  { value: "Impact", label: "Impact / Heart" },
+  { value: "Growth", label: "Growth / Trend" },
+  { value: "Partner", label: "Partner / Handshake" },
+  { value: "WebsiteStarter", label: "Website / Globe" },
+  { value: "WebsiteProBiz", label: "Website Pro / Screen" },
+  { value: "WebsiteAdvance", label: "Advanced / Code" },
+  { value: "BrandingStarter", label: "Branding / Palette" },
+  { value: "BrandingProBiz", label: "Branding Pro / Badge" },
+  { value: "BrandingAdvance", label: "Branding Advance / Gem" },
+  { value: "LeapRegistration", label: "Leap / Compliance" },
+  { value: "Custom", label: "Custom / Sliders" },
+  { value: "layers", label: "Generic / Layers" },
+];
+
 function getTemplateIdParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0] ?? "";
   return value ?? "";
 }
 
+function catalogOrder(packageType: PackageType) {
+  const index = PACKAGE_CATALOG.findIndex((item) => item.type === packageType);
+  return index >= 0 ? index + 1 : 999;
+}
+
 function templateToForm(template: ProjectTemplate): TemplateForm {
+  const catalog = getPackageCatalogItem(template.packageType);
+
   return {
     name: template.name,
     packageType: template.packageType,
+    slug: template.slug ?? "",
+    category: template.category ?? catalog.category,
+    color: template.color ?? catalog.color,
+    iconKey: template.iconKey ?? template.packageType,
+    sortOrder: template.sortOrder ?? catalogOrder(template.packageType),
+    isOfficial: template.isOfficial ?? false,
+    isActive: template.isActive ?? true,
     description: template.description,
     phases: template.phases?.length
       ? template.phases.map((phase) => ({
@@ -66,6 +103,13 @@ function catalogToForm(packageType: PackageType): TemplateForm {
   return {
     name: item.title,
     packageType,
+    slug: item.type,
+    category: item.category,
+    color: item.color,
+    iconKey: item.type,
+    sortOrder: catalogOrder(packageType),
+    isOfficial: packageType !== "Custom",
+    isActive: true,
     description: item.description,
     phases: item.phases.map((phase) => ({
       title: phase.title,
@@ -79,6 +123,13 @@ function formToPayload(form: TemplateForm) {
   return {
     name: form.name.trim(),
     packageType: form.packageType,
+    slug: form.slug.trim() || null,
+    category: form.category.trim() || "Custom",
+    color: form.color.trim() || "#5300D9",
+    iconKey: form.iconKey.trim() || "layers",
+    sortOrder: Number.isFinite(Number(form.sortOrder)) ? Number(form.sortOrder) : 999,
+    isOfficial: Boolean(form.isOfficial),
+    isActive: Boolean(form.isActive),
     description: form.description.trim(),
     phases: form.phases
       .map((phase) => ({
@@ -158,22 +209,22 @@ export function AdminTemplateEditPage() {
   }
 
   function applyCatalogWorkflow() {
-    const phases = getPackagePhases(form.packageType).map((phase) => ({
-      title: phase.title,
-      description: phase.description,
-      deliverablesText: phase.deliverables
-        .map((deliverable) => deliverable.title)
-        .join("\n"),
-    }));
+    const catalogForm = catalogToForm(form.packageType);
 
     setForm((current) => ({
       ...current,
-      name: current.name.trim() || selectedCatalog.title,
-      description: current.description.trim() || selectedCatalog.description,
-      phases,
+      slug: current.slug.trim() || catalogForm.slug,
+      category: catalogForm.category,
+      color: catalogForm.color,
+      iconKey: catalogForm.iconKey,
+      sortOrder: catalogForm.sortOrder,
+      isOfficial: form.packageType !== "Custom",
+      name: current.name.trim() || catalogForm.name,
+      description: current.description.trim() || catalogForm.description,
+      phases: catalogForm.phases,
     }));
 
-    setNotice("Default workflow applied. Review and adjust before saving.");
+    setNotice("Default workflow and metadata applied. Review and adjust before saving.");
     setError("");
   }
 
@@ -204,6 +255,11 @@ export function AdminTemplateEditPage() {
       return;
     }
 
+    if (!payload.category) {
+      setError("Template category is required.");
+      return;
+    }
+
     if (!payload.phases.length) {
       setError("Add at least one delivery phase.");
       return;
@@ -231,7 +287,7 @@ export function AdminTemplateEditPage() {
       await refresh();
       setNotice("Template updated successfully.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update template.");
+      setError(err instanceof Error ? err.message : "Could not save template.");
     } finally {
       setLoading(false);
     }
@@ -281,16 +337,16 @@ export function AdminTemplateEditPage() {
                   {isNewTemplate ? "Create project template" : "Edit project template"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/82 sm:text-[15px]">
-                  Manage the package type, delivery phases and client-visible deliverables used to structure Octalve projects.
+                  Manage package identity, display metadata, phases and client-visible deliverables.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl bg-white/12 px-4 py-3">
                   <span className="block text-[11px] font-black uppercase tracking-widest text-white/65">
-                    Package
+                    Category
                   </span>
-                  <strong className="mt-1 block text-sm">{selectedCatalog.shortTitle}</strong>
+                  <strong className="mt-1 block text-sm">{form.category || selectedCatalog.category}</strong>
                 </div>
                 <div className="rounded-2xl bg-white/12 px-4 py-3">
                   <span className="block text-[11px] font-black uppercase tracking-widest text-white/65">
@@ -308,7 +364,7 @@ export function AdminTemplateEditPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:p-8">
+          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:p-8">
             <aside className="space-y-5">
               <Card className="border-slate-200 bg-white p-5 shadow-none">
                 <div className="mb-4 flex items-center gap-3">
@@ -320,7 +376,7 @@ export function AdminTemplateEditPage() {
                       Template details
                     </h2>
                     <p className="text-xs font-medium text-slate-500">
-                      Core package identity
+                      Database-managed package identity
                     </p>
                   </div>
                 </div>
@@ -333,26 +389,101 @@ export function AdminTemplateEditPage() {
                       onChange={(event) =>
                         setForm({ ...form, name: event.target.value })
                       }
-                      placeholder="e.g. Launch Suite Delivery Workflow"
+                      placeholder="e.g. AI Automation Suite"
                       className="h-12 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
                     />
                   </Field>
 
-                  <Field label="Package / Suite">
+                  <Field label="Legacy package group">
                     <Select
                       value={form.packageType}
                       disabled={loading}
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const packageType = event.target.value as PackageType;
+                        const catalogForm = catalogToForm(packageType);
+
                         setForm({
                           ...form,
-                          packageType: event.target.value as PackageType,
-                        })
-                      }
+                          packageType,
+                          category: form.category || catalogForm.category,
+                          color: form.color || catalogForm.color,
+                          iconKey: form.iconKey || catalogForm.iconKey,
+                        });
+                      }}
                       className="h-12 rounded-2xl border-slate-200 text-sm"
                     >
                       {PACKAGE_CATALOG.map((item) => (
                         <option key={item.type} value={item.type}>
                           {item.title}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Category">
+                      <Input
+                        value={form.category}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, category: event.target.value })
+                        }
+                        placeholder="e.g. Automation"
+                        className="h-12 rounded-2xl border-slate-200 text-sm"
+                      />
+                    </Field>
+
+                    <Field label="Slug">
+                      <Input
+                        value={form.slug}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, slug: event.target.value })
+                        }
+                        placeholder="e.g. ai-automation-suite"
+                        className="h-12 rounded-2xl border-slate-200 text-sm"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Color">
+                      <Input
+                        type="color"
+                        value={form.color}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, color: event.target.value })
+                        }
+                        className="h-12 rounded-2xl border-slate-200 p-1"
+                      />
+                    </Field>
+
+                    <Field label="Sort order">
+                      <Input
+                        type="number"
+                        value={form.sortOrder}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, sortOrder: Number(event.target.value) })
+                        }
+                        className="h-12 rounded-2xl border-slate-200 text-sm"
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label="Icon key">
+                    <Select
+                      value={form.iconKey}
+                      disabled={loading}
+                      onChange={(event) =>
+                        setForm({ ...form, iconKey: event.target.value })
+                      }
+                      className="h-12 rounded-2xl border-slate-200 text-sm"
+                    >
+                      {ICON_OPTIONS.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
                         </option>
                       ))}
                     </Select>
@@ -369,6 +500,34 @@ export function AdminTemplateEditPage() {
                       className="min-h-30 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
                     />
                   </Field>
+
+                  <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <label className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-700">
+                      Official Octalve template
+                      <input
+                        type="checkbox"
+                        checked={form.isOfficial}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, isOfficial: event.target.checked })
+                        }
+                        className="h-5 w-5"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between gap-4 text-sm font-semibold text-slate-700">
+                      Active / visible to clients
+                      <input
+                        type="checkbox"
+                        checked={form.isActive}
+                        disabled={loading}
+                        onChange={(event) =>
+                          setForm({ ...form, isActive: event.target.checked })
+                        }
+                        className="h-5 w-5"
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="mt-5 grid gap-3">
@@ -412,7 +571,7 @@ export function AdminTemplateEditPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <Badge className={packageClass(form.packageType)}>
-                    {selectedCatalog.title}
+                    {form.category || selectedCatalog.title}
                   </Badge>
                   <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
                     Delivery phases

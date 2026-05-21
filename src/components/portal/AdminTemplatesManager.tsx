@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Copy,
-  ExternalLink,
   Layers3,
   Pencil,
   Plus,
@@ -16,6 +15,10 @@ import type { ProjectTemplate } from "@/lib/types";
 import { PACKAGE_CATALOG, getPackageCatalogItem } from "./packageCatalog";
 import { useApp } from "./AppContext";
 import { Badge, Button, Card } from "./UI";
+
+function catalogIndex(packageType: string) {
+  return PACKAGE_CATALOG.findIndex((item) => item.type === packageType);
+}
 
 function catalogPayload(item: (typeof PACKAGE_CATALOG)[number]) {
   const order = PACKAGE_CATALOG.findIndex((catalogItem) => catalogItem.type === item.type);
@@ -29,6 +32,7 @@ function catalogPayload(item: (typeof PACKAGE_CATALOG)[number]) {
     iconKey: item.type,
     sortOrder: order >= 0 ? order + 1 : 999,
     isOfficial: true,
+    isActive: true,
     description: item.description,
     phases: item.phases.map((phase) => ({
       title: phase.title,
@@ -45,6 +49,42 @@ function countDeliverables(template: ProjectTemplate) {
   );
 }
 
+function templatePayload(template: ProjectTemplate, patch: Partial<ProjectTemplate> = {}) {
+  return {
+    name: patch.name ?? template.name,
+    packageType: patch.packageType ?? template.packageType,
+    slug: patch.slug ?? template.slug ?? null,
+    category: patch.category ?? template.category ?? "Custom",
+    color: patch.color ?? template.color ?? "#5300D9",
+    iconKey: patch.iconKey ?? template.iconKey ?? template.packageType,
+    sortOrder: patch.sortOrder ?? template.sortOrder ?? 999,
+    isOfficial: patch.isOfficial ?? template.isOfficial ?? false,
+    isActive: patch.isActive ?? template.isActive ?? true,
+    description: patch.description ?? template.description,
+    phases: template.phases.map((phase) => ({
+      title: phase.title,
+      description: phase.description ?? "",
+      deliverables: phase.deliverables ?? [],
+    })),
+  };
+}
+
+function needsOfficialMetadataBackfill(template: ProjectTemplate) {
+  if (template.packageType === "Custom") return false;
+
+  const catalog = getPackageCatalogItem(template.packageType);
+  const order = catalogIndex(template.packageType);
+
+  return (
+    template.slug !== template.packageType ||
+    template.category !== catalog.category ||
+    template.color !== catalog.color ||
+    template.iconKey !== template.packageType ||
+    template.sortOrder !== (order >= 0 ? order + 1 : 999) ||
+    template.isOfficial !== true
+  );
+}
+
 export function AdminTemplatesManager() {
   const {
     state,
@@ -57,6 +97,10 @@ export function AdminTemplatesManager() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+
+  const activeTemplates = state.templates.filter((template) => template.isActive !== false);
+  const inactiveTemplates = state.templates.length - activeTemplates.length;
+  const officialTemplates = state.templates.filter((template) => template.isOfficial === true);
 
   const totalPhases = state.templates.reduce(
     (total, template) => total + template.phases.length,
@@ -73,6 +117,7 @@ export function AdminTemplatesManager() {
       state.templates.some((template) => template.packageType === item.type),
     ).length;
   }, [state.templates]);
+
   const missingCatalogItems = useMemo(() => {
     const existingTypes = new Set(
       state.templates.map((template) => template.packageType),
@@ -81,7 +126,12 @@ export function AdminTemplatesManager() {
     return PACKAGE_CATALOG.filter((item) => !existingTypes.has(item.type));
   }, [state.templates]);
 
+  const metadataBackfillTemplates = useMemo(() => {
+    return state.templates.filter(needsOfficialMetadataBackfill);
+  }, [state.templates]);
+
   const canCreateMissingTemplates = missingCatalogItems.length > 0;
+  const canBackfillMetadata = metadataBackfillTemplates.length > 0;
 
   async function createMissingOfficialTemplates() {
     if (!missingCatalogItems.length) {
@@ -120,6 +170,51 @@ export function AdminTemplatesManager() {
     }
   }
 
+  async function backfillOfficialTemplateMetadata() {
+    if (!metadataBackfillTemplates.length) {
+      setNotice("Official template metadata is already up to date.");
+      setError("");
+      return;
+    }
+
+    const ok = window.confirm(
+      `Backfill metadata for ${metadataBackfillTemplates.length} official template${metadataBackfillTemplates.length === 1 ? "" : "s"}? Phases and deliverables will be preserved.`,
+    );
+
+    if (!ok) return;
+
+    setLoadingAction("metadata");
+    setNotice("");
+    setError("");
+
+    try {
+      for (const template of metadataBackfillTemplates) {
+        const catalog = getPackageCatalogItem(template.packageType);
+        const order = catalogIndex(template.packageType);
+
+        await updateTemplate(
+          template.id,
+          templatePayload(template, {
+            slug: template.packageType,
+            category: catalog.category,
+            color: catalog.color,
+            iconKey: template.packageType,
+            sortOrder: order >= 0 ? order + 1 : 999,
+            isOfficial: true,
+            isActive: template.isActive !== false,
+          }) as any,
+        );
+      }
+
+      await refresh();
+      setNotice("Official template metadata backfilled successfully. Existing phases and deliverables were preserved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not backfill official template metadata.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
+
   async function duplicateTemplate(template: ProjectTemplate) {
     setLoadingAction(`copy-${template.id}`);
     setNotice("");
@@ -127,14 +222,12 @@ export function AdminTemplatesManager() {
 
     try {
       await createTemplate({
-        name: `${template.name} Copy`,
-        packageType: template.packageType,
-        description: template.description,
-        phases: template.phases.map((phase) => ({
-          title: phase.title,
-          description: phase.description ?? "",
-          deliverables: phase.deliverables ?? [],
-        })),
+        ...templatePayload(template, {
+          name: `${template.name} Copy`,
+          slug: template.slug ? `${template.slug}-copy` : undefined,
+          isOfficial: false,
+          sortOrder: (template.sortOrder ?? 999) + 1000,
+        }),
       } as any);
 
       await refresh();
@@ -150,7 +243,7 @@ export function AdminTemplatesManager() {
 
   async function removeTemplate(template: ProjectTemplate) {
     const ok = window.confirm(
-      `Delete "${template.name}"? This cannot be undone.`,
+      `Delete "${template.name}"? This will remove it from the client package selection immediately.`,
     );
 
     if (!ok) return;
@@ -184,39 +277,50 @@ export function AdminTemplatesManager() {
                 Templates
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/82 sm:text-[15px]">
-                Manage reusable delivery workflows for Octalve projects, including package structure, phases and client-visible deliverables.
+                Manage database-backed delivery workflows. Only templates created here appear for clients.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-bold text-white">
-                  {state.templates.length} templates
+                  {state.templates.length} total
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-bold text-white">
-                  {totalPhases} phases
+                  {activeTemplates.length} active
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-bold text-white">
-                  {totalDeliverables} deliverables
+                  {inactiveTemplates} inactive
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-bold text-white">
-                  {catalogCoverage}/{PACKAGE_CATALOG.length} package workflows
+                  {catalogCoverage}/{PACKAGE_CATALOG.length} official coverage
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3 lg:justify-end">
-              {canCreateMissingTemplates ? (
-
-                <Button type="button"
-                variant="secondary"
-                loading={loadingAction === "sync"}
-                onClick={createMissingOfficialTemplates}
-                className="bg-white text-[#E61525]"
-              >
-<RefreshCw size={16} />
-                Create Missing Templates
-
+              {canBackfillMetadata ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  loading={loadingAction === "metadata"}
+                  onClick={backfillOfficialTemplateMetadata}
+                  className="bg-white text-[#E61525]"
+                >
+                  <RefreshCw size={16} />
+                  Backfill Metadata
                 </Button>
+              ) : null}
 
+              {canCreateMissingTemplates ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  loading={loadingAction === "sync"}
+                  onClick={createMissingOfficialTemplates}
+                  className="bg-white text-[#E61525]"
+                >
+                  <RefreshCw size={16} />
+                  Create Missing Templates
+                </Button>
               ) : null}
 
               <Link href="/admin/templates/new">
@@ -259,10 +363,10 @@ export function AdminTemplatesManager() {
               <Layers3 size={18} />
             </span>
             <strong className="mt-4 block text-3xl tracking-tighter text-slate-950">
-              {totalPhases}
+              {officialTemplates.length}
             </strong>
             <span className="text-sm font-semibold text-slate-500">
-              Reusable phases
+              Official templates
             </span>
           </Card>
 
@@ -286,7 +390,7 @@ export function AdminTemplatesManager() {
               {catalogCoverage}/{PACKAGE_CATALOG.length}
             </strong>
             <span className="text-sm font-semibold text-slate-500">
-              Package coverage
+              Official coverage
             </span>
           </Card>
         </div>
@@ -299,7 +403,7 @@ export function AdminTemplatesManager() {
                   Template Library
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Open a template to manage its package, phases and deliverables.
+                  Every active template here is available to clients. Deleted or inactive templates disappear from client selection.
                 </p>
               </div>
 
@@ -314,83 +418,100 @@ export function AdminTemplatesManager() {
 
           <div className="divide-y divide-slate-100">
             {state.templates.length ? (
-              state.templates.map((template) => {
-                const catalog = getPackageCatalogItem(template.packageType);
-                const deliverables = countDeliverables(template);
+              [...state.templates]
+                .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999) || a.name.localeCompare(b.name))
+                .map((template) => {
+                  const catalog = getPackageCatalogItem(template.packageType);
+                  const deliverables = countDeliverables(template);
+                  const color = template.color || catalog.color;
+                  const category = template.category || catalog.category;
 
-                return (
-                  <div
-                    key={template.id}
-                    className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
-                  >
-                    <div className="flex min-w-0 gap-4">
-                      <span
-                        className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
-                        style={{
-                          backgroundColor: `${catalog.color}14`,
-                          color: catalog.color,
-                        }}
-                      >
-                        <Layers3 size={19} />
-                      </span>
+                  return (
+                    <div
+                      key={template.id}
+                      className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+                    >
+                      <div className="flex min-w-0 gap-4">
+                        <span
+                          className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
+                          style={{
+                            backgroundColor: `${color}14`,
+                            color,
+                          }}
+                        >
+                          <Layers3 size={19} />
+                        </span>
 
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-semibold tracking-[-0.03em] text-slate-950">
-                            {template.name}
-                          </h3>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-base font-semibold tracking-[-0.03em] text-slate-950">
+                              {template.name}
+                            </h3>
 
-                          <span
-                            className="rounded-full px-2.5 py-1 text-[11px] font-black"
-                            style={{
-                              backgroundColor: `${catalog.color}14`,
-                              color: catalog.color,
-                            }}
-                          >
-                            {catalog.title}
-                          </span>
-                        </div>
+                            <span
+                              className="rounded-full px-2.5 py-1 text-[11px] font-black"
+                              style={{
+                                backgroundColor: `${color}14`,
+                                color,
+                              }}
+                            >
+                              {category}
+                            </span>
 
-                        <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-                          {template.description || catalog.description}
-                        </p>
+                            {template.isOfficial ? (
+                              <Badge className="badge-blue">Official</Badge>
+                            ) : (
+                              <Badge className="badge-slate">Custom</Badge>
+                            )}
 
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                          <span>{template.phases.length} phases</span>
-                          <span>{deliverables} deliverables</span>
+                            {template.isActive === false ? (
+                              <Badge className="badge-orange">Inactive</Badge>
+                            ) : (
+                              <Badge className="badge-green">Active</Badge>
+                            )}
+                          </div>
+
+                          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                            {template.description || catalog.description}
+                          </p>
+
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                            <span>{template.phases.length} phases</span>
+                            <span>{deliverables} deliverables</span>
+                            <span>Sort {template.sortOrder ?? 999}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
-                      <Link href={`/admin/templates/${template.id}`}>
-                        <Button variant="secondary">
-                          <Pencil size={15} />
-                          Edit
+                      <div className="flex flex-wrap gap-2 lg:justify-end">
+                        <Link href={`/admin/templates/${template.id}`}>
+                          <Button variant="secondary">
+                            <Pencil size={15} />
+                            Edit
+                          </Button>
+                        </Link>
+
+                        <Button
+                          variant="secondary"
+                          loading={loadingAction === `copy-${template.id}`}
+                          onClick={() => duplicateTemplate(template)}
+                        >
+                          <Copy size={15} />
+                          Copy
                         </Button>
-                      </Link>
 
-                      <Button
-                        variant="secondary"
-                        loading={loadingAction === `copy-${template.id}`}
-                        onClick={() => duplicateTemplate(template)}
-                      >
-                        <Copy size={15} />
-                        Copy
-                      </Button>
-
-                      <Button
-                        variant="danger"
-                        loading={loadingAction === `delete-${template.id}`}
-                        onClick={() => removeTemplate(template)}
-                      >
-                        <Trash2 size={15} />
-                        Delete
-                      </Button>
+                        <Button
+                          variant="danger"
+                          loading={loadingAction === `delete-${template.id}`}
+                          onClick={() => removeTemplate(template)}
+                        >
+                          <Trash2 size={15} />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })
             ) : (
               <div className="px-6 py-12 text-center">
                 <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-[#0064E0]">
@@ -404,16 +525,14 @@ export function AdminTemplatesManager() {
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
                   {canCreateMissingTemplates ? (
-
-                    <Button variant="secondary"
-                    loading={loadingAction === "sync"}
-                    onClick={createMissingOfficialTemplates}
-                  >
-<RefreshCw size={16} />
-                    Create Missing Templates
-
+                    <Button
+                      variant="secondary"
+                      loading={loadingAction === "sync"}
+                      onClick={createMissingOfficialTemplates}
+                    >
+                      <RefreshCw size={16} />
+                      Create Missing Templates
                     </Button>
-
                   ) : null}
 
                   <Link href="/admin/templates/new">

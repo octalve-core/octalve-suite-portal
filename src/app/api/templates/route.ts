@@ -35,8 +35,10 @@ export async function GET() {
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
 
+  const includeInactive = result.role === "SUPER_ADMIN";
+
   const templates = await prisma.projectTemplate.findMany({
-    where: { isActive: true },
+    where: includeInactive ? undefined : { isActive: true },
     include: {
       phases: {
         orderBy: { order: "asc" },
