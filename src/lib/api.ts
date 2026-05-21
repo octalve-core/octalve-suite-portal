@@ -12,6 +12,7 @@ import type {
   User,
   Review,
   NotificationItem,
+  WalletSummary,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -102,6 +103,11 @@ export const api = {
       data: Partial<Pick<Project, "title" | "targetDate" | "internalNotes" | "projectManagerId">>,
     ) => patch<Project>(`/api/projects/${id}`, data),
     delete: (id: string) => del(`/api/projects/${id}`),
+  },
+
+  // Wallet
+  wallet: {
+    get: () => fetchJson<WalletSummary>("/api/wallet"),
   },
 
   // Payments

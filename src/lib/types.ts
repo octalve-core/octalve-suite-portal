@@ -1,3 +1,11 @@
+import type {
+  PaymentProvider,
+  PaymentTransactionStatus,
+  WalletLedgerDirection,
+  WalletLedgerEntryType,
+  WebhookProcessingStatus,
+} from "@/lib/payment-constants";
+
 export type Role = "CLIENT" | "STAFF" | "PROJECT_MANAGER" | "SUPER_ADMIN";
 export type PackageType =
   | "Launch"
@@ -25,6 +33,90 @@ export type PhaseStatus = "LOCKED" | "NOT_STARTED" | "IN_PROGRESS" | "AWAITING_A
 export type DeliverableStatus = "DRAFT" | "READY_FOR_REVIEW" | "NEEDS_CHANGES" | "APPROVED";
 export type PaymentStatus = "UNPAID" | "PENDING_CONFIRMATION" | "CONFIRMED" | "REJECTED";
 export type PaymentType = "DEPOSIT" | "BALANCE";
+
+
+export type PaymentGatewaySetting = {
+  id: string;
+  provider: PaymentProvider | (string & {});
+  displayName: string;
+  isEnabled: boolean;
+  mode: "LIVE" | "TEST" | (string & {});
+  sortOrder: number;
+  publicKeyEnvName?: string;
+  secretKeyEnvName?: string;
+  webhookSecretEnvName?: string;
+  callbackPath?: string;
+  webhookPath?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaymentTransaction = {
+  id: string;
+  paymentId: string;
+  projectId: string;
+  webhookEventId?: string;
+  provider: PaymentProvider | (string & {});
+  status: PaymentTransactionStatus | (string & {});
+  amount: number;
+  currency: string;
+  reference: string;
+  idempotencyKey: string;
+  providerReference?: string;
+  providerStatus?: string;
+  authorizationUrl?: string;
+  initiatedById?: string;
+  verifiedAt?: string;
+  confirmedAt?: string;
+  failedAt?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaymentWebhookEvent = {
+  id: string;
+  provider: PaymentProvider | (string & {});
+  eventType: string;
+  eventId?: string;
+  reference?: string;
+  status: WebhookProcessingStatus | (string & {});
+  signatureValid: boolean;
+  payloadHash?: string;
+  idempotencyKey: string;
+  processedAt?: string;
+  processingError?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WalletLedgerEntry = {
+  id: string;
+  userId: string;
+  projectId?: string;
+  paymentId?: string;
+  transactionId?: string;
+  entryType: WalletLedgerEntryType | (string & {});
+  direction: WalletLedgerDirection | (string & {});
+  amount: number;
+  currency: string;
+  balanceAfter?: number;
+  reference: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type WalletSummary = {
+  currency: string;
+  balance: number;
+  availableBalance: number;
+  heldBalance: number;
+  totalCredited: number;
+  totalSpent: number;
+  entries: WalletLedgerEntry[];
+};
 
 export type User = {
   id: string;
@@ -112,6 +204,14 @@ export type ProjectPayment = {
   clientMarkedPaidAt?: string;
   confirmedAt?: string;
   note?: string;
+
+  provider?: PaymentProvider | (string & {});
+  gatewayReference?: string;
+  providerReference?: string;
+  paidVia?: string;
+  confirmedSource?: string;
+  transactions?: PaymentTransaction[];
+  walletLedgerEntries?: WalletLedgerEntry[];
 };
 
 export type Project = {
@@ -132,6 +232,8 @@ export type Project = {
   balanceAmount: number;
   phases: ProjectPhase[];
   payments: ProjectPayment[];
+  paymentTransactions?: PaymentTransaction[];
+  walletLedgerEntries?: WalletLedgerEntry[];
   internalNotes?: string;
   clientBrief?: string;
   createdAt: string;

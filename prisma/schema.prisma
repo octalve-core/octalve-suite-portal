@@ -113,6 +113,7 @@ model User {
   reviews               Review[]
   submittedDeliverables Deliverable[]    @relation("DeliverableSubmitter")
   notifications         Notification[]
+  walletLedgerEntries  WalletLedgerEntry[]
 }
 
 model Session {
@@ -249,9 +250,11 @@ model Project {
   requestId         String?          @unique
   request           ProjectRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
 
-  phases   ProjectPhase[]
-  payments ProjectPayment[]
-  reviews  Review[]
+  phases              ProjectPhase[]
+  payments            ProjectPayment[]
+  paymentTransactions PaymentTransaction[]
+  walletLedgerEntries WalletLedgerEntry[]
+  reviews             Review[]
 
   @@index([clientId])
   @@index([templateId])
@@ -332,10 +335,154 @@ model ProjectPayment {
   confirmedBy         User?         @relation("PaymentConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
   confirmedAt         DateTime?
   note                String?
+
+  // Provider/payment automation fields. Provider remains String so future gateways do not force enum churn.
+  provider            String        @default("MANUAL_BANK")
+  gatewayReference    String?       @unique
+  providerReference   String?
+  paidVia             String?
+  confirmedSource     String?
+
+  transactions        PaymentTransaction[]
+  walletLedgerEntries WalletLedgerEntry[]
+
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
   @@index([projectId])
+  @@index([provider])
+  @@index([status, type])
+}
+
+
+model PaymentGatewaySetting {
+  id                   String   @id @default(cuid())
+
+  // Uses TypeScript as-const provider constants, not Prisma enum, for future gateway expansion.
+  provider             String   @unique
+  displayName          String
+  isEnabled            Boolean  @default(false)
+  mode                 String   @default("LIVE")
+  sortOrder            Int      @default(0)
+
+  // Store environment variable names only. Do not store secret values in the database.
+  publicKeyEnvName     String?
+  secretKeyEnvName     String?
+  webhookSecretEnvName String?
+
+  callbackPath         String?
+  webhookPath          String?
+  notes                String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([provider, isEnabled])
+}
+
+model PaymentTransaction {
+  id                  String               @id @default(cuid())
+  paymentId           String
+  payment             ProjectPayment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  projectId           String
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  webhookEventId      String?
+  webhookEvent        PaymentWebhookEvent? @relation(fields: [webhookEventId], references: [id], onDelete: SetNull)
+
+  provider            String
+  status              String               @default("INITIALIZED")
+  amount              Int
+  currency            String               @default("NGN")
+
+  // Internal idempotency/reference control.
+  reference           String               @unique
+  idempotencyKey      String               @unique
+
+  // Provider-side references. These are not trusted unless verified server-side.
+  providerReference   String?              @unique
+  providerStatus      String?
+  authorizationUrl    String?
+
+  initiatedById       String?
+  verifiedAt          DateTime?
+  confirmedAt         DateTime?
+  failedAt            DateTime?
+  failureReason       String?
+
+  walletLedgerEntries WalletLedgerEntry[]
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([paymentId])
+  @@index([projectId])
+  @@index([provider, status])
+  @@index([createdAt])
+}
+
+model PaymentWebhookEvent {
+  id              String   @id @default(cuid())
+
+  provider        String
+  eventType       String
+  eventId         String?
+  reference       String?
+  status          String   @default("RECEIVED")
+
+  // Security/idempotency controls.
+  signatureValid  Boolean  @default(false)
+  payloadHash     String?
+  idempotencyKey  String   @unique
+
+  processedAt     DateTime?
+  processingError String?
+
+  transactions    PaymentTransaction[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, eventId])
+  @@index([provider, eventType])
+  @@index([reference])
+  @@index([status])
+}
+
+model WalletLedgerEntry {
+  id            String              @id @default(cuid())
+
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId     String?
+  project       Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  paymentId     String?
+  payment       ProjectPayment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  transactionId String?
+  transaction   PaymentTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  entryType     String
+  direction     String
+  amount        Int
+  currency      String              @default("NGN")
+  balanceAfter  Int?
+
+  reference     String              @unique
+  description   String?
+  metadata      Json?
+
+  createdAt     DateTime            @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([paymentId])
+  @@index([transactionId])
+  @@index([entryType])
+  @@index([createdAt])
 }
 
 model Review {

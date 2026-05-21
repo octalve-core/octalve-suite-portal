@@ -1,0 +1,87 @@
+export const PAYMENT_PROVIDERS = {
+  MANUAL_BANK: "MANUAL_BANK",
+  PAYSTACK: "PAYSTACK",
+  FLUTTERWAVE: "FLUTTERWAVE",
+  PAYPAL: "PAYPAL",
+  WALLET: "WALLET",
+  OTHER: "OTHER",
+} as const;
+
+export type PaymentProvider =
+  (typeof PAYMENT_PROVIDERS)[keyof typeof PAYMENT_PROVIDERS];
+
+export const PAYMENT_GATEWAY_MODES = {
+  LIVE: "LIVE",
+  TEST: "TEST",
+} as const;
+
+export type PaymentGatewayMode =
+  (typeof PAYMENT_GATEWAY_MODES)[keyof typeof PAYMENT_GATEWAY_MODES];
+
+export const PAYMENT_TRANSACTION_STATUSES = {
+  INITIALIZED: "INITIALIZED",
+  PENDING: "PENDING",
+  VERIFIED: "VERIFIED",
+  CONFIRMED: "CONFIRMED",
+  FAILED: "FAILED",
+  ABANDONED: "ABANDONED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type PaymentTransactionStatus =
+  (typeof PAYMENT_TRANSACTION_STATUSES)[keyof typeof PAYMENT_TRANSACTION_STATUSES];
+
+export const PAYMENT_CONFIRMATION_SOURCES = {
+  ADMIN_MANUAL: "ADMIN_MANUAL",
+  WEBHOOK: "WEBHOOK",
+  SERVER_VERIFY: "SERVER_VERIFY",
+  WALLET_LEDGER: "WALLET_LEDGER",
+} as const;
+
+export type PaymentConfirmationSource =
+  (typeof PAYMENT_CONFIRMATION_SOURCES)[keyof typeof PAYMENT_CONFIRMATION_SOURCES];
+
+export const WEBHOOK_PROCESSING_STATUSES = {
+  RECEIVED: "RECEIVED",
+  VERIFIED: "VERIFIED",
+  PROCESSED: "PROCESSED",
+  IGNORED: "IGNORED",
+  FAILED: "FAILED",
+} as const;
+
+export type WebhookProcessingStatus =
+  (typeof WEBHOOK_PROCESSING_STATUSES)[keyof typeof WEBHOOK_PROCESSING_STATUSES];
+
+export const WALLET_LEDGER_ENTRY_TYPES = {
+  CREDIT: "CREDIT",
+  DEBIT: "DEBIT",
+  HOLD: "HOLD",
+  RELEASE: "RELEASE",
+  REFUND: "REFUND",
+  REVERSAL: "REVERSAL",
+  PROJECT_PAYMENT: "PROJECT_PAYMENT",
+} as const;
+
+export type WalletLedgerEntryType =
+  (typeof WALLET_LEDGER_ENTRY_TYPES)[keyof typeof WALLET_LEDGER_ENTRY_TYPES];
+
+export const WALLET_LEDGER_DIRECTIONS = {
+  IN: "IN",
+  OUT: "OUT",
+} as const;
+
+export type WalletLedgerDirection =
+  (typeof WALLET_LEDGER_DIRECTIONS)[keyof typeof WALLET_LEDGER_DIRECTIONS];
+
+export const SERVER_PAYMENT_PROVIDERS = [
+  PAYMENT_PROVIDERS.MANUAL_BANK,
+  PAYMENT_PROVIDERS.PAYSTACK,
+  PAYMENT_PROVIDERS.FLUTTERWAVE,
+  PAYMENT_PROVIDERS.PAYPAL,
+  PAYMENT_PROVIDERS.WALLET,
+  PAYMENT_PROVIDERS.OTHER,
+] as const;
+
+export function isKnownPaymentProvider(value: string): value is PaymentProvider {
+  return SERVER_PAYMENT_PROVIDERS.includes(value as PaymentProvider);
+}

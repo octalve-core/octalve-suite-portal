@@ -64,7 +64,8 @@ function navForRole(role: Role, counts: CountState): NavItem[] {
       { label: "Projects", shortLabel: "Projects", href: "/client/projects", icon: navIcon(FolderKanban) },
       { label: "Phases", shortLabel: "Phases", href: "/client/phases", icon: navIcon(Layers3) },
       { label: "Approvals", shortLabel: "Approve", href: "/client/approvals", icon: navIcon(ClipboardCheck), badge: counts.approvals },
-      { label: "Payments", shortLabel: "Pay", href: "/client/payments", icon: navIcon(WalletCards), badge: counts.payments },
+      { label: "Payments", shortLabel: "Pay", href: "/client/payments", icon: navIcon(CreditCard), badge: counts.payments },
+      { label: "Wallet", shortLabel: "Wallet", href: "/client/wallet", icon: navIcon(WalletCards) },
       { label: "Support", shortLabel: "Help", href: "/client/support", icon: navIcon(MessagesSquare) },
       { label: "Settings", shortLabel: "Settings", href: "/client/settings", icon: navIcon(Settings2) },
     ];
