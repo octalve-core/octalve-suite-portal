@@ -120,6 +120,8 @@ export type Project = {
   title: string;
   businessName: string;
   clientEmail: string;
+  templateId?: string;
+  template?: ProjectTemplate | null;
   packageType: PackageType;
   status: ProjectStatus;
   targetDate?: string;

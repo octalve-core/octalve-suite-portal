@@ -12,6 +12,20 @@ import {
 type Params = { params: Promise<{ id: string }> };
 
 const projectIncludes = {
+  template: {
+    select: {
+      id: true,
+      name: true,
+      packageType: true,
+      category: true,
+      color: true,
+      iconKey: true,
+      sortOrder: true,
+      isOfficial: true,
+      isActive: true,
+      description: true,
+    },
+  },
   phases: {
     orderBy: { phaseNumber: "asc" as const },
     include: {
