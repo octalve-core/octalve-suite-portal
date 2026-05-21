@@ -169,7 +169,7 @@ export function AdminProjectRequestsManager() {
   const requests = (state.requests ?? []) as RequestWithClient[];
 
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<RequestStatusFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<RequestStatusFilter>("PENDING_REVIEW");
   const [packageFilter, setPackageFilter] = useState<"ALL" | PackageType>("ALL");
 
   const pending = requests.filter((request) => request.status === "PENDING_REVIEW");

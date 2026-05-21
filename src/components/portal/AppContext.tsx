@@ -171,7 +171,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ] = await Promise.all([
         api.projects.list(),
         api.templates.list(),
-        currentUser.role === "SUPER_ADMIN" ? api.projectRequests.list() : Promise.resolve([]),
+        ["SUPER_ADMIN", "PROJECT_MANAGER", "CLIENT"].includes(currentUser.role) ? api.projectRequests.list() : Promise.resolve([]),
         currentUser.role === "SUPER_ADMIN" ? api.reviews.list() : Promise.resolve([]),
         api.notifications.list(),
         (currentUser.role === "SUPER_ADMIN" || currentUser.role === "PROJECT_MANAGER") ? api.team.list() : Promise.resolve([]),

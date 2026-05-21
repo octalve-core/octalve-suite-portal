@@ -346,9 +346,69 @@ function ClientReviewModal({
   );
 }
 
+function ClientPendingRequestsPanel({ requests }: { requests: any[] }) {
+  if (!requests.length) return null;
+
+  return (
+    <Card className="mt-5 border-blue-100 bg-blue-50/60 p-5 shadow-[0_12px_28px_rgba(0,100,224,0.06)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Badge className="badge-blue">Under Admin Review</Badge>
+          <h2 className="mt-3 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+            Submitted Project Request{requests.length === 1 ? "" : "s"}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Your request has been received. Octalve will review the scope, approve the request, and open the project workspace after setup.
+          </p>
+        </div>
+
+        <Link href="/client/projects/new">
+          <Button variant="secondary">{Icons.plus} New Request</Button>
+        </Link>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {requests.map((request) => (
+          <div
+            key={request.id}
+            className="rounded-2xl border border-blue-100 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <strong className="block text-sm text-slate-950">
+                  {request.projectName || request.businessName || "Project request"}
+                </strong>
+                <span className="mt-1 block text-sm text-slate-500">
+                  {request.businessName || "Business name not provided"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Badge className={packageClass(request.packageType)}>
+                  {getPackageTitle(request.packageType)}
+                </Badge>
+                <Badge className={statusClass(request.status)}>
+                  {statusLabel(request.status)}
+                </Badge>
+              </div>
+            </div>
+
+            <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+              {request.projectGoal || request.projectDescription || "Your brief is waiting for admin review."}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function ClientDashboard() {
-  const { currentUser, clientProjects, selectedProject } = useApp();
+  const { currentUser, clientProjects, selectedProject, state } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const clientPendingRequests = (state.requests ?? []).filter((request) =>
+    ["PENDING_REVIEW", "INFO_REQUESTED"].includes(request.status),
+  );
   const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
 
   if (!clientProjects.length) {
@@ -918,7 +978,7 @@ export function ClientApprovals() {
 export function ClientPayments() {
   const { selectedProject } = useApp();
   const [paymentId, setPaymentId] = useState<string | null>(null);
-  const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
+const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
 
   if (!selectedProject) {
     return (
