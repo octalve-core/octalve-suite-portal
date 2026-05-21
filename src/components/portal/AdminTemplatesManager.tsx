@@ -65,12 +65,25 @@ export function AdminTemplatesManager() {
       state.templates.some((template) => template.packageType === item.type),
     ).length;
   }, [state.templates]);
+  const missingCatalogItems = useMemo(() => {
+    const existingTypes = new Set(
+      state.templates.map((template) => template.packageType),
+    );
 
-  
-  const canSyncDefaultTemplates = process.env.NODE_ENV !== "production";
-async function syncDefaultTemplates() {
+    return PACKAGE_CATALOG.filter((item) => !existingTypes.has(item.type));
+  }, [state.templates]);
+
+  const canCreateMissingTemplates = missingCatalogItems.length > 0;
+
+  async function createMissingOfficialTemplates() {
+    if (!missingCatalogItems.length) {
+      setNotice("All official Octalve package templates are already admin-managed.");
+      setError("");
+      return;
+    }
+
     const ok = window.confirm(
-      "Sync the official Octalve package workflows? This will create missing templates and update existing package templates with the latest phases and deliverables.",
+      `Create ${missingCatalogItems.length} missing official Octalve template${missingCatalogItems.length === 1 ? "" : "s"}? Existing templates will not be changed.`,
     );
 
     if (!ok) return;
@@ -80,27 +93,19 @@ async function syncDefaultTemplates() {
     setError("");
 
     try {
-      for (const item of PACKAGE_CATALOG) {
-        const existing = state.templates.find(
-          (template) => template.packageType === item.type,
-        );
-
-        const payload = catalogPayload(item);
-
-        if (existing) {
-          await updateTemplate(existing.id, payload as any);
-        } else {
-          await createTemplate(payload as any);
-        }
+      for (const item of missingCatalogItems) {
+        await createTemplate(catalogPayload(item) as any);
       }
 
       await refresh();
-      setNotice("Official Octalve package templates synced successfully.");
+      setNotice(
+        `${missingCatalogItems.length} missing official template${missingCatalogItems.length === 1 ? "" : "s"} created successfully. Existing templates were not overwritten.`,
+      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Could not sync default templates.",
+          : "Could not create missing official templates.",
       );
     } finally {
       setLoadingAction(null);
@@ -191,16 +196,16 @@ async function syncDefaultTemplates() {
             </div>
 
             <div className="flex flex-wrap gap-3 lg:justify-end">
-              {canSyncDefaultTemplates ? (
+              {canCreateMissingTemplates ? (
 
                 <Button type="button"
                 variant="secondary"
                 loading={loadingAction === "sync"}
-                onClick={syncDefaultTemplates}
+                onClick={createMissingOfficialTemplates}
                 className="bg-white text-[#E61525]"
               >
 <RefreshCw size={16} />
-                Sync Default Templates
+                Create Missing Templates
 
                 </Button>
 
@@ -387,17 +392,17 @@ async function syncDefaultTemplates() {
                   No templates yet
                 </h3>
                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-                  Sync the official Octalve templates or create a custom delivery workflow.
+                  Create the missing official Octalve templates or add a custom delivery workflow.
                 </p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  {canSyncDefaultTemplates ? (
+                  {canCreateMissingTemplates ? (
 
                     <Button variant="secondary"
                     loading={loadingAction === "sync"}
-                    onClick={syncDefaultTemplates}
+                    onClick={createMissingOfficialTemplates}
                   >
 <RefreshCw size={16} />
-                    Sync Default Templates
+                    Create Missing Templates
 
                     </Button>
 
