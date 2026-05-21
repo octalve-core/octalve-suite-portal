@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolvePaymentBankDetails } from "@/lib/payment-bank";
-import { getSessionOrThrow, requireRoles, errorResponse, makeProjectCode, makePaymentRef } from "@/lib/api-helpers";
+import {
+  getSessionOrThrow,
+  requireRoles,
+  errorResponse,
+  makeProjectCode,
+  makePaymentRef,
+} from "@/lib/api-helpers";
 import type { Prisma } from "@prisma/client";
 
 const projectIncludes = {
+  template: {
+    select: {
+      id: true,
+      name: true,
+      packageType: true,
+      category: true,
+      color: true,
+      iconKey: true,
+      sortOrder: true,
+      isOfficial: true,
+      isActive: true,
+      description: true,
+    },
+  },
   phases: {
     orderBy: { phaseNumber: "asc" as const },
     include: {
@@ -42,7 +62,6 @@ export async function GET() {
       };
       break;
     case "SUPER_ADMIN":
-      // No filter — all projects
       break;
   }
 
@@ -56,12 +75,13 @@ export async function GET() {
 }
 
 /**
- * POST /api/projects — Admin creates a project from a template.
+ * POST /api/projects — Admin creates a project from an active template.
  * Role: SUPER_ADMIN only.
  */
 export async function POST(request: Request) {
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
@@ -83,35 +103,35 @@ export async function POST(request: Request) {
   if (!title?.trim()) return errorResponse("Project title is required", 400);
   if (!clientEmail?.trim()) return errorResponse("Client email is required", 400);
 
-  // Find template
+  const templateInclude = {
+    phases: {
+      orderBy: { order: "asc" as const },
+      include: { deliverables: { orderBy: { order: "asc" as const } } },
+    },
+  };
+
   const template = templateId
-    ? await prisma.projectTemplate.findUnique({
-        where: { id: templateId },
-        include: {
-          phases: {
-            orderBy: { order: "asc" },
-            include: { deliverables: { orderBy: { order: "asc" } } },
-          },
-        },
+    ? await prisma.projectTemplate.findFirst({
+        where: { id: templateId, isActive: true },
+        include: templateInclude,
       })
     : await prisma.projectTemplate.findFirst({
         where: { packageType: packageType ?? "Launch", isActive: true },
-        include: {
-          phases: {
-            orderBy: { order: "asc" },
-            include: { deliverables: { orderBy: { order: "asc" } } },
-          },
-        },
+        include: templateInclude,
       });
 
-  if (!template) return errorResponse("Template not found", 400);
+  if (!template) {
+    return errorResponse("Active template not found. Please choose another template.", 400);
+  }
 
   const code = makeProjectCode();
   const paymentBank = resolvePaymentBankDetails();
 
   const project = await prisma.$transaction(async (tx) => {
-    // Find or create client user
-    let client = await tx.user.findUnique({ where: { email: clientEmail.toLowerCase() } });
+    let client = await tx.user.findUnique({
+      where: { email: clientEmail.toLowerCase() },
+    });
+
     if (!client) {
       client = await tx.user.create({
         data: {
@@ -123,14 +143,14 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create project
     const proj = await tx.project.create({
       data: {
         clientId: client.id,
+        templateId: template.id,
         title: title.trim(),
         businessName: clientName ?? client.company ?? client.name,
         clientEmail: client.email,
-        packageType: packageType ?? template.packageType,
+        packageType: template.packageType,
         status: "APPROVED_AWAITING_DEPOSIT",
         targetDate: targetDate ? new Date(targetDate) : null,
         projectCode: code,
@@ -142,19 +162,19 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create phases with deliverables
     for (let i = 0; i < template.phases.length; i++) {
       const tPhase = template.phases[i];
+
       await tx.projectPhase.create({
         data: {
           projectId: proj.id,
           phaseNumber: i + 1,
           title: tPhase.title,
           description: tPhase.description ?? "",
-          status: "LOCKED",
+          status: i === 0 ? "NOT_STARTED" : "LOCKED",
           deliverables: {
-            create: tPhase.deliverables.map((d) => ({
-              name: d.name,
+            create: tPhase.deliverables.map((deliverable) => ({
+              name: deliverable.name,
               status: "DRAFT",
               visibleToClient: false,
             })),
@@ -163,7 +183,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create payments
     await tx.projectPayment.createMany({
       data: [
         {

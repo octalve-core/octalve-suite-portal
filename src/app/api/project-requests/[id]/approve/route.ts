@@ -147,6 +147,7 @@ export async function POST(request: Request, { params }: Params) {
     const proj = await tx.project.create({
       data: {
         clientId: projectRequest.clientId,
+        templateId: template.id,
         title: projectRequest.projectName,
         businessName: projectRequest.businessName,
         clientEmail: projectRequest.client.email,
