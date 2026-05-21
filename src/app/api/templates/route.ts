@@ -2,9 +2,34 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 import type { PackageType } from "@/lib/types";
+import { getPackageCatalogItem } from "@/components/portal/packageCatalog";
+
+function serializeTemplate(template: any) {
+  const catalog = getPackageCatalogItem(template.packageType);
+
+  return {
+    id: template.id,
+    name: template.name,
+    packageType: template.packageType as PackageType,
+    slug: template.slug ?? null,
+    category: template.category || catalog.category || "Custom",
+    color: template.color || catalog.color || "#5300D9",
+    iconKey: template.iconKey || template.packageType || "layers",
+    sortOrder: template.sortOrder ?? 999,
+    isOfficial: template.isOfficial ?? false,
+    isActive: template.isActive ?? true,
+    description: template.description,
+    phases: (template.phases ?? []).map((phase: any) => ({
+      id: phase.id,
+      title: phase.title,
+      description: phase.description ?? "",
+      deliverables: (phase.deliverables ?? []).map((deliverable: any) => deliverable.name),
+    })),
+  };
+}
 
 /**
- * GET /api/templates — List all active templates with phases flattened for the frontend.
+ * GET /api/templates — List active database-managed templates only.
  */
 export async function GET() {
   const result = await getSessionOrThrow();
@@ -18,57 +43,74 @@ export async function GET() {
         include: { deliverables: { orderBy: { order: "asc" } } },
       },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: [
+      { sortOrder: "asc" },
+      { createdAt: "asc" },
+    ],
   });
 
-  // Flatten TemplateDeliverable[] into string[] for the frontend
-  const mapped = templates.map((t) => ({
-    id: t.id,
-    name: t.name,
-    packageType: t.packageType as PackageType,
-    description: t.description,
-    phases: t.phases.map((p) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description ?? "",
-      deliverables: p.deliverables.map((d) => d.name),
-    })),
-  }));
-
-  return NextResponse.json(mapped);
+  return NextResponse.json(templates.map(serializeTemplate));
 }
 
 /**
- * POST /api/templates — Create a new template with phases and deliverables.
+ * POST /api/templates — Create a database-managed template.
  * Role: SUPER_ADMIN only.
  */
 export async function POST(request: Request) {
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
   const body = await request.json();
-  const { name, packageType, description, phases } = body;
+  const {
+    name,
+    packageType,
+    slug,
+    category,
+    color,
+    iconKey,
+    sortOrder,
+    isOfficial,
+    isActive,
+    description,
+    phases,
+  } = body;
 
   if (!name?.trim()) return errorResponse("Template name is required", 400);
+
+  const catalog = getPackageCatalogItem(packageType ?? "Custom");
 
   const template = await prisma.projectTemplate.create({
     data: {
       name: name.trim(),
-      packageType: packageType ?? "Launch",
-      description: description ?? "",
+      packageType: packageType ?? "Custom",
+      slug: slug?.trim() || null,
+      category: category?.trim() || catalog.category || "Custom",
+      color: color?.trim() || catalog.color || "#5300D9",
+      iconKey: iconKey?.trim() || packageType || "layers",
+      sortOrder: Number.isFinite(Number(sortOrder)) ? Number(sortOrder) : 999,
+      isOfficial: Boolean(isOfficial),
+      isActive: isActive === false ? false : true,
+      description: description?.trim() ?? "",
       phases: {
         create: (phases ?? []).map(
-          (phase: { title: string; description?: string; deliverables?: string[] }, index: number) => ({
+          (
+            phase: { title: string; description?: string; deliverables?: string[] },
+            index: number,
+          ) => ({
             order: index + 1,
-            title: phase.title,
-            description: phase.description ?? "",
+            title: phase.title?.trim() || `Phase ${index + 1}`,
+            description: phase.description?.trim() ?? "",
             deliverables: {
-              create: (phase.deliverables ?? []).map((delName: string, dIdx: number) => ({
-                name: delName,
-                order: dIdx + 1,
-              })),
+              create: (phase.deliverables ?? [])
+                .map((deliverable: string) => deliverable.trim())
+                .filter(Boolean)
+                .map((deliverable: string, deliverableIndex: number) => ({
+                  name: deliverable,
+                  order: deliverableIndex + 1,
+                })),
             },
           }),
         ),
@@ -82,19 +124,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json(
-    {
-      id: template.id,
-      name: template.name,
-      packageType: template.packageType,
-      description: template.description,
-      phases: template.phases.map((p) => ({
-        id: p.id,
-        title: p.title,
-        description: p.description ?? "",
-        deliverables: p.deliverables.map((d) => d.name),
-      })),
-    },
-    { status: 201 },
-  );
+  return NextResponse.json(serializeTemplate(template), { status: 201 });
 }

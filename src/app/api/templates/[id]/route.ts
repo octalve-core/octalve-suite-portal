@@ -2,14 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 import type { PackageType } from "@/lib/types";
+import { getPackageCatalogItem } from "@/components/portal/packageCatalog";
 
 type Params = { params: Promise<{ id: string }> };
 
 function serializeTemplate(template: any) {
+  const catalog = getPackageCatalogItem(template.packageType);
+
   return {
     id: template.id,
     name: template.name,
     packageType: template.packageType as PackageType,
+    slug: template.slug ?? null,
+    category: template.category || catalog.category || "Custom",
+    color: template.color || catalog.color || "#5300D9",
+    iconKey: template.iconKey || template.packageType || "layers",
+    sortOrder: template.sortOrder ?? 999,
+    isOfficial: template.isOfficial ?? false,
+    isActive: template.isActive ?? true,
     description: template.description,
     phases: (template.phases ?? []).map((phase: any) => ({
       id: phase.id,
@@ -28,7 +38,19 @@ async function updateTemplateRecord(request: Request, id: string) {
   if (forbidden) return forbidden;
 
   const body = await request.json();
-  const { name, packageType, description, phases } = body;
+  const {
+    name,
+    packageType,
+    slug,
+    category,
+    color,
+    iconKey,
+    sortOrder,
+    isOfficial,
+    isActive,
+    description,
+    phases,
+  } = body;
 
   if (!name?.trim()) return errorResponse("Template name is required", 400);
 
@@ -39,6 +61,8 @@ async function updateTemplateRecord(request: Request, id: string) {
 
   if (!exists) return errorResponse("Template not found", 404);
 
+  const catalog = getPackageCatalogItem(packageType ?? "Custom");
+
   const updated = await prisma.$transaction(async (tx) => {
     await tx.templatePhase.deleteMany({
       where: { templateId: id },
@@ -48,9 +72,15 @@ async function updateTemplateRecord(request: Request, id: string) {
       where: { id },
       data: {
         name: name.trim(),
-        packageType: packageType ?? "Launch",
+        packageType: packageType ?? "Custom",
+        slug: slug?.trim() || null,
+        category: category?.trim() || catalog.category || "Custom",
+        color: color?.trim() || catalog.color || "#5300D9",
+        iconKey: iconKey?.trim() || packageType || "layers",
+        sortOrder: Number.isFinite(Number(sortOrder)) ? Number(sortOrder) : 999,
+        isOfficial: Boolean(isOfficial),
+        isActive: isActive === false ? false : true,
         description: description?.trim() ?? "",
-        isActive: true,
       },
     });
 

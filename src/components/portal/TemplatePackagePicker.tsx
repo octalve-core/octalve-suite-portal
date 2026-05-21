@@ -11,6 +11,7 @@ import {
   Handshake,
   HeartHandshake,
   Landmark,
+  Layers3,
   LayoutList,
   MonitorSmartphone,
   Palette,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 
 import type { PackageType, ProjectTemplate } from "@/lib/types";
-import { PACKAGE_CATALOG, getPackageCatalogItem } from "./packageCatalog";
+import { getPackageCatalogItem } from "./packageCatalog";
 
 export type TemplatePickerLayout = "grid" | "compact" | "list";
 export type TemplatePickerRole = "client" | "admin" | "staff";
@@ -33,8 +34,9 @@ export type TemplatePickerOption = {
   description: string;
   category: string;
   color: string;
-  template: ProjectTemplate | null;
-  isLiveTemplate: boolean;
+  iconKey: string;
+  template: ProjectTemplate;
+  isLiveTemplate: true;
 };
 
 export const OCTALVE_COLORS = {
@@ -51,7 +53,7 @@ export const OCTALVE_COLORS = {
   muted: "#64748B",
 } as const;
 
-const packageIcons: Record<PackageType, ReactNode> = {
+const packageIcons: Record<string, ReactNode> = {
   Launch: <Rocket size={21} />,
   Impact: <HeartHandshake size={21} />,
   Growth: <TrendingUp size={21} />,
@@ -64,6 +66,18 @@ const packageIcons: Record<PackageType, ReactNode> = {
   BrandingAdvance: <Gem size={21} />,
   LeapRegistration: <Landmark size={21} />,
   Custom: <SlidersHorizontal size={21} />,
+
+  rocket: <Rocket size={21} />,
+  impact: <HeartHandshake size={21} />,
+  growth: <TrendingUp size={21} />,
+  partner: <Handshake size={21} />,
+  website: <Globe2 size={21} />,
+  code: <Code2 size={21} />,
+  branding: <Palette size={21} />,
+  premium: <Gem size={21} />,
+  compliance: <Landmark size={21} />,
+  custom: <SlidersHorizontal size={21} />,
+  layers: <Layers3 size={21} />,
 };
 
 const roleAccent: Record<TemplatePickerRole, string> = {
@@ -82,55 +96,48 @@ const layoutOptions: Array<{
   { key: "list", label: "List", icon: <LayoutList size={14} /> },
 ];
 
+function templateSortValue(template: ProjectTemplate) {
+  return typeof template.sortOrder === "number" ? template.sortOrder : 999;
+}
+
+function resolveTemplateIcon(option: TemplatePickerOption) {
+  return packageIcons[option.iconKey] ?? packageIcons[option.type] ?? packageIcons.layers;
+}
+
 export function getTemplatePackageOptions(
   templates: ProjectTemplate[],
 ): TemplatePickerOption[] {
-  const liveOptions = templates.map((template) => {
-    const catalog = getPackageCatalogItem(template.packageType);
+  return [...templates]
+    .filter((template) => template.isActive !== false)
+    .sort((a, b) => {
+      const orderDiff = templateSortValue(a) - templateSortValue(b);
+      if (orderDiff !== 0) return orderDiff;
+      return a.name.localeCompare(b.name);
+    })
+    .map((template) => {
+      const catalog = getPackageCatalogItem(template.packageType);
 
-    return {
-      id: template.id,
-      type: template.packageType,
-      title: template.name || catalog.title,
-      description: template.description || catalog.description,
-      category: catalog.category,
-      color: catalog.color,
-      template,
-      isLiveTemplate: true,
-    };
-  });
-
-  const livePackageTypes = new Set(templates.map((template) => template.packageType));
-
-  const fallbackOptions = PACKAGE_CATALOG.filter((item) => !livePackageTypes.has(item.type)).map(
-    (item) => ({
-      id: `catalog-${item.type}`,
-      type: item.type,
-      title: item.title,
-      description: item.description,
-      category: item.category,
-      color: item.color,
-      template: null,
-      isLiveTemplate: false,
-    }),
-  );
-
-  return [...liveOptions, ...fallbackOptions];
+      return {
+        id: template.id,
+        type: template.packageType,
+        title: template.name,
+        description: template.description || catalog.description,
+        category: template.category || catalog.category || "Custom",
+        color: template.color || catalog.color || OCTALVE_COLORS.blue,
+        iconKey: template.iconKey || template.packageType || "layers",
+        template,
+        isLiveTemplate: true,
+      };
+    });
 }
+
 function getPhaseCount(option: TemplatePickerOption) {
-  return option.template?.phases?.length ?? getPackageCatalogItem(option.type).phases.length;
+  return option.template.phases?.length ?? 0;
 }
 
 function getDeliverableCount(option: TemplatePickerOption) {
-  if (option.template?.phases?.length) {
-    return option.template.phases.reduce(
-      (total, phase) => total + (phase.deliverables?.length ?? 0),
-      0,
-    );
-  }
-
-  return getPackageCatalogItem(option.type).phases.reduce(
-    (total, phase) => total + phase.deliverables.length,
+  return (option.template.phases ?? []).reduce(
+    (total, phase) => total + (phase.deliverables?.length ?? 0),
     0,
   );
 }
@@ -178,7 +185,7 @@ export function TemplatePackagePicker({
           </p>
         </div>
 
-        {showLayoutSwitch && onLayoutChange ? (
+        {showLayoutSwitch && onLayoutChange && options.length ? (
           <div className="inline-flex rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             {layoutOptions.map((option) => {
               const active = layout === option.key;
@@ -203,84 +210,96 @@ export function TemplatePackagePicker({
         ) : null}
       </div>
 
-      <div className={`grid gap-4 ${gridClass}`}>
-        {options.map((option) => {
-          const selected = selectedId === option.id;
-          const phases = getPhaseCount(option);
-          const deliverables = getDeliverableCount(option);
+      {!options.length ? (
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-[#0064E0]">
+            <Layers3 size={20} />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold tracking-[-0.035em] text-slate-950">
+            No admin-managed templates available
+          </h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
+            Templates must be created by admin before they appear here. No fallback package is shown in production.
+          </p>
+        </div>
+      ) : (
+        <div className={`grid gap-4 ${gridClass}`}>
+          {options.map((option) => {
+            const selected = selectedId === option.id;
+            const phases = getPhaseCount(option);
+            const deliverables = getDeliverableCount(option);
 
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onSelect(option)}
-              className={[
-                "group relative w-full rounded-3xl border bg-white p-5 text-left transition",
-                "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
-                layout === "list"
-                  ? "grid min-h-29.5 grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
-                  : "min-h-41.5",
-              ].join(" ")}
-              style={{
-                borderColor: selected ? option.color : OCTALVE_COLORS.border,
-                boxShadow: selected
-                  ? `0 0 0 4px ${option.color}22, 0 20px 45px rgba(15,23,42,0.09)`
-                  : undefined,
-              }}
-            >
-              <span
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSelect(option)}
+                className={[
+                  "group relative w-full rounded-3xl border bg-white p-5 text-left transition",
+                  "shadow-[0_14px_34px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(15,23,42,0.09)]",
+                  layout === "list"
+                    ? "grid min-h-29.5 grid-cols-[auto,minmax(0,1fr),auto] items-center gap-5"
+                    : "min-h-41.5",
+                ].join(" ")}
                 style={{
-                  backgroundColor: `${option.color}14`,
-                  color: option.color,
+                  borderColor: selected ? option.color : OCTALVE_COLORS.border,
+                  boxShadow: selected
+                    ? `0 0 0 4px ${option.color}22, 0 20px 45px rgba(15,23,42,0.09)`
+                    : undefined,
                 }}
               >
-                {packageIcons[option.type]}
-              </span>
-
-              <span className={layout === "list" ? "block" : "mt-5 block"}>
                 <span
-                  className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl"
                   style={{
                     backgroundColor: `${option.color}14`,
                     color: option.color,
                   }}
                 >
-                  {option.category}
+                  {resolveTemplateIcon(option)}
                 </span>
 
-                <span className="block text-[17px] font-semibold tracking-[-0.03em] text-slate-950">
-                  {option.title}
-                </span>
+                <span className={layout === "list" ? "block" : "mt-5 block"}>
+                  <span
+                    className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
+                    style={{
+                      backgroundColor: `${option.color}14`,
+                      color: option.color,
+                    }}
+                  >
+                    {option.category}
+                  </span>
 
-                <span className="mt-2 block max-w-160 text-sm leading-6 text-slate-600">
-                  {option.description}
-                </span>
+                  <span className="block text-[17px] font-semibold tracking-[-0.03em] text-slate-950">
+                    {option.title}
+                  </span>
 
-                <span className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                  <span>{phases} phases</span>
-                  <span>{deliverables} deliverables</span>
-                  <span>
-                    {option.isLiveTemplate ? "Admin-managed" : "Default fallback"}
+                  <span className="mt-2 block max-w-160 text-sm leading-6 text-slate-600">
+                    {option.description}
+                  </span>
+
+                  <span className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                    <span>{phases} phases</span>
+                    <span>{deliverables} deliverables</span>
+                    <span>Admin-managed</span>
                   </span>
                 </span>
-              </span>
 
-              {selected ? (
-                <span
-                  className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full"
-                  style={{
-                    backgroundColor: `${option.color}14`,
-                    color: option.color,
-                  }}
-                >
-                  <CheckCircle2 size={18} />
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+                {selected ? (
+                  <span
+                    className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full"
+                    style={{
+                      backgroundColor: `${option.color}14`,
+                      color: option.color,
+                    }}
+                  >
+                    <CheckCircle2 size={18} />
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

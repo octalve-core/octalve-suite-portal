@@ -47,6 +47,16 @@ export type ProjectTemplate = {
   id: string;
   name: string;
   packageType: PackageType;
+
+  // Dynamic database-managed display/configuration fields.
+  slug?: string;
+  category?: string;
+  color?: string;
+  iconKey?: string;
+  sortOrder?: number;
+  isOfficial?: boolean;
+  isActive?: boolean;
+
   description: string;
   phases: TemplatePhase[];
 };

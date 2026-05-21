@@ -158,7 +158,17 @@ model Verification {
 model ProjectTemplate {
   id          String          @id @default(cuid())
   name        String
-  packageType PackageType
+  packageType PackageType     @default(Custom)
+
+  // Dynamic display/configuration fields.
+  // These make templates database-managed instead of catalog-dependent.
+  slug        String?
+  category    String          @default("Custom")
+  color       String          @default("#5300D9")
+  iconKey     String          @default("layers")
+  sortOrder   Int             @default(0)
+  isOfficial  Boolean         @default(false)
+
   description String
   isActive    Boolean         @default(true)
   phases      TemplatePhase[]

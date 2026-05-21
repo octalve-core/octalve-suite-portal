@@ -18,9 +18,17 @@ import { useApp } from "./AppContext";
 import { Badge, Button, Card } from "./UI";
 
 function catalogPayload(item: (typeof PACKAGE_CATALOG)[number]) {
+  const order = PACKAGE_CATALOG.findIndex((catalogItem) => catalogItem.type === item.type);
+
   return {
     name: item.title,
     packageType: item.type,
+    slug: item.type,
+    category: item.category,
+    color: item.color,
+    iconKey: item.type,
+    sortOrder: order >= 0 ? order + 1 : 999,
+    isOfficial: true,
     description: item.description,
     phases: item.phases.map((phase) => ({
       title: phase.title,

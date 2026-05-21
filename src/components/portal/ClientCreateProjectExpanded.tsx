@@ -217,11 +217,8 @@ export function ClientCreateProjectExpanded() {
       });
     }
 
-    return getPackagePhases(packageType).map((phase, index) => ({
-      id: `${packageType}-${index}`,
-      ...phase,
-    }));
-  }, [packageType, selectedPackage.phases, template]);
+    return [];
+  }, [selectedPackage.phases, template]);
 
   const aiPackage = useMemo(
     () => recommendPackageLocal(`${form.projectGoal} ${form.projectDescription}`),
@@ -256,6 +253,10 @@ export function ClientCreateProjectExpanded() {
   }, [draftHydrated, step, layoutMode, selectedTemplateId, packageType, form]);
   function validateStep(targetStep = step) {
     if (targetStep !== 2 && targetStep !== 3) return "";
+
+    if (!selectedOption?.template || !selectedTemplateId) {
+      return "Select an admin-managed project template.";
+    }
 
     if (!form.projectName.trim()) return "Project name is required.";
     if (!form.businessName.trim()) return "Business or brand name is required.";
@@ -446,10 +447,10 @@ export function ClientCreateProjectExpanded() {
                       Selected Template
                     </Badge>
                     <h3 className="mt-3 text-xl font-semibold tracking-[-0.035em] text-slate-950">
-                      {template?.name || selectedOption?.title || selectedPackage.title}
+                      {template?.name || selectedOption?.title || "No admin-managed template selected"}
                     </h3>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                      {template?.description || selectedOption?.description || selectedPackage.description}
+                      {template?.description || selectedOption?.description || "Create or select an admin-managed template before submitting this request."}
                     </p>
                   </div>
 
@@ -613,7 +614,7 @@ export function ClientCreateProjectExpanded() {
             <Card className="card-body stack">
               <div className="timeline-row">
                 <span>Selected Template</span>
-                <strong>{selectedOption?.title || getPackageTitle(packageType)}</strong>
+                <strong>{selectedOption?.title || "No template selected"}</strong>
               </div>
 
               <div className="timeline-row">
