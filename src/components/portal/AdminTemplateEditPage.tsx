@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Copy,
@@ -146,9 +146,10 @@ function formToPayload(form: TemplateForm) {
 
 export function AdminTemplateEditPage() {
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
   const templateId = getTemplateIdParam(params?.templateId);
-  const isNewTemplate = templateId === "new";
+  const isNewTemplate = templateId === "new" || pathname.endsWith("/admin/templates/new") || pathname.endsWith("/templates/new");
 
   const { state, createTemplate, updateTemplate, refresh } = useApp();
 
