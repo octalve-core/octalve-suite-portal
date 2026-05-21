@@ -95,6 +95,8 @@ function normalizeDeliverables(items: unknown): PackageDeliverable[] {
   });
 }
 
+const CLIENT_PROJECT_REQUEST_DRAFT_KEY = "octalve-client-project-request-draft-v1";
+
 export function ClientCreateProjectExpanded() {
   const { state, createProjectRequest } = useApp();
 
@@ -115,6 +117,55 @@ export function ClientCreateProjectExpanded() {
     additionalNotes: "",
   });
 
+
+  
+  const [draftHydrated, setDraftHydrated] = useState(false);
+// Restore saved client project request draft once on mount.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CLIENT_PROJECT_REQUEST_DRAFT_KEY);
+
+      if (!raw) {
+        setDraftHydrated(true);
+        return;
+      }
+
+      const draft = JSON.parse(raw) as {
+        step?: number;
+        layoutMode?: TemplatePickerLayout;
+        selectedTemplateId?: string;
+        packageType?: PackageType;
+        form?: Partial<typeof form>;
+      };
+
+      if (draft.step && draft.step >= 1 && draft.step <= 3) {
+        setStep(draft.step);
+      }
+
+      if (draft.layoutMode) {
+        setLayoutMode(draft.layoutMode);
+      }
+
+      if (draft.selectedTemplateId) {
+        setSelectedTemplateId(draft.selectedTemplateId);
+      }
+
+      if (draft.packageType) {
+        setPackageType(draft.packageType);
+      }
+
+      if (draft.form && typeof draft.form === "object") {
+        setForm((current) => ({
+          ...current,
+          ...draft.form,
+        }));
+      }
+    } catch {
+      window.localStorage.removeItem(CLIENT_PROJECT_REQUEST_DRAFT_KEY);
+    } finally {
+      setDraftHydrated(true);
+    }
+  }, []);
   const packageOptions = useMemo(
     () => getTemplatePackageOptions(state.templates),
     [state.templates],
@@ -133,11 +184,13 @@ export function ClientCreateProjectExpanded() {
     null;
 
   useEffect(() => {
+    if (!draftHydrated) return;
+
     if (!selectedTemplateId && packageOptions[0]) {
       setSelectedTemplateId(packageOptions[0].id);
       setPackageType(packageOptions[0].type);
     }
-  }, [packageOptions, selectedTemplateId]);
+  }, [draftHydrated, packageOptions, selectedTemplateId]);
 
   function selectTemplate(option: TemplatePickerOption) {
     setSelectedTemplateId(option.id);
@@ -182,6 +235,25 @@ export function ClientCreateProjectExpanded() {
     .filter(Boolean)
     .join(" | ");
 
+
+  // Save client project request draft so tab/page changes do not restart the wizard.
+  useEffect(() => {
+    if (!draftHydrated) return;
+
+    try {
+      window.localStorage.setItem(
+        CLIENT_PROJECT_REQUEST_DRAFT_KEY,
+        JSON.stringify({
+          step,
+          layoutMode,
+          selectedTemplateId,
+          packageType,
+          form,
+          updatedAt: new Date().toISOString(),
+        }),
+      );
+    } catch {}
+  }, [draftHydrated, step, layoutMode, selectedTemplateId, packageType, form]);
   function validateStep(targetStep = step) {
     if (targetStep !== 2 && targetStep !== 3) return "";
 
@@ -284,6 +356,10 @@ export function ClientCreateProjectExpanded() {
           .join("\n\n"),
         packageType,
       });
+
+      try {
+        window.localStorage.removeItem(CLIENT_PROJECT_REQUEST_DRAFT_KEY);
+      } catch {}
 
       window.location.href = "/client/projects";
     } catch (error) {
