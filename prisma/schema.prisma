@@ -338,7 +338,7 @@ model ProjectPayment {
 
   // Provider/payment automation fields. Provider remains String so future gateways do not force enum churn.
   provider            String        @default("MANUAL_BANK")
-  gatewayReference    String?       @unique
+  gatewayReference    String?
   providerReference   String?
   paidVia             String?
   confirmedSource     String?
@@ -351,6 +351,7 @@ model ProjectPayment {
 
   @@index([projectId])
   @@index([provider])
+  @@index([gatewayReference])
   @@index([status, type])
 }
 
