@@ -38,7 +38,7 @@ type AppContextValue = {
   setSelectedProjectId: (id: string) => void;
   resetDemo: () => void;
   createProjectRequest: (
-    payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">,
+    payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt" | "template">,
   ) => Promise<string>;
   approveProjectRequest: (
     requestId: string,
@@ -267,7 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // ------- Mutations -------
 
   async function createProjectRequest(
-    payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">,
+    payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt" | "template">,
   ) {
     const res = await api.projectRequests.create(payload);
     await syncPortalData();

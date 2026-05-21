@@ -244,7 +244,8 @@ export function ClientCreateProjectExpanded() {
           step,
           layoutMode,
           selectedTemplateId,
-          packageType,
+          templateId: selectedTemplateId,
+        packageType: template?.packageType ?? packageType,
           form,
           updatedAt: new Date().toISOString(),
         }),
@@ -355,7 +356,8 @@ export function ClientCreateProjectExpanded() {
         ]
           .filter(Boolean)
           .join("\n\n"),
-        packageType,
+        templateId: selectedTemplateId,
+        packageType: template?.packageType ?? packageType,
       });
 
       try {

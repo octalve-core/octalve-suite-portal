@@ -138,6 +138,8 @@ export type Project = {
 export type ProjectRequest = {
   id: string;
   clientId: string;
+  templateId?: string;
+  template?: ProjectTemplate | null;
   packageType: PackageType;
   projectName: string;
   businessName: string;

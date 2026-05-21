@@ -172,6 +172,7 @@ model ProjectTemplate {
   description String
   isActive    Boolean         @default(true)
   phases      TemplatePhase[]
+  requests    ProjectRequest[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
@@ -198,6 +199,8 @@ model ProjectRequest {
   id                  String               @id @default(cuid())
   clientId            String
   client              User                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  templateId          String?
+  template            ProjectTemplate?      @relation(fields: [templateId], references: [id], onDelete: SetNull)
   packageType         PackageType
   projectName         String
   businessName        String
@@ -214,6 +217,7 @@ model ProjectRequest {
   project             Project?
 
   @@index([clientId])
+  @@index([templateId])
   @@index([status])
 }
 

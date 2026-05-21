@@ -22,6 +22,20 @@ export async function GET() {
     where: role === "CLIENT" ? { clientId: user.id } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
+      template: {
+        select: {
+          id: true,
+          name: true,
+          packageType: true,
+          category: true,
+          color: true,
+          iconKey: true,
+          sortOrder: true,
+          isOfficial: true,
+          isActive: true,
+          description: true,
+        },
+      },
       client: {
         select: {
           id: true,
@@ -39,6 +53,10 @@ export async function GET() {
 /**
  * POST /api/project-requests — Submit a new project request.
  * Role: CLIENT.
+ *
+ * Production rule:
+ * - Client must submit a real active database templateId.
+ * - packageType is derived from that template, not trusted from frontend.
  */
 export async function POST(request: Request) {
   const result = await getSessionOrThrow();
@@ -49,7 +67,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const {
-    packageType,
+    templateId,
     projectName,
     businessName,
     phone,
@@ -59,14 +77,32 @@ export async function POST(request: Request) {
     additionalNotes,
   } = body;
 
+  if (!templateId?.trim()) return errorResponse("Select an active project template", 400);
   if (!projectName?.trim()) return errorResponse("Project name is required", 400);
   if (!businessName?.trim()) return errorResponse("Business name is required", 400);
   if (!projectGoal?.trim()) return errorResponse("Project goal is required", 400);
 
+  const template = await prisma.projectTemplate.findFirst({
+    where: {
+      id: templateId.trim(),
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      packageType: true,
+    },
+  });
+
+  if (!template) {
+    return errorResponse("Selected template is no longer available. Please choose another template.", 400);
+  }
+
   const created = await prisma.projectRequest.create({
     data: {
       clientId: result.user.id,
-      packageType: packageType ?? "Launch",
+      templateId: template.id,
+      packageType: template.packageType,
       projectName: projectName.trim(),
       businessName: businessName.trim(),
       phone: phone?.trim() || null,
@@ -77,6 +113,20 @@ export async function POST(request: Request) {
       status: "PENDING_REVIEW",
     },
     include: {
+      template: {
+        select: {
+          id: true,
+          name: true,
+          packageType: true,
+          category: true,
+          color: true,
+          iconKey: true,
+          sortOrder: true,
+          isOfficial: true,
+          isActive: true,
+          description: true,
+        },
+      },
       client: {
         select: {
           id: true,
@@ -92,7 +142,7 @@ export async function POST(request: Request) {
     data: {
       role: "SUPER_ADMIN",
       title: "New project request",
-      body: `${created.businessName} submitted a new ${created.packageType} project request.`,
+      body: `${created.businessName} submitted a new ${template.name} project request.`,
       href: `/admin/project-requests/${created.id}`,
     },
   });
