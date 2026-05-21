@@ -85,35 +85,38 @@ const layoutOptions: Array<{
 export function getTemplatePackageOptions(
   templates: ProjectTemplate[],
 ): TemplatePickerOption[] {
-  if (templates.length > 0) {
-    return templates.map((template) => {
-      const catalog = getPackageCatalogItem(template.packageType);
+  const liveOptions = templates.map((template) => {
+    const catalog = getPackageCatalogItem(template.packageType);
 
-      return {
-        id: template.id,
-        type: template.packageType,
-        title: template.name || catalog.title,
-        description: template.description || catalog.description,
-        category: catalog.category,
-        color: catalog.color,
-        template,
-        isLiveTemplate: true,
-      };
-    });
-  }
+    return {
+      id: template.id,
+      type: template.packageType,
+      title: template.name || catalog.title,
+      description: template.description || catalog.description,
+      category: catalog.category,
+      color: catalog.color,
+      template,
+      isLiveTemplate: true,
+    };
+  });
 
-  return PACKAGE_CATALOG.map((item) => ({
-    id: `catalog-${item.type}`,
-    type: item.type,
-    title: item.title,
-    description: item.description,
-    category: item.category,
-    color: item.color,
-    template: null,
-    isLiveTemplate: false,
-  }));
+  const livePackageTypes = new Set(templates.map((template) => template.packageType));
+
+  const fallbackOptions = PACKAGE_CATALOG.filter((item) => !livePackageTypes.has(item.type)).map(
+    (item) => ({
+      id: `catalog-${item.type}`,
+      type: item.type,
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      color: item.color,
+      template: null,
+      isLiveTemplate: false,
+    }),
+  );
+
+  return [...liveOptions, ...fallbackOptions];
 }
-
 function getPhaseCount(option: TemplatePickerOption) {
   return option.template?.phases?.length ?? getPackageCatalogItem(option.type).phases.length;
 }

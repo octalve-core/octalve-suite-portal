@@ -97,12 +97,13 @@ export function AdminTemplateEditPage() {
   const params = useParams();
   const router = useRouter();
   const templateId = getTemplateIdParam(params?.templateId);
+  const isNewTemplate = templateId === "new";
 
-  const { state, updateTemplate, refresh } = useApp();
+  const { state, createTemplate, updateTemplate, refresh } = useApp();
 
   const template = useMemo(
-    () => state.templates.find((item) => item.id === templateId) ?? null,
-    [state.templates, templateId],
+    () => (isNewTemplate ? null : state.templates.find((item) => item.id === templateId) ?? null),
+    [isNewTemplate, state.templates, templateId],
   );
 
   const [form, setForm] = useState<TemplateForm>(() =>
@@ -218,6 +219,14 @@ export function AdminTemplateEditPage() {
     setNotice("");
 
     try {
+      if (isNewTemplate) {
+        const createdTemplateId = await createTemplate(payload as any);
+        await refresh();
+        setNotice("Template created successfully.");
+        router.replace(`/admin/templates/${createdTemplateId}`);
+        return;
+      }
+
       await updateTemplate(templateId, payload as any);
       await refresh();
       setNotice("Template updated successfully.");
@@ -228,7 +237,7 @@ export function AdminTemplateEditPage() {
     }
   }
 
-  if (!template && state.templates.length > 0) {
+  if (!isNewTemplate && !template && state.templates.length > 0) {
     return (
       <div className="content narrow">
         <Card className="border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
@@ -269,7 +278,7 @@ export function AdminTemplateEditPage() {
                   Template editor
                 </Badge>
                 <h1 className="mt-4 max-w-3xl text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[46px]">
-                  Edit project template
+                  {isNewTemplate ? "Create project template" : "Edit project template"}
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/82 sm:text-[15px]">
                   Manage the package type, delivery phases and client-visible deliverables used to structure Octalve projects.
@@ -381,7 +390,7 @@ export function AdminTemplateEditPage() {
                     className="w-full justify-center"
                   >
                     <Save size={16} />
-                    Save template
+                    {isNewTemplate ? "Create template" : "Save template"}
                   </Button>
                 </div>
 

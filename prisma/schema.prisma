@@ -20,6 +20,13 @@ enum PackageType {
   Impact
   Growth
   Partner
+  WebsiteStarter
+  WebsiteProBiz
+  WebsiteAdvance
+  BrandingStarter
+  BrandingProBiz
+  BrandingAdvance
+  LeapRegistration
   Custom
 }
 
