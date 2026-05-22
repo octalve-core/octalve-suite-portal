@@ -72,6 +72,16 @@ export type PaymentMethodOption = {
   unavailableReason?: string;
 };
 
+
+export type PaymentVerifyResponse = {
+  provider: PaymentProvider | (string & {});
+  paymentId: string;
+  paymentReference?: string;
+  transactionReference?: string;
+  status: "CONFIRMED" | "ALREADY_CONFIRMED" | "FAILED" | "PENDING";
+  message: string;
+  projectStatus?: ProjectStatus;
+};
 export type PaymentInitializeResponse = {
   provider: PaymentProvider | (string & {});
   paymentId: string;

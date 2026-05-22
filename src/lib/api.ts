@@ -17,6 +17,7 @@ import type {
   PaymentGatewaySetting,
   PaymentInitializeResponse,
   PaymentMethodOption,
+  PaymentVerifyResponse,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -121,6 +122,8 @@ export const api = {
       fetchJson<PaymentMethodOption[]>(`/api/payments/${id}/methods`),
     initialize: (id: string, provider: string) =>
       post<PaymentInitializeResponse>(`/api/payments/${id}/initialize`, { provider }),
+    verifyPaystack: (data: { reference: string; paymentId?: string }) =>
+      post<PaymentVerifyResponse>("/api/payments/paystack/verify", data),
     markPaid: (id: string) =>
       post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
     confirm: (id: string) =>
