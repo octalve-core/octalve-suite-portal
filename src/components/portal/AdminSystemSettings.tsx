@@ -189,7 +189,7 @@ function GatewayCard({
 }
 
 export function AdminSystemSettings() {
-  const { currentUser, refresh } = useApp();
+  const { refresh } = useApp();
 
   const [form, setForm] = useState<PaymentBankForm>(EMPTY_BANK_FORM);
   const [gateways, setGateways] = useState<PaymentGatewaySetting[]>([]);
@@ -288,24 +288,16 @@ export function AdminSystemSettings() {
   return (
     <div className="content">
       <section className="mb-7 rounded-[30px] bg-[#000A16] px-6 py-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:px-8 lg:px-10">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div>
-            <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white/80">
-              System Configuration
-            </span>
-            <h1 className="mt-4 max-w-3xl text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[46px]">
-              Settings
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/75 sm:text-[15px]">
-              Manage payment bank details, gateway availability and secure payment configuration from one admin page.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
-            <span className="block text-white/55">Signed in as</span>
-            <strong className="mt-1 block text-white">{currentUser?.name ?? "Admin"}</strong>
-            <span className="mt-1 block text-white/60">{currentUser?.email ?? "No email"}</span>
-          </div>
+        <div>
+          <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white/80">
+            System Configuration
+          </span>
+          <h1 className="mt-4 max-w-3xl text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[46px]">
+            Settings
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/75 sm:text-[15px]">
+            Manage payment bank details, gateway availability and secure payment configuration from one admin page.
+          </p>
         </div>
       </section>
 
