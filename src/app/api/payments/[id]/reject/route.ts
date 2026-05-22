@@ -56,7 +56,7 @@ export async function POST(request: Request, { params }: Params) {
         userId: payment.project.clientId,
         title: "Payment rejected",
         body: `Your ${payment.type.toLowerCase()} payment was rejected.${note ? ` Reason: ${note}` : ""}`,
-        href: "/client/payments",
+        href: `/client/payments/${id}`,
       },
     });
   });

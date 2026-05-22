@@ -110,7 +110,7 @@ export async function confirmWalletTopUp(
           role: "SUPER_ADMIN",
           title: "Wallet top-up confirmed",
           body: `A client wallet top-up of ₦${updated.amount.toLocaleString("en-NG")} was confirmed via ${safeProviderLabel(input.provider)}.`,
-          href: "/admin/payments",
+          href: `/admin/wallet/${updated.id}`,
         },
       });
     }

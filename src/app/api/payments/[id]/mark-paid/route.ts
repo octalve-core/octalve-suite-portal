@@ -57,7 +57,7 @@ export async function POST(_request: Request, { params }: Params) {
         role: "SUPER_ADMIN",
         title: "Payment pending confirmation",
         body: `${payment.project.title} — ${payment.type} payment marked as paid.`,
-        href: "/admin/payments",
+        href: `/admin/payments/${id}`,
       },
     });
   });

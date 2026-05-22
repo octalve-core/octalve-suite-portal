@@ -270,7 +270,7 @@ export async function confirmProjectPayment(
         userId: freshPayment.project.clientId,
         title: "Payment confirmed",
         body: `Your ${freshPayment.type.toLowerCase()} payment for ${freshPayment.project.title} has been confirmed.`,
-        href: "/client",
+        href: `/client/payments/${freshPayment.id}`,
       },
     });
 
@@ -282,7 +282,7 @@ export async function confirmProjectPayment(
           role: "SUPER_ADMIN",
           title: "Online payment confirmed",
           body: `${freshPayment.project.title} — ${freshPayment.type} payment was confirmed through ${providerLabel}.`,
-          href: "/admin/payments",
+          href: `/admin/payments/${freshPayment.id}`,
         },
       });
     }
