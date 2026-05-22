@@ -420,8 +420,9 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
           methods.map((method) => {
             const isManual = method.provider === "MANUAL_BANK";
             const available = method.isReady || isManual;
-            const isPaystack = method.provider === "PAYSTACK";
-            const canStartOnline = available && isPaystack;
+            const canStartOnline =
+              available &&
+              (method.provider === "PAYSTACK" || method.provider === "FLUTTERWAVE");
             const isInitializing = initializingProvider === method.provider;
 
             return (

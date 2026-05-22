@@ -8,6 +8,22 @@ import {
 
 type Params = { params: Promise<{ id: string }> };
 
+type GatewayPaymentInput = {
+  id: string;
+  reference: string;
+  amount: number;
+  type: string;
+  projectId: string;
+  project: {
+    id: string;
+    title: string;
+    projectCode: string;
+    clientId: string;
+    clientEmail: string;
+    businessName?: string | null;
+  };
+};
+
 type PaystackInitializeResponse = {
   status: boolean;
   message?: string;
@@ -18,7 +34,16 @@ type PaystackInitializeResponse = {
   };
 };
 
+type FlutterwaveInitializeResponse = {
+  status?: string;
+  message?: string;
+  data?: {
+    link?: string;
+  };
+};
+
 const PAYSTACK_INITIALIZE_URL = "https://api.paystack.co/transaction/initialize";
+const FLUTTERWAVE_INITIALIZE_URL = "https://api.flutterwave.com/v3/payments";
 
 function normalizeProvider(value: unknown) {
   return String(value ?? "")
@@ -58,34 +83,15 @@ function safeFailureReason(value: unknown) {
   return message.slice(0, 250);
 }
 
-async function initializePaystackTransaction(input: {
-  request: Request;
-  payment: {
-    id: string;
-    reference: string;
-    amount: number;
-    type: string;
-    projectId: string;
-    project: {
-      id: string;
-      title: string;
-      projectCode: string;
-      clientId: string;
-      clientEmail: string;
-    };
-  };
+async function createGatewayTransaction(input: {
+  payment: GatewayPaymentInput;
+  provider: string;
   userId: string;
 }) {
-  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
-
-  if (!secretKey) {
-    return errorResponse("Paystack server key is not configured", 500);
-  }
-
   const existing = await prisma.paymentTransaction.findFirst({
     where: {
       paymentId: input.payment.id,
-      provider: PAYMENT_PROVIDERS.PAYSTACK,
+      provider: input.provider,
       status: {
         in: [
           PAYMENT_TRANSACTION_STATUSES.INITIALIZED,
@@ -98,35 +104,71 @@ async function initializePaystackTransaction(input: {
   });
 
   if (existing?.authorizationUrl) {
-    return noStoreJson({
-      provider: PAYMENT_PROVIDERS.PAYSTACK,
-      paymentId: input.payment.id,
-      paymentReference: input.payment.reference,
+    return {
+      existing,
+      transaction: null,
       transactionReference: existing.reference,
-      authorizationUrl: existing.authorizationUrl,
-      status: "PAYSTACK_AUTHORIZATION_READY",
-      message: "Paystack checkout is ready.",
-    });
+    };
   }
 
   const transactionReference = makeTransactionReference(
     input.payment.reference,
-    PAYMENT_PROVIDERS.PAYSTACK,
+    input.provider,
   );
 
   const transaction = await prisma.paymentTransaction.create({
     data: {
       paymentId: input.payment.id,
       projectId: input.payment.projectId,
-      provider: PAYMENT_PROVIDERS.PAYSTACK,
+      provider: input.provider,
       status: PAYMENT_TRANSACTION_STATUSES.INITIALIZED,
       amount: input.payment.amount,
       currency: "NGN",
       reference: transactionReference,
-      idempotencyKey: makeIdempotencyKey(input.payment.id, PAYMENT_PROVIDERS.PAYSTACK),
+      idempotencyKey: makeIdempotencyKey(input.payment.id, input.provider),
       initiatedById: input.userId,
     },
   });
+
+  return {
+    existing: null,
+    transaction,
+    transactionReference,
+  };
+}
+
+async function initializePaystackTransaction(input: {
+  request: Request;
+  payment: GatewayPaymentInput;
+  userId: string;
+}) {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
+
+  if (!secretKey) {
+    return errorResponse("Paystack server key is not configured", 500);
+  }
+
+  const record = await createGatewayTransaction({
+    payment: input.payment,
+    provider: PAYMENT_PROVIDERS.PAYSTACK,
+    userId: input.userId,
+  });
+
+  if (record.existing?.authorizationUrl) {
+    return noStoreJson({
+      provider: PAYMENT_PROVIDERS.PAYSTACK,
+      paymentId: input.payment.id,
+      paymentReference: input.payment.reference,
+      transactionReference: record.existing.reference,
+      authorizationUrl: record.existing.authorizationUrl,
+      status: "PAYSTACK_AUTHORIZATION_READY",
+      message: "Paystack checkout is ready.",
+    });
+  }
+
+  if (!record.transaction) {
+    return errorResponse("Unable to create Paystack transaction", 500);
+  }
 
   const callbackUrl = `${getCallbackBaseUrl(input.request)}/client/payments/callback/paystack?paymentId=${encodeURIComponent(input.payment.id)}`;
 
@@ -142,7 +184,7 @@ async function initializePaystackTransaction(input: {
         email: input.payment.project.clientEmail,
         amount: input.payment.amount * 100,
         currency: "NGN",
-        reference: transaction.reference,
+        reference: record.transaction.reference,
         callback_url: callbackUrl,
         metadata: {
           paymentId: input.payment.id,
@@ -166,7 +208,7 @@ async function initializePaystackTransaction(input: {
         payload?.message || `Paystack initialize failed with status ${response.status}`;
 
       await prisma.paymentTransaction.update({
-        where: { id: transaction.id },
+        where: { id: record.transaction.id },
         data: {
           status: PAYMENT_TRANSACTION_STATUSES.FAILED,
           failedAt: new Date(),
@@ -178,7 +220,7 @@ async function initializePaystackTransaction(input: {
     }
 
     const updated = await prisma.paymentTransaction.update({
-      where: { id: transaction.id },
+      where: { id: record.transaction.id },
       data: {
         status: PAYMENT_TRANSACTION_STATUSES.PENDING,
         providerReference: payload.data.reference,
@@ -198,7 +240,7 @@ async function initializePaystackTransaction(input: {
     });
   } catch (error) {
     await prisma.paymentTransaction.update({
-      where: { id: transaction.id },
+      where: { id: record.transaction.id },
       data: {
         status: PAYMENT_TRANSACTION_STATUSES.FAILED,
         failedAt: new Date(),
@@ -207,6 +249,131 @@ async function initializePaystackTransaction(input: {
     });
 
     return errorResponse("Unable to initialize Paystack payment. Please try again.", 502);
+  }
+}
+
+async function initializeFlutterwaveTransaction(input: {
+  request: Request;
+  payment: GatewayPaymentInput;
+  userId: string;
+}) {
+  const secretKey = process.env.FLUTTERWAVE_SECRET_KEY?.trim();
+
+  if (!secretKey) {
+    return errorResponse("Flutterwave server key is not configured", 500);
+  }
+
+  const record = await createGatewayTransaction({
+    payment: input.payment,
+    provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+    userId: input.userId,
+  });
+
+  if (record.existing?.authorizationUrl) {
+    return noStoreJson({
+      provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+      paymentId: input.payment.id,
+      paymentReference: input.payment.reference,
+      transactionReference: record.existing.reference,
+      authorizationUrl: record.existing.authorizationUrl,
+      status: "FLUTTERWAVE_LINK_READY",
+      message: "Flutterwave checkout is ready.",
+    });
+  }
+
+  if (!record.transaction) {
+    return errorResponse("Unable to create Flutterwave transaction", 500);
+  }
+
+  const redirectUrl = `${getCallbackBaseUrl(input.request)}/client/payments/callback/flutterwave?paymentId=${encodeURIComponent(input.payment.id)}`;
+
+  try {
+    const response = await fetch(FLUTTERWAVE_INITIALIZE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+      },
+      body: JSON.stringify({
+        tx_ref: record.transaction.reference,
+        amount: String(input.payment.amount),
+        currency: "NGN",
+        redirect_url: redirectUrl,
+        customer: {
+          email: input.payment.project.clientEmail,
+          name: input.payment.project.businessName || input.payment.project.title,
+        },
+        meta: {
+          paymentId: input.payment.id,
+          projectId: input.payment.projectId,
+          projectCode: input.payment.project.projectCode,
+          paymentType: input.payment.type,
+          source: "OCTALVE_SUITE_PORTAL",
+        },
+        customizations: {
+          title: "Octalve Suite",
+          description: `${input.payment.type.toLowerCase()} payment for ${input.payment.project.title}`,
+        },
+        configurations: {
+          session_duration: 30,
+          max_retry_attempt: 3,
+        },
+      }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as FlutterwaveInitializeResponse | null;
+
+    if (
+      !response.ok ||
+      payload?.status !== "success" ||
+      !payload.data?.link
+    ) {
+      const failureReason =
+        payload?.message || `Flutterwave initialize failed with status ${response.status}`;
+
+      await prisma.paymentTransaction.update({
+        where: { id: record.transaction.id },
+        data: {
+          status: PAYMENT_TRANSACTION_STATUSES.FAILED,
+          failedAt: new Date(),
+          failureReason: failureReason.slice(0, 250),
+        },
+      });
+
+      return errorResponse("Unable to initialize Flutterwave payment. Please try again.", 502);
+    }
+
+    const updated = await prisma.paymentTransaction.update({
+      where: { id: record.transaction.id },
+      data: {
+        status: PAYMENT_TRANSACTION_STATUSES.PENDING,
+        providerReference: record.transaction.reference,
+        providerStatus: "hosted_link_created",
+        authorizationUrl: payload.data.link,
+      },
+    });
+
+    return noStoreJson({
+      provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+      paymentId: input.payment.id,
+      paymentReference: input.payment.reference,
+      transactionReference: updated.reference,
+      authorizationUrl: updated.authorizationUrl,
+      status: "FLUTTERWAVE_LINK_READY",
+      message: "Flutterwave checkout is ready.",
+    });
+  } catch (error) {
+    await prisma.paymentTransaction.update({
+      where: { id: record.transaction.id },
+      data: {
+        status: PAYMENT_TRANSACTION_STATUSES.FAILED,
+        failedAt: new Date(),
+        failureReason: safeFailureReason(error),
+      },
+    });
+
+    return errorResponse("Unable to initialize Flutterwave payment. Please try again.", 502);
   }
 }
 
@@ -252,16 +419,24 @@ export async function POST(request: Request, { params }: Params) {
     });
   }
 
-  if (provider === PAYMENT_PROVIDERS.PAYSTACK) {
+  if (provider === PAYMENT_PROVIDERS.PAYSTACK || provider === PAYMENT_PROVIDERS.FLUTTERWAVE) {
     const gateway = await prisma.paymentGatewaySetting.findUnique({
       where: { provider },
     });
 
     if (!gateway?.isEnabled) {
-      return errorResponse("Paystack is not enabled", 400);
+      return errorResponse(`${provider} is not enabled`, 400);
     }
 
-    return initializePaystackTransaction({
+    if (provider === PAYMENT_PROVIDERS.PAYSTACK) {
+      return initializePaystackTransaction({
+        request,
+        payment,
+        userId: result.user.id,
+      });
+    }
+
+    return initializeFlutterwaveTransaction({
       request,
       payment,
       userId: result.user.id,
@@ -269,7 +444,6 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   if (
-    provider === PAYMENT_PROVIDERS.FLUTTERWAVE ||
     provider === PAYMENT_PROVIDERS.PAYPAL ||
     provider === PAYMENT_PROVIDERS.WALLET
   ) {

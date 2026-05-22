@@ -32,7 +32,7 @@ const DEFAULT_METHODS: MethodDefault[] = [
     provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
     displayName: "Flutterwave",
     sortOrder: 30,
-    automated: false,
+    automated: true,
     requiresEnv: ["FLUTTERWAVE_SECRET_KEY"],
   },
   {
