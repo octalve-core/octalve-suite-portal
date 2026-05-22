@@ -25,15 +25,15 @@ const DEFAULT_METHODS: MethodDefault[] = [
     provider: PAYMENT_PROVIDERS.PAYSTACK,
     displayName: "Paystack",
     sortOrder: 20,
-    automated: false,
-    requiresEnv: ["PAYSTACK_PUBLIC_KEY", "PAYSTACK_SECRET_KEY"],
+    automated: true,
+    requiresEnv: ["PAYSTACK_SECRET_KEY"],
   },
   {
     provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
     displayName: "Flutterwave",
     sortOrder: 30,
     automated: false,
-    requiresEnv: ["FLUTTERWAVE_PUBLIC_KEY", "FLUTTERWAVE_SECRET_KEY"],
+    requiresEnv: ["FLUTTERWAVE_SECRET_KEY"],
   },
   {
     provider: PAYMENT_PROVIDERS.PAYPAL,
@@ -100,9 +100,9 @@ export async function GET(_request: Request, { params }: Params) {
     if (!isEnabled) {
       unavailableReason = "Disabled by admin";
     } else if (!hasEnv) {
-      unavailableReason = "Provider environment keys are not fully configured";
+      unavailableReason = "Provider server key is not configured";
     } else if (!defaults.automated) {
-      unavailableReason = "Gateway automation will be activated in the next provider batch";
+      unavailableReason = "Gateway automation will be activated in a provider-specific batch";
     }
 
     return {

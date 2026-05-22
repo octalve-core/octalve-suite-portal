@@ -334,6 +334,7 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
 function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
   const [methods, setMethods] = useState<PaymentMethodOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initializingProvider, setInitializingProvider] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -364,6 +365,28 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
     };
   }, [payment.id, payment.status]);
 
+  async function handleInitialize(provider: string) {
+    if (provider === "MANUAL_BANK") return;
+
+    setInitializingProvider(provider);
+    setError("");
+
+    try {
+      const response = await api.payments.initialize(payment.id, provider);
+
+      if (response.authorizationUrl) {
+        window.location.assign(response.authorizationUrl);
+        return;
+      }
+
+      setError(response.message || "Payment provider did not return a checkout link.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to start payment.");
+    } finally {
+      setInitializingProvider("");
+    }
+  }
+
   if (payment.status !== "UNPAID") return null;
 
   return (
@@ -377,7 +400,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
             Payment methods
           </h2>
           <p className="text-sm font-medium text-slate-500">
-            Choose a secure payment path. Online gateways are prepared but will connect in the provider batch.
+            Choose a secure payment path. Manual transfer remains available, and Paystack can redirect you to secure checkout when enabled.
           </p>
         </div>
       </div>
@@ -397,6 +420,9 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
           methods.map((method) => {
             const isManual = method.provider === "MANUAL_BANK";
             const available = method.isReady || isManual;
+            const isPaystack = method.provider === "PAYSTACK";
+            const canStartOnline = available && isPaystack;
+            const isInitializing = initializingProvider === method.provider;
 
             return (
               <div
@@ -412,21 +438,33 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
                       {available
                         ? isManual
                           ? "Available now. Use the bank details below."
-                          : "Ready for secure online payment."
+                          : "Available now. Continue to secure provider checkout."
                         : method.unavailableReason ?? "Not available yet."}
                     </span>
                   </div>
 
-                  <span
-                    className={[
-                      "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
-                      available
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 bg-white text-slate-500",
-                    ].join(" ")}
-                  >
-                    {available ? "Available" : "Not Ready"}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={[
+                        "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
+                        available
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-slate-200 bg-white text-slate-500",
+                      ].join(" ")}
+                    >
+                      {available ? "Available" : "Not Ready"}
+                    </span>
+
+                    {canStartOnline ? (
+                      <Button
+                        onClick={() => handleInitialize(method.provider)}
+                        loading={isInitializing}
+                        disabled={Boolean(initializingProvider)}
+                      >
+                        Continue
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );
