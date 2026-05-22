@@ -204,21 +204,22 @@ export async function confirmProjectPayment(
 
     await updateLinkedAutomationRecords(tx, input, "CONFIRMED");
 
-      await recordExternalProjectPaymentLedgerSettlement(tx, {
-        userId: freshPayment.project.clientId,
-        projectId: freshPayment.projectId,
-        projectTitle: freshPayment.project.title,
-        paymentId: freshPayment.id,
-        paymentReference: freshPayment.reference,
-        paymentType: freshPayment.type,
-        provider: input.provider,
-        source: input.source,
-        transactionId: input.transactionId ?? null,
-        amount: freshPayment.amount,
-        currency: "NGN",
-        gatewayReference: input.gatewayReference ?? null,
-        providerReference: input.providerReference ?? null,
-      });
+    await recordExternalProjectPaymentLedgerSettlement(tx, {
+      userId: freshPayment.project.clientId,
+      projectId: freshPayment.projectId,
+      projectTitle: freshPayment.project.title,
+      paymentId: freshPayment.id,
+      paymentReference: freshPayment.reference,
+      paymentType: freshPayment.type,
+      provider: input.provider,
+      source: input.source,
+      transactionId: input.transactionId ?? null,
+      amount: freshPayment.amount,
+      currency: "NGN",
+      gatewayReference: input.gatewayReference ?? null,
+      providerReference: input.providerReference ?? null,
+    });
+
     await tx.project.update({
       where: { id: freshPayment.projectId },
       data: { status: nextProjectStatus },
