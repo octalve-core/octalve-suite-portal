@@ -1,8 +1,8 @@
 /**
  * Production-safe database bootstrap.
  *
- * This script intentionally does NOT create demo users, demo projects,
- * demo requests, demo payments, demo reviews, or demo notifications.
+ * This script intentionally does NOT create user accounts, client projects,
+ * project requests, payment records, reviews, or notifications.
  *
  * It only creates missing default project templates when deliberately run.
  *

@@ -36,7 +36,7 @@ type AppContextValue = {
   clientProjects: Project[];
   logout: () => Promise<void>;
   setSelectedProjectId: (id: string) => void;
-  resetDemo: () => void;
+  refreshWorkspaceData: () => Promise<void>;
   createProjectRequest: (
     payload: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt" | "template">,
   ) => Promise<string>;
@@ -260,9 +260,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  async function resetDemo() {
-    // No-op or call a destructive "clear my data" endpoint if needed.
-    // For now, we'll just refresh.
+  async function refreshWorkspaceData() {
+    // Refresh live workspace data without changing records.
     await syncPortalData();
   }
 
@@ -453,7 +452,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clientProjects,
     logout,
     setSelectedProjectId,
-    resetDemo,
+    refreshWorkspaceData,
     createProjectRequest,
     approveProjectRequest,
     createAdminProject,

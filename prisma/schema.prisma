@@ -81,7 +81,7 @@ enum MessageType {
   SYSTEM
 }
 
-// Better Auth core user table plus Octalve Suite profile fields.
+// Better Auth core user table plus Octalve Workspace profile fields.
 model User {
   id            String    @id @default(cuid())
   name          String
