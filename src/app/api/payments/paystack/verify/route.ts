@@ -5,6 +5,7 @@ import {
   PAYMENT_PROVIDERS,
   PAYMENT_TRANSACTION_STATUSES,
 } from "@/lib/payment-constants";
+import { confirmProjectPayment } from "@/lib/payment-confirmation";
 
 type PaystackVerifyResponse = {
   status: boolean;
@@ -102,11 +103,7 @@ export async function POST(request: Request) {
     include: {
       payment: {
         include: {
-          project: {
-            include: {
-              phases: { orderBy: { phaseNumber: "asc" } },
-            },
-          },
+          project: true,
         },
       },
     },
@@ -200,143 +197,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const resultPayload = await prisma.$transaction(async (tx) => {
-    const freshPayment = await tx.projectPayment.findUnique({
-      where: { id: transaction.paymentId },
-      include: {
-        project: {
-          include: {
-            phases: { orderBy: { phaseNumber: "asc" } },
-          },
-        },
-      },
-    });
-
-    if (!freshPayment) {
-      throw new Error("Payment disappeared during verification");
-    }
-
-    if (freshPayment.status === "CONFIRMED") {
-      await tx.paymentTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-          verifiedAt: new Date(),
-          confirmedAt: new Date(),
-          providerStatus,
-          providerReference: providerReferenceFromPaystack(data),
-        },
-      });
-
-      return {
-        status: "ALREADY_CONFIRMED" as const,
-        projectStatus: freshPayment.project.status,
-      };
-    }
-
-    const expectedProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "APPROVED_AWAITING_DEPOSIT"
-        : "AWAITING_BALANCE";
-
-    const pendingProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "DEPOSIT_PENDING_CONFIRMATION"
-        : "BALANCE_PENDING_CONFIRMATION";
-
-    if (
-      freshPayment.status !== "UNPAID" ||
-      ![expectedProjectStatus, pendingProjectStatus].includes(freshPayment.project.status)
-    ) {
-      throw new Error("Payment is not in a payable state");
-    }
-
-    await tx.paymentTransaction.update({
-      where: { id: transaction.id },
-      data: {
-        status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-        verifiedAt: new Date(),
-        confirmedAt: new Date(),
-        providerStatus,
-        providerReference: providerReferenceFromPaystack(data),
-      },
-    });
-
-    await tx.projectPayment.update({
-      where: { id: freshPayment.id },
-      data: {
-        status: "CONFIRMED",
-        confirmedAt: new Date(),
-        clientMarkedPaidAt: new Date(),
-        provider: PAYMENT_PROVIDERS.PAYSTACK,
-        gatewayReference: transaction.reference,
-        providerReference: providerReferenceFromPaystack(data),
-        paidVia: paidViaFromPaystack(data),
-        confirmedSource: PAYMENT_CONFIRMATION_SOURCES.SERVER_VERIFY,
-        note: null,
-      },
-    });
-
-    let nextProjectStatus = freshPayment.project.status;
-
-    if (freshPayment.type === "DEPOSIT") {
-      nextProjectStatus = "ACTIVE";
-
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: nextProjectStatus },
-      });
-
-      const firstPhase = freshPayment.project.phases[0];
-
-      if (firstPhase && firstPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: firstPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    if (freshPayment.type === "BALANCE") {
-      nextProjectStatus = "ACTIVE";
-
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: nextProjectStatus },
-      });
-
-      const finalPhase = freshPayment.project.phases[freshPayment.project.phases.length - 1];
-
-      if (finalPhase && finalPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: finalPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    await tx.notification.create({
-      data: {
-        userId: freshPayment.project.clientId,
-        title: "Payment confirmed",
-        body: `Your ${freshPayment.type.toLowerCase()} payment for ${freshPayment.project.title} has been confirmed.`,
-        href: "/client",
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        role: "SUPER_ADMIN",
-        title: "Online payment confirmed",
-        body: `${freshPayment.project.title} — ${freshPayment.type} payment was confirmed through Paystack.`,
-        href: "/admin/payments",
-      },
-    });
-
-    return {
-      status: "CONFIRMED" as const,
-      projectStatus: nextProjectStatus,
-    };
+  const resultPayload = await confirmProjectPayment({
+    paymentId: transaction.paymentId,
+    provider: PAYMENT_PROVIDERS.PAYSTACK,
+    source: PAYMENT_CONFIRMATION_SOURCES.SERVER_VERIFY,
+    gatewayReference: transaction.reference,
+    providerReference: providerReferenceFromPaystack(data),
+    paidVia: paidViaFromPaystack(data),
+    providerStatus,
+    transactionId: transaction.id,
+    providerDisplayName: "Paystack",
   });
 
   return noStoreJson({
