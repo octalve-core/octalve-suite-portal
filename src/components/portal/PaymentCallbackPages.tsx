@@ -24,7 +24,7 @@ export function PaystackPaymentCallbackPage({
 }) {
   const [result, setResult] = useState<PaymentVerifyResponse | null>(null);
   const [status, setStatus] = useState<"VERIFYING" | "CONFIRMED" | "FAILED">("VERIFYING");
-  const [message, setMessage] = useState("Verifying your Paystack payment securely...");
+  const [message, setMessage] = useState("Confirming your Paystack payment securely...");
 
   useEffect(() => {
     let mounted = true;
@@ -32,7 +32,7 @@ export function PaystackPaymentCallbackPage({
     async function verifyPayment() {
       if (!reference) {
         setStatus("FAILED");
-        setMessage("Missing Paystack reference. Please return to payments and contact support if you were debited.");
+        setMessage("We could not find the Paystack reference for this return. Please contact support if your account was debited.");
         return;
       }
 
@@ -53,7 +53,7 @@ export function PaystackPaymentCallbackPage({
         }
 
         setStatus("FAILED");
-        setMessage(response.message || "Payment could not be confirmed yet.");
+        setMessage(response.message || "Payment could not be confirmed at this time.");
       } catch (error) {
         if (!mounted) return;
 
@@ -61,7 +61,7 @@ export function PaystackPaymentCallbackPage({
         setMessage(
           error instanceof Error
             ? error.message
-            : "Unable to verify payment. Please contact support if you were debited.",
+            : "Unable to confirm payment at this time. Please contact support if your account was debited.",
         );
       }
     }
@@ -93,7 +93,7 @@ export function PaystackPaymentCallbackPage({
             confirmed ? "bg-emerald-700" : failed ? "bg-red-700" : "bg-slate-950",
           ].join(" ")}
         >
-          <Badge className="border-white/20 bg-white/10 text-white">Paystack Verification</Badge>
+          <Badge className="border-white/20 bg-white/10 text-white">Paystack Payment Check</Badge>
           <h1 className="mt-4 text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
             {confirmed
               ? "Payment confirmed"
@@ -129,17 +129,17 @@ export function PaystackPaymentCallbackPage({
               <div>
                 <strong className="block text-sm font-bold text-slate-950">
                   {confirmed
-                    ? "Verified by server"
+                    ? "Payment verified"
                     : failed
                       ? "Verification needs attention"
-                      : "Server verification in progress"}
+                      : "Secure confirmation in progress"}
                 </strong>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
                   {confirmed
                     ? "Your payment has been confirmed and your project access has been updated."
                     : failed
                       ? "Do not retry immediately if your account was debited. Contact support with your reference."
-                      : "Please wait while Octalve confirms this payment with Paystack."}
+                      : "Please wait while Octalve securely confirms this payment with Paystack."}
                 </p>
               </div>
             </div>
@@ -159,7 +159,7 @@ export function PaystackPaymentCallbackPage({
               {paymentId ? (
                 <div>
                   <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                    Payment ID
+                    Payment Record
                   </span>
                   <strong className="mt-1 block break-all text-slate-800">{paymentId}</strong>
                 </div>
@@ -168,7 +168,7 @@ export function PaystackPaymentCallbackPage({
               {result?.transactionReference ? (
                 <div>
                   <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                    Internal Transaction
+                    Transaction Reference
                   </span>
                   <strong className="mt-1 block break-all text-slate-800">
                     {result.transactionReference}
@@ -183,7 +183,7 @@ export function PaystackPaymentCallbackPage({
               <div className="flex gap-3">
                 <AlertCircle className="mt-0.5 text-orange-600" size={20} />
                 <p className="text-sm font-semibold leading-6 text-orange-800">
-                  This page only confirms payment after secure server verification. Webhook confirmation will be added next for full provider-grade reliability.
+                  This page confirms payment only after secure provider verification. Provider webhook protection is active for additional confirmation reliability.
                 </p>
               </div>
             </div>
@@ -222,7 +222,7 @@ export function FlutterwavePaymentCallbackPage({
   const [verificationStatus, setVerificationStatus] = useState<
     "VERIFYING" | "CONFIRMED" | "FAILED"
   >("VERIFYING");
-  const [message, setMessage] = useState("Verifying your Flutterwave payment securely...");
+  const [message, setMessage] = useState("Confirming your Flutterwave payment securely...");
 
   useEffect(() => {
     let mounted = true;
@@ -230,7 +230,7 @@ export function FlutterwavePaymentCallbackPage({
     async function verifyPayment() {
       if (!txRef && !transactionId) {
         setVerificationStatus("FAILED");
-        setMessage("Missing Flutterwave transaction reference. Please contact support if you were debited.");
+        setMessage("We could not find the Flutterwave transaction reference for this return. Please contact support if your account was debited.");
         return;
       }
 
@@ -252,7 +252,7 @@ export function FlutterwavePaymentCallbackPage({
         }
 
         setVerificationStatus("FAILED");
-        setMessage(response.message || "Payment could not be confirmed yet.");
+        setMessage(response.message || "Payment could not be confirmed at this time.");
       } catch (error) {
         if (!mounted) return;
 
@@ -260,7 +260,7 @@ export function FlutterwavePaymentCallbackPage({
         setMessage(
           error instanceof Error
             ? error.message
-            : "Unable to verify payment. Please contact support if you were debited.",
+            : "Unable to confirm payment at this time. Please contact support if your account was debited.",
         );
       }
     }
@@ -293,7 +293,7 @@ export function FlutterwavePaymentCallbackPage({
           ].join(" ")}
         >
           <Badge className="border-white/20 bg-white/10 text-white">
-            Flutterwave Verification
+            Flutterwave Payment Check
           </Badge>
           <h1 className="mt-4 text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
             {confirmed
@@ -330,17 +330,17 @@ export function FlutterwavePaymentCallbackPage({
               <div>
                 <strong className="block text-sm font-bold text-slate-950">
                   {confirmed
-                    ? "Verified by server"
+                    ? "Payment verified"
                     : failed
                       ? "Verification needs attention"
-                      : "Server verification in progress"}
+                      : "Secure confirmation in progress"}
                 </strong>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
                   {confirmed
                     ? "Your payment has been confirmed and your project access has been updated."
                     : failed
                       ? "Do not retry immediately if your account was debited. Contact support with your reference."
-                      : "Please wait while Octalve confirms this payment with Flutterwave."}
+                      : "Please wait while Octalve securely confirms this payment with Flutterwave."}
                 </p>
               </div>
             </div>
@@ -350,7 +350,7 @@ export function FlutterwavePaymentCallbackPage({
             {status ? (
               <div>
                 <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Flutterwave Return Status
+                  Flutterwave Status
                 </span>
                 <strong className="mt-1 block break-all text-slate-800">{status}</strong>
               </div>
@@ -377,7 +377,7 @@ export function FlutterwavePaymentCallbackPage({
             {paymentId ? (
               <div>
                 <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Payment ID
+                  Payment Record
                 </span>
                 <strong className="mt-1 block break-all text-slate-800">{paymentId}</strong>
               </div>
@@ -386,7 +386,7 @@ export function FlutterwavePaymentCallbackPage({
             {result?.transactionReference ? (
               <div>
                 <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Internal Transaction
+                  Transaction Reference
                 </span>
                 <strong className="mt-1 block break-all text-slate-800">
                   {result.transactionReference}
@@ -400,7 +400,7 @@ export function FlutterwavePaymentCallbackPage({
               <div className="flex gap-3">
                 <AlertCircle className="mt-0.5 text-orange-600" size={20} />
                 <p className="text-sm font-semibold leading-6 text-orange-800">
-                  Server verification is active, but webhook confirmation will still be added next for stronger provider-grade reliability.
+                  This page confirms payment only after secure provider verification. Provider webhook protection is active for additional confirmation reliability.
                 </p>
               </div>
             </div>

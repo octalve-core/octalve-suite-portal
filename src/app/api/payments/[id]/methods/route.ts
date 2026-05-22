@@ -98,11 +98,11 @@ export async function GET(_request: Request, { params }: Params) {
     let unavailableReason: string | undefined;
 
     if (!isEnabled) {
-      unavailableReason = "Disabled by admin";
+      unavailableReason = "This payment option is currently unavailable.";
     } else if (!hasEnv) {
-      unavailableReason = "Provider server key is not configured";
+      unavailableReason = "This payment option is temporarily unavailable.";
     } else if (!defaults.automated) {
-      unavailableReason = "Gateway automation will be activated in a provider-specific batch";
+      unavailableReason = "This payment option is currently unavailable for online checkout.";
     }
 
     return {

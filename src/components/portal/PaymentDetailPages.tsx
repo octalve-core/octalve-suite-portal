@@ -379,9 +379,9 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         return;
       }
 
-      setError(response.message || "Payment provider did not return a checkout link.");
+      setError(response.message || "We could not open the checkout page. Please try again or use bank transfer.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start payment.");
+      setError(err instanceof Error ? err.message : "Unable to start online payment. Please try again or use bank transfer.");
     } finally {
       setInitializingProvider("");
     }
@@ -400,7 +400,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
             Payment methods
           </h2>
           <p className="text-sm font-medium text-slate-500">
-            Choose a secure payment path. Manual transfer remains available, and Paystack can redirect you to secure checkout when enabled.
+            Choose a secure payment option. Manual transfer remains available, and approved online gateways can redirect you to secure checkout when enabled.
           </p>
         </div>
       </div>
@@ -414,7 +414,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
       <div className="mt-5 grid gap-3">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
-            Loading payment methods...
+            Loading payment options...
           </div>
         ) : methods.length ? (
           methods.map((method) => {
@@ -439,8 +439,8 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
                       {available
                         ? isManual
                           ? "Available now. Use the bank details below."
-                          : "Available now. Continue to secure provider checkout."
-                        : method.unavailableReason ?? "Not available yet."}
+                          : "Available now. Continue to secure checkout."
+                        : method.unavailableReason ?? "Currently unavailable."}
                     </span>
                   </div>
 
@@ -472,7 +472,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
           })
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
-            No payment methods are available yet.
+            No payment options are available right now.
           </div>
         )}
       </div>

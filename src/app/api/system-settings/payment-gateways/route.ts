@@ -26,7 +26,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     sortOrder: 10,
     callbackPath: null as unknown as string,
     webhookPath: null as unknown as string,
-    notes: "Manual transfer remains admin-confirmed.",
+    notes: "Manual bank transfer is confirmed by finance/admin review.",
   },
   {
     provider: PAYMENT_PROVIDERS.PAYSTACK,
@@ -39,7 +39,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     webhookSecretEnvName: "PAYSTACK_WEBHOOK_SECRET",
     callbackPath: "/client/payments/callback/paystack",
     webhookPath: "/api/webhooks/paystack",
-    notes: "Secret key and webhook secret must stay server-only.",
+    notes: "Credential values are stored only in server environment variables.",
   },
   {
     provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
@@ -52,7 +52,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     webhookSecretEnvName: "FLUTTERWAVE_WEBHOOK_SECRET",
     callbackPath: "/client/payments/callback/flutterwave",
     webhookPath: "/api/webhooks/flutterwave",
-    notes: "Secret key and webhook hash/secret must stay server-only.",
+    notes: "Credential values are stored only in server environment variables.",
   },
   {
     provider: PAYMENT_PROVIDERS.PAYPAL,
@@ -65,7 +65,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     webhookSecretEnvName: "PAYPAL_WEBHOOK_ID",
     callbackPath: "/client/payments/callback/paypal",
     webhookPath: "/api/webhooks/paypal",
-    notes: "Future provider. Use OAuth and webhook verification before activation.",
+    notes: "Reserved for activation after provider verification is completed.",
   },
   {
     provider: PAYMENT_PROVIDERS.WALLET,
@@ -75,7 +75,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     sortOrder: 50,
     callbackPath: "/client/wallet",
     webhookPath: null as unknown as string,
-    notes: "Future internal ledger-backed wallet payments.",
+    notes: "Reserved for wallet payments after ledger settlement is activated.",
   },
 ];
 

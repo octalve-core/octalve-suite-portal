@@ -71,7 +71,7 @@ async function verifyWithFlutterwave(input: {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    throw new Error("Flutterwave server key is not configured");
+    throw new Error("Flutterwave verification is temporarily unavailable");
   }
 
   const transactionId = cleanText(input.transactionId, 80);
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
   });
 
   if (!transaction || transaction.provider !== PAYMENT_PROVIDERS.FLUTTERWAVE) {
-    return errorResponse("Flutterwave transaction not found", 404);
+    return errorResponse("Payment transaction not found", 404);
   }
 
   if (paymentId && transaction.paymentId !== paymentId) {
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return errorResponse("Unable to verify Flutterwave payment. Please try again.", 502);
+    return errorResponse("Unable to confirm Flutterwave payment. Please try again or contact support.", 502);
   }
 
   const data = flutterwavePayload.data;

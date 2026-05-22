@@ -52,7 +52,7 @@ function InfoCard({
             {label}
           </span>
           <strong className="mt-1 block break-words text-base font-semibold text-slate-950">
-            {value || "Not configured"}
+            {value || "Not set"}
           </strong>
           <p className="mt-1 text-sm leading-6 text-slate-500">{helper}</p>
         </div>
@@ -114,7 +114,7 @@ function GatewayCard({
             </div>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              {gateway.notes || "No notes configured."}
+              {gateway.notes || "No operational note provided."}
             </p>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -160,7 +160,7 @@ function GatewayCard({
             Callback
           </span>
           <strong className="mt-1 block break-all text-slate-800">
-            {gateway.callbackPath || "Not required"}
+            {gateway.callbackPath || "Not applicable"}
           </strong>
         </div>
 
@@ -169,7 +169,7 @@ function GatewayCard({
             Webhook
           </span>
           <strong className="mt-1 block break-all text-slate-800">
-            {gateway.webhookPath || "Not required"}
+            {gateway.webhookPath || "Not applicable"}
           </strong>
         </div>
 
@@ -180,7 +180,7 @@ function GatewayCard({
           <p className="mt-1 break-words text-slate-600">
             {[gateway.publicKeyEnvName, gateway.secretKeyEnvName, gateway.webhookSecretEnvName]
               .filter(Boolean)
-              .join(" • ") || "No gateway env reference needed."}
+              .join(" • ") || "No credential reference required."}
           </p>
         </div>
       </div>
@@ -221,12 +221,12 @@ export function AdminSystemSettings() {
       setGateways(gatewayList);
       setConnected(true);
       setGatewayConnected(true);
-      setNotice("System payment settings connected.");
+      setNotice("Payment settings are up to date.");
       window.setTimeout(() => setNotice(""), 1800);
     } catch (err) {
       setConnected(false);
       setGatewayConnected(false);
-      setError(err instanceof Error ? err.message : "Backend system settings are not configured yet.");
+      setError(err instanceof Error ? err.message : "Unable to load payment settings. Please refresh or contact system support.");
     } finally {
       setLoading(false);
     }
@@ -250,7 +250,7 @@ export function AdminSystemSettings() {
 
       setForm(updated);
       setConnected(true);
-      setNotice("Payment bank settings saved and synced to open manual payments.");
+      setNotice("Bank transfer details saved successfully.");
       await refresh();
       window.setTimeout(() => setNotice(""), 2400);
     } catch (err) {
@@ -276,7 +276,7 @@ export function AdminSystemSettings() {
 
       setGateways(updated);
       setGatewayConnected(true);
-      setNotice("Gateway settings updated. Secrets remain server-only in Vercel env.");
+      setNotice("Gateway settings updated. Sensitive credentials remain protected in server environment variables.");
       window.setTimeout(() => setNotice(""), 2400);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update gateway settings.");
@@ -290,13 +290,13 @@ export function AdminSystemSettings() {
       <section className="mb-7 rounded-[30px] bg-[#000A16] px-6 py-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:px-8 lg:px-10">
         <div>
           <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white/80">
-            System Configuration
+            Payment Operations
           </span>
           <h1 className="mt-4 max-w-3xl text-[34px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[46px]">
             Settings
           </h1>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/75 sm:text-[15px]">
-            Manage payment bank details, gateway availability and secure payment configuration from one admin page.
+            Manage bank transfer details, online payment channels and operational payment controls.
           </p>
         </div>
       </section>
@@ -346,7 +346,7 @@ export function AdminSystemSettings() {
                   ].join(" ")}
                 >
                   {connected ? <ShieldCheck size={14} /> : <LockKeyhole size={14} />}
-                  {connected ? "Backend connected" : "Backend unavailable"}
+                  {connected ? "Settings synced" : "Settings unavailable"}
                 </span>
               </div>
 
@@ -418,21 +418,21 @@ export function AdminSystemSettings() {
                 icon={<Landmark size={20} />}
                 label="Current bank"
                 value={form.bankName}
-                helper="Stored in database after save, otherwise read from server env fallback."
+                helper="Active receiving bank displayed on client payment pages."
               />
 
               <InfoCard
                 icon={<Building2 size={20} />}
                 label="Current account"
                 value={form.accountName}
-                helper="The receiving account name clients should see."
+                helper="Active receiving account name shown to clients."
               />
 
               <InfoCard
                 icon={<Banknote size={20} />}
                 label="Current number"
                 value={form.accountNumber}
-                helper="Clients can copy this from payment pages."
+                helper="Active receiving account number shown to clients."
               />
 
               <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5">
@@ -440,10 +440,10 @@ export function AdminSystemSettings() {
                   <Info className="mt-0.5 text-[#0064E0]" size={20} />
                   <div>
                     <strong className="block text-sm font-bold text-blue-900">
-                      Manual bank safety
+                      Manual transfer notice
                     </strong>
                     <p className="mt-1 text-sm leading-6 text-blue-800">
-                      Bank details are public payment instructions. Gateway secrets remain server-only and are never displayed here.
+                      Bank details are visible to clients as payment instructions. Gateway credentials remain protected in server environment variables.
                     </p>
                   </div>
                 </div>
@@ -461,7 +461,7 @@ export function AdminSystemSettings() {
                   Payment Gateways
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                  Enable or disable gateway availability. This does not expose secret keys and does not activate transaction automation yet.
+                  Enable or disable approved payment channels. Credential values are never displayed in the portal.
                 </p>
               </div>
 

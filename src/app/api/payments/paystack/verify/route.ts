@@ -65,7 +65,7 @@ async function verifyWithPaystack(reference: string): Promise<PaystackVerifyResp
   const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    throw new Error("Paystack server key is not configured");
+    throw new Error("Paystack verification is temporarily unavailable");
   }
 
   const response = await fetch(`${PAYSTACK_VERIFY_BASE_URL}/${encodeURIComponent(reference)}`, {
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
   });
 
   if (!transaction || transaction.provider !== PAYMENT_PROVIDERS.PAYSTACK) {
-    return errorResponse("Paystack transaction not found", 404);
+    return errorResponse("Payment transaction not found", 404);
   }
 
   if (paymentId && transaction.paymentId !== paymentId) {
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return errorResponse("Unable to verify Paystack payment. Please try again.", 502);
+    return errorResponse("Unable to confirm Paystack payment. Please try again or contact support.", 502);
   }
 
   const data = paystackPayload.data;

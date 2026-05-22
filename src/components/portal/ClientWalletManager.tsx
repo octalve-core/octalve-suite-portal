@@ -253,7 +253,7 @@ export function ClientWalletManager() {
               <EmptyState
                 icon={<WalletCards size={30} />}
                 title="No wallet activity yet"
-                body="Wallet ledger records will appear here after confirmed top-ups, refunds, deductions, or project payments."
+                body="Wallet ledger records will appear here after approved top-ups, refunds, deductions, or project payments."
               />
             )}
           </div>
@@ -282,7 +282,7 @@ export function ClientWalletManager() {
                   Funding coming next
                 </strong>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Wallet funding will connect to verified gateway transactions after Paystack and Flutterwave automation is added.
+                  Wallet funding is reserved for the next finance ledger release.
                 </p>
               </div>
             </div>

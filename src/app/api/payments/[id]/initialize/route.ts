@@ -145,7 +145,7 @@ async function initializePaystackTransaction(input: {
   const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    return errorResponse("Paystack server key is not configured", 500);
+    return errorResponse("Paystack is temporarily unavailable. Please use another payment option or contact support.", 503);
   }
 
   const record = await createGatewayTransaction({
@@ -167,7 +167,7 @@ async function initializePaystackTransaction(input: {
   }
 
   if (!record.transaction) {
-    return errorResponse("Unable to create Paystack transaction", 500);
+    return errorResponse("Unable to prepare Paystack checkout. Please try again.", 502);
   }
 
   const callbackUrl = `${getCallbackBaseUrl(input.request)}/client/payments/callback/paystack?paymentId=${encodeURIComponent(input.payment.id)}`;
@@ -216,7 +216,7 @@ async function initializePaystackTransaction(input: {
         },
       });
 
-      return errorResponse("Unable to initialize Paystack payment. Please try again.", 502);
+      return errorResponse("Unable to start Paystack checkout. Please try again or use another payment option.", 502);
     }
 
     const updated = await prisma.paymentTransaction.update({
@@ -248,7 +248,7 @@ async function initializePaystackTransaction(input: {
       },
     });
 
-    return errorResponse("Unable to initialize Paystack payment. Please try again.", 502);
+    return errorResponse("Unable to start Paystack checkout. Please try again or use another payment option.", 502);
   }
 }
 
@@ -260,7 +260,7 @@ async function initializeFlutterwaveTransaction(input: {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    return errorResponse("Flutterwave server key is not configured", 500);
+    return errorResponse("Flutterwave is temporarily unavailable. Please use another payment option or contact support.", 503);
   }
 
   const record = await createGatewayTransaction({
@@ -282,7 +282,7 @@ async function initializeFlutterwaveTransaction(input: {
   }
 
   if (!record.transaction) {
-    return errorResponse("Unable to create Flutterwave transaction", 500);
+    return errorResponse("Unable to prepare Flutterwave checkout. Please try again.", 502);
   }
 
   const redirectUrl = `${getCallbackBaseUrl(input.request)}/client/payments/callback/flutterwave?paymentId=${encodeURIComponent(input.payment.id)}`;
@@ -341,7 +341,7 @@ async function initializeFlutterwaveTransaction(input: {
         },
       });
 
-      return errorResponse("Unable to initialize Flutterwave payment. Please try again.", 502);
+      return errorResponse("Unable to start Flutterwave checkout. Please try again or use another payment option.", 502);
     }
 
     const updated = await prisma.paymentTransaction.update({
@@ -373,7 +373,7 @@ async function initializeFlutterwaveTransaction(input: {
       },
     });
 
-    return errorResponse("Unable to initialize Flutterwave payment. Please try again.", 502);
+    return errorResponse("Unable to start Flutterwave checkout. Please try again or use another payment option.", 502);
   }
 }
 
@@ -425,7 +425,7 @@ export async function POST(request: Request, { params }: Params) {
     });
 
     if (!gateway?.isEnabled) {
-      return errorResponse(`${provider} is not enabled`, 400);
+      return errorResponse("This payment option is currently unavailable.", 400);
     }
 
     if (provider === PAYMENT_PROVIDERS.PAYSTACK) {
@@ -447,7 +447,7 @@ export async function POST(request: Request, { params }: Params) {
     provider === PAYMENT_PROVIDERS.PAYPAL ||
     provider === PAYMENT_PROVIDERS.WALLET
   ) {
-    return errorResponse("This payment provider is not connected yet", 400);
+    return errorResponse("This payment option is currently unavailable.", 400);
   }
 
   return errorResponse("Unsupported payment provider", 400);
