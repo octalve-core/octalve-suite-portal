@@ -1,4 +1,4 @@
-﻿import { PortalShell } from "@/components/portal/PortalShell";
+import { PortalShell } from "@/components/portal/PortalShell";
 import { ProfileSettings } from "@/components/portal/ProfileSettings";
 
 export default function Page() {
