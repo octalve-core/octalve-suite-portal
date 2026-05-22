@@ -75,7 +75,7 @@ const DEFAULT_GATEWAYS: GatewayDefault[] = [
     sortOrder: 50,
     callbackPath: "/client/wallet",
     webhookPath: null as unknown as string,
-    notes: "Reserved for wallet payments after ledger settlement is activated.",
+    notes: "Enables clients to pay eligible project invoices directly from their verified Octalve Wallet balance.",
   },
 ];
 
