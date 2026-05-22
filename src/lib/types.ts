@@ -3,6 +3,7 @@ import type {
   PaymentTransactionStatus,
   WalletLedgerDirection,
   WalletLedgerEntryType,
+  WalletTopUpStatus,
   WebhookProcessingStatus,
 } from "@/lib/payment-constants";
 
@@ -130,12 +131,53 @@ export type PaymentWebhookEvent = {
   updatedAt: string;
 };
 
+
+export type WalletTopUp = {
+  id: string;
+  userId: string;
+  provider: PaymentProvider | (string & {});
+  status: WalletTopUpStatus | (string & {});
+  amount: number;
+  currency: string;
+  reference: string;
+  idempotencyKey: string;
+  providerReference?: string;
+  providerStatus?: string;
+  authorizationUrl?: string;
+  initiatedById?: string;
+  verifiedAt?: string;
+  confirmedAt?: string;
+  failedAt?: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WalletTopUpInitializeResponse = {
+  provider: PaymentProvider | (string & {});
+  topUpId: string;
+  topUpReference: string;
+  transactionReference?: string;
+  authorizationUrl?: string;
+  status: string;
+  message: string;
+};
+
+export type WalletTopUpVerifyResponse = {
+  provider: PaymentProvider | (string & {});
+  topUpId: string;
+  topUpReference: string;
+  status: "CONFIRMED" | "ALREADY_CONFIRMED" | "FAILED" | "PENDING";
+  message: string;
+};
+
 export type WalletLedgerEntry = {
   id: string;
   userId: string;
   projectId?: string;
   paymentId?: string;
   transactionId?: string;
+  topUpId?: string;
   entryType: WalletLedgerEntryType | (string & {});
   direction: WalletLedgerDirection | (string & {});
   amount: number;

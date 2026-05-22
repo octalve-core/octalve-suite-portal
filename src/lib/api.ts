@@ -13,6 +13,8 @@ import type {
   Review,
   NotificationItem,
   WalletSummary,
+  WalletTopUpInitializeResponse,
+  WalletTopUpVerifyResponse,
   PaymentBankDetails,
   PaymentGatewaySetting,
   PaymentInitializeResponse,
@@ -110,10 +112,21 @@ export const api = {
     ) => patch<Project>(`/api/projects/${id}`, data),
     delete: (id: string) => del(`/api/projects/${id}`),
   },
-
   // Wallet
   wallet: {
     get: () => fetchJson<WalletSummary>("/api/wallet"),
+    initializeTopUp: (amount: number, provider: string) =>
+      post<WalletTopUpInitializeResponse>("/api/wallet/topups/initialize", {
+        amount,
+        provider,
+      }),
+    verifyPaystackTopUp: (data: { reference: string; topUpId?: string }) =>
+      post<WalletTopUpVerifyResponse>("/api/wallet/topups/paystack/verify", data),
+    verifyFlutterwaveTopUp: (data: {
+      txRef?: string;
+      transactionId?: string;
+      topUpId?: string;
+    }) => post<WalletTopUpVerifyResponse>("/api/wallet/topups/flutterwave/verify", data),
   },
 
   // Payments

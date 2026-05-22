@@ -109,6 +109,118 @@ function WalletEntryRow({ entry }: { entry: WalletLedgerEntry }) {
   );
 }
 
+
+function WalletFundingCard({ onSuccess }: { onSuccess: () => Promise<void> }) {
+  const [amount, setAmount] = useState("10000");
+  const [provider, setProvider] = useState("PAYSTACK");
+  const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleFundWallet() {
+    const numericAmount = Math.round(Number(amount));
+
+    setNotice("");
+    setError("");
+
+    if (!Number.isFinite(numericAmount) || numericAmount < 1000) {
+      setError("Minimum wallet funding amount is ₦1,000.");
+      return;
+    }
+
+    if (numericAmount > 5000000) {
+      setError("Maximum wallet funding amount is ₦5,000,000.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.wallet.initializeTopUp(numericAmount, provider);
+
+      if (response.authorizationUrl) {
+        window.location.assign(response.authorizationUrl);
+        return;
+      }
+
+      setNotice(response.message || "Wallet funding request created.");
+      await onSuccess();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to start wallet funding. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start gap-3">
+        <Landmark className="mt-0.5 text-slate-600" size={21} />
+        <div>
+          <strong className="block text-sm font-bold text-slate-950">
+            Fund wallet
+          </strong>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Add funds through an enabled secure checkout provider. Wallet balance is credited only after server-side verification.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        <label className="block">
+          <span className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+            Amount
+          </span>
+          <input
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            inputMode="numeric"
+            disabled={loading}
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+            placeholder="10000"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+            Provider
+          </span>
+          <select
+            value={provider}
+            onChange={(event) => setProvider(event.target.value)}
+            disabled={loading}
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"
+          >
+            <option value="PAYSTACK">Paystack</option>
+            <option value="FLUTTERWAVE">Flutterwave</option>
+          </select>
+        </label>
+
+        {notice ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
+            {notice}
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm font-semibold text-orange-700">
+            {error}
+          </div>
+        ) : null}
+
+        <Button onClick={handleFundWallet} loading={loading} disabled={loading}>
+          <WalletCards size={16} />
+          Continue to Checkout
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 export function ClientWalletManager() {
   const { currentUser } = useApp();
   const [wallet, setWallet] = useState<WalletSummary | null>(null);
@@ -274,19 +386,7 @@ export function ClientWalletManager() {
             </div>
           </Card>
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
-            <div className="flex items-start gap-3">
-              <Landmark className="mt-0.5 text-slate-600" size={21} />
-              <div>
-                <strong className="block text-sm font-bold text-slate-950">
-                  Funding coming next
-                </strong>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Wallet funding is reserved for the next finance ledger release.
-                </p>
-              </div>
-            </div>
-          </Card>
+          <WalletFundingCard onSuccess={() => loadWallet("refresh")} />
         </aside>
       </section>
     </div>

@@ -8,6 +8,72 @@ import {
 
 type WalletLedgerTx = Prisma.TransactionClient;
 
+
+export type RecordWalletTopUpCreditInput = {
+  userId: string;
+  topUpId: string;
+  topUpReference: string;
+  provider: string;
+  source: string;
+  amount: number;
+  currency?: string;
+  gatewayReference?: string | null;
+  providerReference?: string | null;
+};
+
+function walletTopUpCreditReference(topUpReference: string) {
+  return `WALLET-IN-${cleanReference(topUpReference)}`;
+}
+
+/**
+ * Records a confirmed wallet top-up as CREDIT / IN.
+ * Failed or abandoned top-ups must not create ledger entries.
+ */
+export async function recordWalletTopUpCredit(
+  tx: WalletLedgerTx,
+  input: RecordWalletTopUpCreditInput,
+) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { created: false, reason: "invalid_amount" as const };
+  }
+
+  const reference = walletTopUpCreditReference(input.topUpReference);
+  const existing = await tx.walletLedgerEntry.findUnique({
+    where: { reference },
+  });
+
+  if (existing) {
+    return { created: false, reason: "already_recorded" as const };
+  }
+
+  const currency = input.currency ?? "NGN";
+  let balance = await getCurrentWalletBalance(tx, input.userId);
+  balance += input.amount;
+
+  await tx.walletLedgerEntry.create({
+    data: {
+      userId: input.userId,
+      topUpId: input.topUpId,
+      entryType: WALLET_LEDGER_ENTRY_TYPES.CREDIT,
+      direction: WALLET_LEDGER_DIRECTIONS.IN,
+      amount: input.amount,
+      currency,
+      balanceAfter: balance,
+      reference,
+      description: `Wallet top-up confirmed via ${input.provider.replaceAll("_", " ").toLowerCase()}`,
+      metadata: {
+        provider: input.provider,
+        source: input.source,
+        topUpReference: input.topUpReference,
+        gatewayReference: input.gatewayReference ?? null,
+        providerReference: input.providerReference ?? null,
+      },
+    },
+  });
+
+  return { created: true, reason: "recorded" as const };
+}
+
 export type RecordExternalProjectPaymentLedgerInput = {
   userId: string;
   projectId: string;

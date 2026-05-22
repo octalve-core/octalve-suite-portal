@@ -4,9 +4,11 @@ import {
   PAYMENT_CONFIRMATION_SOURCES,
   PAYMENT_PROVIDERS,
   PAYMENT_TRANSACTION_STATUSES,
+  WALLET_TOPUP_STATUSES,
   WEBHOOK_PROCESSING_STATUSES,
 } from "@/lib/payment-constants";
 import { confirmProjectPayment } from "@/lib/payment-confirmation";
+import { confirmWalletTopUp } from "@/lib/wallet-topup-confirmation";
 
 type PaystackWebhookPayload = {
   event?: string;
@@ -129,6 +131,93 @@ async function markWebhookEvent(input: {
   });
 }
 
+async function processWalletTopUpCharge(input: {
+  webhookEventId: string;
+  reference: string;
+  data: NonNullable<PaystackWebhookPayload["data"]>;
+}) {
+  const topUp = await prisma.walletTopUp.findUnique({
+    where: { reference: input.reference },
+  });
+
+  if (!topUp || topUp.provider !== PAYMENT_PROVIDERS.PAYSTACK) {
+    await markWebhookEvent({
+      id: input.webhookEventId,
+      status: WEBHOOK_PROCESSING_STATUSES.FAILED,
+      processedAt: new Date(),
+      processingError: "Matching Paystack payment or wallet funding record not found",
+    });
+
+    return noStoreJson({ received: true, processed: false, reason: "record_not_found" });
+  }
+
+  const providerStatus = cleanText(input.data.status || "unknown", 80);
+  const amountMatches = Number(input.data.amount) === topUp.amount * 100;
+  const currencyMatches =
+    cleanText(input.data.currency, 12).toUpperCase() === topUp.currency;
+  const referenceMatches = input.data.reference === topUp.reference;
+  const successful = providerStatus === "success";
+
+  if (!successful || !amountMatches || !currencyMatches || !referenceMatches) {
+    const reason = [
+      !successful ? `Provider status: ${providerStatus}` : "",
+      !amountMatches ? "Amount mismatch" : "",
+      !currencyMatches ? "Currency mismatch" : "",
+      !referenceMatches ? "Reference mismatch" : "",
+    ]
+      .filter(Boolean)
+      .join("; ")
+      .slice(0, 250);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.walletTopUp.update({
+        where: { id: topUp.id },
+        data: {
+          status: WALLET_TOPUP_STATUSES.FAILED,
+          providerStatus,
+          failedAt: new Date(),
+          failureReason: reason,
+        },
+      });
+
+      await tx.paymentWebhookEvent.update({
+        where: { id: input.webhookEventId },
+        data: {
+          status: WEBHOOK_PROCESSING_STATUSES.FAILED,
+          processedAt: new Date(),
+          processingError: reason,
+        },
+      });
+    });
+
+    return noStoreJson({ received: true, processed: false, reason: "wallet_topup_verification_failed" });
+  }
+
+  const result = await confirmWalletTopUp({
+    topUpId: topUp.id,
+    provider: PAYMENT_PROVIDERS.PAYSTACK,
+    source: PAYMENT_CONFIRMATION_SOURCES.WEBHOOK,
+    gatewayReference: topUp.reference,
+    providerReference: input.data.id ? String(input.data.id) : input.data.reference ?? null,
+    providerStatus,
+  });
+
+  await markWebhookEvent({
+    id: input.webhookEventId,
+    status: WEBHOOK_PROCESSING_STATUSES.PROCESSED,
+    processedAt: new Date(),
+    processingError: null,
+  });
+
+  return noStoreJson({
+    received: true,
+    processed: result.status === "CONFIRMED",
+    duplicate: result.status === "ALREADY_CONFIRMED",
+    status: result.status,
+    recordType: "WALLET_TOPUP",
+  });
+}
+
 async function processChargeSuccess(input: {
   webhookEventId: string;
   reference: string;
@@ -146,14 +235,11 @@ async function processChargeSuccess(input: {
   });
 
   if (!transaction || transaction.provider !== PAYMENT_PROVIDERS.PAYSTACK) {
-    await markWebhookEvent({
-      id: input.webhookEventId,
-      status: WEBHOOK_PROCESSING_STATUSES.FAILED,
-      processedAt: new Date(),
-      processingError: "Matching Paystack transaction not found",
+    return processWalletTopUpCharge({
+      webhookEventId: input.webhookEventId,
+      reference: input.reference,
+      data: input.data,
     });
-
-    return noStoreJson({ received: true, processed: false, reason: "transaction_not_found" });
   }
 
   const providerStatus = cleanText(input.data.status || "unknown", 80);

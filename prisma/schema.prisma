@@ -114,6 +114,7 @@ model User {
   submittedDeliverables Deliverable[]    @relation("DeliverableSubmitter")
   notifications         Notification[]
   walletLedgerEntries  WalletLedgerEntry[]
+  walletTopUps         WalletTopUp[]
 }
 
 model Session {
@@ -462,6 +463,43 @@ model PaymentWebhookEvent {
   @@index([status])
 }
 
+
+model WalletTopUp {
+  id                  String              @id @default(cuid())
+
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider            String
+  status              String              @default("INITIALIZED")
+  amount              Int
+  currency            String              @default("NGN")
+
+  // Internal idempotency/reference control.
+  reference           String              @unique
+  idempotencyKey      String              @unique
+
+  // Provider-side references. These are not trusted unless verified server-side.
+  providerReference   String?             @unique
+  providerStatus      String?
+  authorizationUrl    String?
+
+  initiatedById       String?
+  verifiedAt          DateTime?
+  confirmedAt         DateTime?
+  failedAt            DateTime?
+  failureReason       String?
+
+  walletLedgerEntries WalletLedgerEntry[]
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([provider, status])
+  @@index([createdAt])
+}
+
 model WalletLedgerEntry {
   id            String              @id @default(cuid())
 
@@ -476,6 +514,9 @@ model WalletLedgerEntry {
 
   transactionId String?
   transaction   PaymentTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  topUpId       String?
+  topUp         WalletTopUp?        @relation(fields: [topUpId], references: [id], onDelete: SetNull)
 
   entryType     String
   direction     String
@@ -493,6 +534,7 @@ model WalletLedgerEntry {
   @@index([projectId])
   @@index([paymentId])
   @@index([transactionId])
+  @@index([topUpId])
   @@index([entryType])
   @@index([createdAt])
 }

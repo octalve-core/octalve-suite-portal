@@ -89,6 +89,7 @@ export async function GET() {
       projectId: entry.projectId ?? undefined,
       paymentId: entry.paymentId ?? undefined,
       transactionId: entry.transactionId ?? undefined,
+      topUpId: entry.topUpId ?? undefined,
       entryType: entry.entryType,
       direction: entry.direction,
       amount: entry.amount,
