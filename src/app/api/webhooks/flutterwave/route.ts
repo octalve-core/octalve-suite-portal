@@ -6,6 +6,7 @@ import {
   PAYMENT_TRANSACTION_STATUSES,
   WEBHOOK_PROCESSING_STATUSES,
 } from "@/lib/payment-constants";
+import { confirmProjectPayment } from "@/lib/payment-confirmation";
 
 type FlutterwaveWebhookPayload = {
   event?: string;
@@ -161,11 +162,7 @@ async function processFlutterwaveCharge(input: {
     include: {
       payment: {
         include: {
-          project: {
-            include: {
-              phases: { orderBy: { phaseNumber: "asc" } },
-            },
-          },
+          project: true,
         },
       },
     },
@@ -175,6 +172,7 @@ async function processFlutterwaveCharge(input: {
     await markWebhookEvent({
       id: input.webhookEventId,
       status: WEBHOOK_PROCESSING_STATUSES.FAILED,
+      processedAt: new Date(),
       processingError: "Matching Flutterwave transaction not found",
     });
 
@@ -225,152 +223,25 @@ async function processFlutterwaveCharge(input: {
     return noStoreJson({ received: true, processed: false, reason: "verification_failed" });
   }
 
-  await prisma.$transaction(async (tx) => {
-    const freshPayment = await tx.projectPayment.findUnique({
-      where: { id: transaction.paymentId },
-      include: {
-        project: {
-          include: {
-            phases: { orderBy: { phaseNumber: "asc" } },
-          },
-        },
-      },
-    });
-
-    if (!freshPayment) {
-      throw new Error("Payment not found during webhook processing");
-    }
-
-    if (freshPayment.status === "CONFIRMED") {
-      await tx.paymentTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          webhookEventId: input.webhookEventId,
-          status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-          verifiedAt: transaction.verifiedAt ?? new Date(),
-          confirmedAt: transaction.confirmedAt ?? new Date(),
-          providerStatus,
-          providerReference: providerReferenceFromFlutterwave(input.data),
-        },
-      });
-
-      await tx.paymentWebhookEvent.update({
-        where: { id: input.webhookEventId },
-        data: {
-          status: WEBHOOK_PROCESSING_STATUSES.PROCESSED,
-          processedAt: new Date(),
-          processingError: null,
-        },
-      });
-
-      return;
-    }
-
-    const expectedProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "APPROVED_AWAITING_DEPOSIT"
-        : "AWAITING_BALANCE";
-
-    const pendingProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "DEPOSIT_PENDING_CONFIRMATION"
-        : "BALANCE_PENDING_CONFIRMATION";
-
-    if (
-      freshPayment.status !== "UNPAID" ||
-      ![expectedProjectStatus, pendingProjectStatus].includes(freshPayment.project.status)
-    ) {
-      throw new Error("Payment is not in a payable state");
-    }
-
-    await tx.paymentTransaction.update({
-      where: { id: transaction.id },
-      data: {
-        webhookEventId: input.webhookEventId,
-        status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-        verifiedAt: transaction.verifiedAt ?? new Date(),
-        confirmedAt: new Date(),
-        providerStatus,
-        providerReference: providerReferenceFromFlutterwave(input.data),
-      },
-    });
-
-    await tx.projectPayment.update({
-      where: { id: freshPayment.id },
-      data: {
-        status: "CONFIRMED",
-        confirmedAt: new Date(),
-        clientMarkedPaidAt: new Date(),
-        provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
-        gatewayReference: transaction.reference,
-        providerReference: providerReferenceFromFlutterwave(input.data),
-        paidVia: paidViaFromFlutterwave(input.data),
-        confirmedSource: PAYMENT_CONFIRMATION_SOURCES.WEBHOOK,
-        note: null,
-      },
-    });
-
-    if (freshPayment.type === "DEPOSIT") {
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: "ACTIVE" },
-      });
-
-      const firstPhase = freshPayment.project.phases[0];
-
-      if (firstPhase && firstPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: firstPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    if (freshPayment.type === "BALANCE") {
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: "ACTIVE" },
-      });
-
-      const finalPhase = freshPayment.project.phases[freshPayment.project.phases.length - 1];
-
-      if (finalPhase && finalPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: finalPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    await tx.paymentWebhookEvent.update({
-      where: { id: input.webhookEventId },
-      data: {
-        status: WEBHOOK_PROCESSING_STATUSES.PROCESSED,
-        processedAt: new Date(),
-        processingError: null,
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        userId: freshPayment.project.clientId,
-        title: "Payment confirmed",
-        body: `Your ${freshPayment.type.toLowerCase()} payment for ${freshPayment.project.title} has been confirmed.`,
-        href: "/client",
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        role: "SUPER_ADMIN",
-        title: "Flutterwave webhook payment confirmed",
-        body: `${freshPayment.project.title} — ${freshPayment.type} payment was confirmed through Flutterwave webhook.`,
-        href: "/admin/payments",
-      },
-    });
+  const result = await confirmProjectPayment({
+    paymentId: transaction.paymentId,
+    provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+    source: PAYMENT_CONFIRMATION_SOURCES.WEBHOOK,
+    gatewayReference: transaction.reference,
+    providerReference: providerReferenceFromFlutterwave(input.data),
+    paidVia: paidViaFromFlutterwave(input.data),
+    providerStatus,
+    transactionId: transaction.id,
+    webhookEventId: input.webhookEventId,
+    providerDisplayName: "Flutterwave webhook",
   });
 
-  return noStoreJson({ received: true, processed: true });
+  return noStoreJson({
+    received: true,
+    processed: result.status === "CONFIRMED",
+    duplicate: result.status === "ALREADY_CONFIRMED",
+    status: result.status,
+  });
 }
 
 export async function POST(request: Request) {
