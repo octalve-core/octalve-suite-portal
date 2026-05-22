@@ -5,6 +5,8 @@ import {
   PAYMENT_PROVIDERS,
   PAYMENT_TRANSACTION_STATUSES,
 } from "@/lib/payment-constants";
+import { confirmProjectPayment } from "@/lib/payment-confirmation";
+import type { Prisma } from "@prisma/client";
 
 type FlutterwaveVerifyResponse = {
   status?: string;
@@ -98,6 +100,40 @@ async function verifyWithFlutterwave(input: {
   return payload;
 }
 
+function buildTransactionWhere(input: {
+  txRef: string;
+  transactionId: string;
+  paymentId: string;
+}): Prisma.PaymentTransactionWhereInput {
+  const clauses: Prisma.PaymentTransactionWhereInput[] = [];
+
+  if (input.txRef) {
+    clauses.push({ reference: input.txRef });
+  }
+
+  if (input.transactionId) {
+    clauses.push({ providerReference: input.transactionId });
+  }
+
+  if (input.paymentId) {
+    clauses.push({
+      paymentId: input.paymentId,
+      status: {
+        in: [
+          PAYMENT_TRANSACTION_STATUSES.INITIALIZED,
+          PAYMENT_TRANSACTION_STATUSES.PENDING,
+          PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
+        ],
+      },
+    });
+  }
+
+  return {
+    provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+    OR: clauses.length ? clauses : [{ id: "__missing_flutterwave_transaction__" }],
+  };
+}
+
 export async function POST(request: Request) {
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
@@ -107,29 +143,20 @@ export async function POST(request: Request) {
   const transactionId = cleanText(body.transactionId, 80);
   const paymentId = cleanText(body.paymentId, 160);
 
-  if (!txRef && !transactionId) {
+  if (!txRef && !transactionId && !paymentId) {
     return errorResponse("Flutterwave transaction reference is required", 400);
   }
 
   const transaction = await prisma.paymentTransaction.findFirst({
-    where: {
-      provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
-      OR: [
-        txRef ? { reference: txRef } : {},
-        transactionId ? { providerReference: transactionId } : {},
-      ],
-    },
+    where: buildTransactionWhere({ txRef, transactionId, paymentId }),
     include: {
       payment: {
         include: {
-          project: {
-            include: {
-              phases: { orderBy: { phaseNumber: "asc" } },
-            },
-          },
+          project: true,
         },
       },
     },
+    orderBy: { createdAt: "desc" },
   });
 
   if (!transaction || transaction.provider !== PAYMENT_PROVIDERS.FLUTTERWAVE) {
@@ -163,7 +190,10 @@ export async function POST(request: Request) {
   let flutterwavePayload: FlutterwaveVerifyResponse;
 
   try {
-    flutterwavePayload = await verifyWithFlutterwave({ txRef: transaction.reference, transactionId });
+    flutterwavePayload = await verifyWithFlutterwave({
+      txRef: transaction.reference,
+      transactionId,
+    });
   } catch (error) {
     await prisma.paymentTransaction.update({
       where: { id: transaction.id },
@@ -222,143 +252,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const resultPayload = await prisma.$transaction(async (tx) => {
-    const freshPayment = await tx.projectPayment.findUnique({
-      where: { id: transaction.paymentId },
-      include: {
-        project: {
-          include: {
-            phases: { orderBy: { phaseNumber: "asc" } },
-          },
-        },
-      },
-    });
-
-    if (!freshPayment) {
-      throw new Error("Payment disappeared during verification");
-    }
-
-    if (freshPayment.status === "CONFIRMED") {
-      await tx.paymentTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-          verifiedAt: new Date(),
-          confirmedAt: new Date(),
-          providerStatus,
-          providerReference: providerReferenceFromFlutterwave(data),
-        },
-      });
-
-      return {
-        status: "ALREADY_CONFIRMED" as const,
-        projectStatus: freshPayment.project.status,
-      };
-    }
-
-    const expectedProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "APPROVED_AWAITING_DEPOSIT"
-        : "AWAITING_BALANCE";
-
-    const pendingProjectStatus =
-      freshPayment.type === "DEPOSIT"
-        ? "DEPOSIT_PENDING_CONFIRMATION"
-        : "BALANCE_PENDING_CONFIRMATION";
-
-    if (
-      freshPayment.status !== "UNPAID" ||
-      ![expectedProjectStatus, pendingProjectStatus].includes(freshPayment.project.status)
-    ) {
-      throw new Error("Payment is not in a payable state");
-    }
-
-    await tx.paymentTransaction.update({
-      where: { id: transaction.id },
-      data: {
-        status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
-        verifiedAt: new Date(),
-        confirmedAt: new Date(),
-        providerStatus,
-        providerReference: providerReferenceFromFlutterwave(data),
-      },
-    });
-
-    await tx.projectPayment.update({
-      where: { id: freshPayment.id },
-      data: {
-        status: "CONFIRMED",
-        confirmedAt: new Date(),
-        clientMarkedPaidAt: new Date(),
-        provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
-        gatewayReference: transaction.reference,
-        providerReference: providerReferenceFromFlutterwave(data),
-        paidVia: paidViaFromFlutterwave(data),
-        confirmedSource: PAYMENT_CONFIRMATION_SOURCES.SERVER_VERIFY,
-        note: null,
-      },
-    });
-
-    let nextProjectStatus = freshPayment.project.status;
-
-    if (freshPayment.type === "DEPOSIT") {
-      nextProjectStatus = "ACTIVE";
-
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: nextProjectStatus },
-      });
-
-      const firstPhase = freshPayment.project.phases[0];
-
-      if (firstPhase && firstPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: firstPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    if (freshPayment.type === "BALANCE") {
-      nextProjectStatus = "ACTIVE";
-
-      await tx.project.update({
-        where: { id: freshPayment.projectId },
-        data: { status: nextProjectStatus },
-      });
-
-      const finalPhase = freshPayment.project.phases[freshPayment.project.phases.length - 1];
-
-      if (finalPhase && finalPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: finalPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    await tx.notification.create({
-      data: {
-        userId: freshPayment.project.clientId,
-        title: "Payment confirmed",
-        body: `Your ${freshPayment.type.toLowerCase()} payment for ${freshPayment.project.title} has been confirmed.`,
-        href: "/client",
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        role: "SUPER_ADMIN",
-        title: "Online payment confirmed",
-        body: `${freshPayment.project.title} — ${freshPayment.type} payment was confirmed through Flutterwave.`,
-        href: "/admin/payments",
-      },
-    });
-
-    return {
-      status: "CONFIRMED" as const,
-      projectStatus: nextProjectStatus,
-    };
+  const resultPayload = await confirmProjectPayment({
+    paymentId: transaction.paymentId,
+    provider: PAYMENT_PROVIDERS.FLUTTERWAVE,
+    source: PAYMENT_CONFIRMATION_SOURCES.SERVER_VERIFY,
+    gatewayReference: transaction.reference,
+    providerReference: providerReferenceFromFlutterwave(data),
+    paidVia: paidViaFromFlutterwave(data),
+    providerStatus,
+    transactionId: transaction.id,
+    providerDisplayName: "Flutterwave",
   });
 
   return noStoreJson({
