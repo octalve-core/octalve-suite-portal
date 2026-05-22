@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolvePaymentBankDetails } from "@/lib/payment-bank";
+import { getOfficialPaymentBankDetails } from "@/lib/payment-settings";
 import {
   getSessionOrThrow,
   requireRoles,
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
   }
 
   const code = makeProjectCode();
-  const paymentBank = resolvePaymentBankDetails();
+  const paymentBank = await getOfficialPaymentBankDetails();
 
   const project = await prisma.$transaction(async (tx) => {
     let client = await tx.user.findUnique({

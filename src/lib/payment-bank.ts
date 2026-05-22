@@ -5,17 +5,25 @@ export type PaymentBankDetails = {
 };
 
 export const OCTALVE_PAYMENT_BANK: PaymentBankDetails = {
-  accountNumber: process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NUMBER?.trim() || "1308342612",
-  bankName: process.env.NEXT_PUBLIC_OCTALVE_BANK_NAME?.trim() || "PROVIDUS BANK",
-  accountName: process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NAME?.trim() || "OCTALVE LTD",
+  accountNumber:
+    process.env.OCTALVE_ACCOUNT_NUMBER?.trim() ||
+    process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NUMBER?.trim() ||
+    "1308342612",
+  bankName:
+    process.env.OCTALVE_BANK_NAME?.trim() ||
+    process.env.NEXT_PUBLIC_OCTALVE_BANK_NAME?.trim() ||
+    "PROVIDUS BANK",
+  accountName:
+    process.env.OCTALVE_ACCOUNT_NAME?.trim() ||
+    process.env.NEXT_PUBLIC_OCTALVE_ACCOUNT_NAME?.trim() ||
+    "OCTALVE LTD",
 } as const;
 
 /**
  * Returns the official Octalve payment account used across the portal.
  *
- * We intentionally do not trust per-payment stored bank fields for display,
- * because older payment rows may contain legacy/demo account values.
- * New backend/system-settings support can later update this one central source.
+ * This is a static fallback. Server routes should prefer getOfficialPaymentBankDetails()
+ * from "@/lib/payment-settings" so database-managed bank settings can override env values.
  */
 export function resolvePaymentBankDetails(_payment?: {
   bankName?: string | null;

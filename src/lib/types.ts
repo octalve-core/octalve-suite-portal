@@ -35,6 +35,12 @@ export type PaymentStatus = "UNPAID" | "PENDING_CONFIRMATION" | "CONFIRMED" | "R
 export type PaymentType = "DEPOSIT" | "BALANCE";
 
 
+export type PaymentBankDetails = {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+};
+
 export type PaymentGatewaySetting = {
   id: string;
   provider: PaymentProvider | (string & {});
@@ -48,6 +54,9 @@ export type PaymentGatewaySetting = {
   callbackPath?: string;
   webhookPath?: string;
   notes?: string;
+  publicKeyConfigured?: boolean;
+  secretKeyConfigured?: boolean;
+  webhookSecretConfigured?: boolean;
   createdAt: string;
   updatedAt: string;
 };

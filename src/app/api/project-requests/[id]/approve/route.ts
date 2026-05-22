@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolvePaymentBankDetails } from "@/lib/payment-bank";
+import { getOfficialPaymentBankDetails } from "@/lib/payment-settings";
 import { validateProjectPaymentSplit } from "@/lib/payment-policy";
 import {
   getSessionOrThrow,
@@ -152,7 +152,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const code = makeProjectCode();
-  const paymentBank = resolvePaymentBankDetails();
+  const paymentBank = await getOfficialPaymentBankDetails();
 
   const project = await prisma.$transaction(async (tx) => {
     await tx.projectRequest.update({

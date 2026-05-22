@@ -13,6 +13,8 @@ import type {
   Review,
   NotificationItem,
   WalletSummary,
+  PaymentBankDetails,
+  PaymentGatewaySetting,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -181,19 +183,19 @@ export const api = {
 
   // System Settings
   systemSettings: {
+    paymentGateways: {
+      list: () => fetchJson<PaymentGatewaySetting[]>("/api/system-settings/payment-gateways"),
+      update: (data: {
+        provider: string;
+        isEnabled?: boolean;
+        mode?: "LIVE" | "TEST";
+        notes?: string;
+      }) => patch<PaymentGatewaySetting[]>("/api/system-settings/payment-gateways", data),
+    },
     paymentBank: {
-      get: () =>
-        fetchJson<{
-          bankName: string;
-          accountName: string;
-          accountNumber: string;
-        }>("/api/system-settings/payment-bank"),
-      update: (data: { bankName: string; accountName: string; accountNumber: string }) =>
-        patch<{
-          bankName: string;
-          accountName: string;
-          accountNumber: string;
-        }>("/api/system-settings/payment-bank", data),
+      get: () => fetchJson<PaymentBankDetails>("/api/system-settings/payment-bank"),
+      update: (data: PaymentBankDetails) =>
+        patch<PaymentBankDetails>("/api/system-settings/payment-bank", data),
     },
   },
   // Notifications
