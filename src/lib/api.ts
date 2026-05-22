@@ -22,6 +22,7 @@ import type {
   PaymentVerifyResponse,
   AdminPaymentFinanceAudit,
   AdminWalletOverview,
+  AdminWalletTopUpAudit,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -134,6 +135,8 @@ export const api = {
   // Admin Wallet
   adminWallet: {
     overview: () => fetchJson<AdminWalletOverview>("/api/admin/wallet"),
+    topUpAudit: (id: string) =>
+      fetchJson<AdminWalletTopUpAudit>(`/api/admin/wallet/${id}`),
   },
 
   // Payments

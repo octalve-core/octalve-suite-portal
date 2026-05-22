@@ -375,6 +375,35 @@ export type AdminWalletClientSummary = {
   lastActivityAt?: string;
 };
 
+
+export type AdminWalletTopUpAudit = {
+  topUp: WalletTopUp & {
+    user?: Pick<User, "id" | "name" | "email" | "phone" | "company"> | null;
+  };
+  user: Pick<User, "id" | "name" | "email" | "phone" | "company">;
+  walletBalance: number;
+  ledgerEntries: Array<
+    WalletLedgerEntry & {
+      project?: Pick<Project, "id" | "title" | "businessName" | "projectCode"> | null;
+      payment?: Pick<ProjectPayment, "id" | "reference" | "type" | "status" | "amount"> | null;
+    }
+  >;
+  webhookEvents: PaymentWebhookEvent[];
+  timeline: Array<{
+    label: string;
+    value?: string;
+    status: "DONE" | "PENDING" | "FAILED";
+  }>;
+  summary: {
+    currency: string;
+    ledgerCreditTotal: number;
+    ledgerDebitTotal: number;
+    ledgerNet: number;
+    webhookCount: number;
+    hasFailure: boolean;
+  };
+};
+
 export type AdminWalletOverview = {
   currency: string;
   summary: {

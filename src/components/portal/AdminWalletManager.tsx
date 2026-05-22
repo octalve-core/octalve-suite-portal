@@ -178,9 +178,18 @@ function TopUpRow({ topUp }: { topUp: WalletTopUp & { user?: { name: string; ema
           </p>
         </div>
 
-        <strong className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
-          {formatNaira(topUp.amount)}
-        </strong>
+        <div className="flex flex-col items-start gap-2 lg:items-end">
+          <strong className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+            {formatNaira(topUp.amount)}
+          </strong>
+          <Link
+            href={`/admin/wallet/${topUp.id}`}
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+          >
+            Open Audit
+            <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
