@@ -171,7 +171,7 @@ export function ClientWalletManager() {
                 Octalve Wallet
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-white/75 sm:text-[15px]">
-                View wallet balance, ledger movement, credits and project payment deductions from one protected account.
+                View wallet balance, confirmed payment activity and ledger-backed project payment records from one protected account.
               </p>
             </div>
 
@@ -200,7 +200,7 @@ export function ClientWalletManager() {
         <WalletMetric
           label="Available"
           value={wallet?.availableBalance ?? 0}
-          helper="Usable wallet value."
+          helper="Net usable wallet value."
           icon={<WalletCards size={20} />}
         />
         <WalletMetric
@@ -212,13 +212,13 @@ export function ClientWalletManager() {
         <WalletMetric
           label="Total Credited"
           value={wallet?.totalCredited ?? 0}
-          helper="All confirmed wallet credits."
+          helper="Confirmed credits and external payment records."
           icon={<ArrowDownLeft size={20} />}
         />
         <WalletMetric
           label="Project Spend"
           value={wallet?.totalSpent ?? 0}
-          helper="Wallet payments used for projects."
+          helper="Confirmed project payment applications."
           icon={<CreditCard size={20} />}
         />
       </section>
@@ -231,7 +231,7 @@ export function ClientWalletManager() {
                 Ledger History
               </h2>
               <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-                Every wallet movement will appear here once wallet funding or deductions are enabled.
+                Confirmed wallet and project payment activity appears here as ledger records.
               </p>
             </div>
 
@@ -253,7 +253,7 @@ export function ClientWalletManager() {
               <EmptyState
                 icon={<WalletCards size={30} />}
                 title="No wallet activity yet"
-                body="Wallet ledger records will appear here after approved top-ups, refunds, deductions, or project payments."
+                body="Ledger records will appear here after confirmed payment activity, approved top-ups, refunds, or deductions."
               />
             )}
           </div>

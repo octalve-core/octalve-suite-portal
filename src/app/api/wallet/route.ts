@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, errorResponse } from "@/lib/api-helpers";
+import {
+  WALLET_LEDGER_DIRECTIONS,
+  WALLET_LEDGER_ENTRY_TYPES,
+} from "@/lib/payment-constants";
+
+function sumAmount(value: number | null | undefined) {
+  return Number.isFinite(value) ? Number(value) : 0;
+}
 
 export async function GET() {
   const result = await getSessionOrThrow();
@@ -10,55 +18,71 @@ export async function GET() {
     return errorResponse("Forbidden", 403);
   }
 
-  const entries = await prisma.walletLedgerEntry.findMany({
-    where: { userId: result.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const userId = result.user.id;
 
-  const totals = entries.reduce(
-    (acc, entry) => {
-      const amount = Number.isFinite(entry.amount) ? entry.amount : 0;
+  const [
+    entries,
+    totalIn,
+    totalOut,
+    held,
+    credited,
+    spent,
+  ] = await Promise.all([
+    prisma.walletLedgerEntry.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: { userId, direction: WALLET_LEDGER_DIRECTIONS.IN },
+      _sum: { amount: true },
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: { userId, direction: WALLET_LEDGER_DIRECTIONS.OUT },
+      _sum: { amount: true },
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: { userId, entryType: WALLET_LEDGER_ENTRY_TYPES.HOLD },
+      _sum: { amount: true },
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: {
+        userId,
+        entryType: {
+          in: [
+            WALLET_LEDGER_ENTRY_TYPES.CREDIT,
+            WALLET_LEDGER_ENTRY_TYPES.REFUND,
+            WALLET_LEDGER_ENTRY_TYPES.RELEASE,
+          ],
+        },
+      },
+      _sum: { amount: true },
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: {
+        userId,
+        entryType: {
+          in: [
+            WALLET_LEDGER_ENTRY_TYPES.DEBIT,
+            WALLET_LEDGER_ENTRY_TYPES.PROJECT_PAYMENT,
+          ],
+        },
+      },
+      _sum: { amount: true },
+    }),
+  ]);
 
-      if (entry.direction === "IN") {
-        acc.balance += amount;
-      }
-
-      if (entry.direction === "OUT") {
-        acc.balance -= amount;
-      }
-
-      if (entry.entryType === "HOLD") {
-        acc.heldBalance += amount;
-      }
-
-      if (entry.entryType === "CREDIT" || entry.entryType === "REFUND" || entry.entryType === "RELEASE") {
-        acc.totalCredited += amount;
-      }
-
-      if (entry.entryType === "DEBIT" || entry.entryType === "PROJECT_PAYMENT") {
-        acc.totalSpent += amount;
-      }
-
-      return acc;
-    },
-    {
-      balance: 0,
-      heldBalance: 0,
-      totalCredited: 0,
-      totalSpent: 0,
-    },
-  );
-
-  const availableBalance = Math.max(totals.balance - totals.heldBalance, 0);
+  const balance = sumAmount(totalIn._sum.amount) - sumAmount(totalOut._sum.amount);
+  const heldBalance = sumAmount(held._sum.amount);
+  const availableBalance = Math.max(balance - heldBalance, 0);
 
   const response = NextResponse.json({
     currency: "NGN",
-    balance: totals.balance,
+    balance,
     availableBalance,
-    heldBalance: totals.heldBalance,
-    totalCredited: totals.totalCredited,
-    totalSpent: totals.totalSpent,
+    heldBalance,
+    totalCredited: sumAmount(credited._sum.amount),
+    totalSpent: sumAmount(spent._sum.amount),
     entries: entries.map((entry) => ({
       id: entry.id,
       userId: entry.userId,

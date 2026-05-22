@@ -6,6 +6,7 @@ import {
   PAYMENT_TRANSACTION_STATUSES,
   WEBHOOK_PROCESSING_STATUSES,
 } from "@/lib/payment-constants";
+import { recordExternalProjectPaymentLedgerSettlement } from "@/lib/wallet-ledger";
 
 export type ConfirmProjectPaymentInput = {
   paymentId: string;
@@ -126,6 +127,21 @@ export async function confirmProjectPayment(
     if (freshPayment.status === "CONFIRMED") {
       await updateLinkedAutomationRecords(tx, input, "ALREADY_CONFIRMED");
 
+      await recordExternalProjectPaymentLedgerSettlement(tx, {
+        userId: freshPayment.project.clientId,
+        projectId: freshPayment.projectId,
+        projectTitle: freshPayment.project.title,
+        paymentId: freshPayment.id,
+        paymentReference: freshPayment.reference,
+        paymentType: freshPayment.type,
+        provider: input.provider,
+        source: input.source,
+        transactionId: input.transactionId ?? null,
+        amount: freshPayment.amount,
+        currency: "NGN",
+        gatewayReference: input.gatewayReference ?? null,
+        providerReference: input.providerReference ?? null,
+      });
       return {
         status: "ALREADY_CONFIRMED",
         paymentId: freshPayment.id,
@@ -188,6 +204,21 @@ export async function confirmProjectPayment(
 
     await updateLinkedAutomationRecords(tx, input, "CONFIRMED");
 
+      await recordExternalProjectPaymentLedgerSettlement(tx, {
+        userId: freshPayment.project.clientId,
+        projectId: freshPayment.projectId,
+        projectTitle: freshPayment.project.title,
+        paymentId: freshPayment.id,
+        paymentReference: freshPayment.reference,
+        paymentType: freshPayment.type,
+        provider: input.provider,
+        source: input.source,
+        transactionId: input.transactionId ?? null,
+        amount: freshPayment.amount,
+        currency: "NGN",
+        gatewayReference: input.gatewayReference ?? null,
+        providerReference: input.providerReference ?? null,
+      });
     await tx.project.update({
       where: { id: freshPayment.projectId },
       data: { status: nextProjectStatus },
