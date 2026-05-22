@@ -124,6 +124,8 @@ export const api = {
       post<PaymentInitializeResponse>(`/api/payments/${id}/initialize`, { provider }),
     verifyPaystack: (data: { reference: string; paymentId?: string }) =>
       post<PaymentVerifyResponse>("/api/payments/paystack/verify", data),
+    verifyFlutterwave: (data: { txRef?: string; transactionId?: string; paymentId?: string }) =>
+      post<PaymentVerifyResponse>("/api/payments/flutterwave/verify", data),
     markPaid: (id: string) =>
       post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
     confirm: (id: string) =>

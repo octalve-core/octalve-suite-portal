@@ -218,7 +218,62 @@ export function FlutterwavePaymentCallbackPage({
   transactionId?: string;
   paymentId?: string;
 }) {
-  const successful = status === "successful";
+  const [result, setResult] = useState<PaymentVerifyResponse | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<
+    "VERIFYING" | "CONFIRMED" | "FAILED"
+  >("VERIFYING");
+  const [message, setMessage] = useState("Verifying your Flutterwave payment securely...");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function verifyPayment() {
+      if (!txRef && !transactionId) {
+        setVerificationStatus("FAILED");
+        setMessage("Missing Flutterwave transaction reference. Please contact support if you were debited.");
+        return;
+      }
+
+      try {
+        const response = await api.payments.verifyFlutterwave({
+          txRef,
+          transactionId,
+          paymentId,
+        });
+
+        if (!mounted) return;
+
+        setResult(response);
+
+        if (response.status === "CONFIRMED" || response.status === "ALREADY_CONFIRMED") {
+          setVerificationStatus("CONFIRMED");
+          setMessage(response.message);
+          return;
+        }
+
+        setVerificationStatus("FAILED");
+        setMessage(response.message || "Payment could not be confirmed yet.");
+      } catch (error) {
+        if (!mounted) return;
+
+        setVerificationStatus("FAILED");
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "Unable to verify payment. Please contact support if you were debited.",
+        );
+      }
+    }
+
+    void verifyPayment();
+
+    return () => {
+      mounted = false;
+    };
+  }, [paymentId, transactionId, txRef]);
+
+  const confirmed = verificationStatus === "CONFIRMED";
+  const failed = verificationStatus === "FAILED";
 
   return (
     <div className="mx-auto w-full max-w-250 px-4 py-6 sm:px-6 lg:px-8">
@@ -231,26 +286,61 @@ export function FlutterwavePaymentCallbackPage({
       </Link>
 
       <Card className="mt-6 overflow-hidden border-slate-200 bg-white p-0 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-        <div className={["p-6 text-white sm:p-8", successful ? "bg-slate-950" : "bg-orange-700"].join(" ")}>
-          <Badge className="border-white/20 bg-white/10 text-white">Flutterwave Return</Badge>
+        <div
+          className={[
+            "p-6 text-white sm:p-8",
+            confirmed ? "bg-emerald-700" : failed ? "bg-red-700" : "bg-slate-950",
+          ].join(" ")}
+        >
+          <Badge className="border-white/20 bg-white/10 text-white">
+            Flutterwave Verification
+          </Badge>
           <h1 className="mt-4 text-3xl font-semibold tracking-[-0.055em] sm:text-4xl">
-            Flutterwave return received
+            {confirmed
+              ? "Payment confirmed"
+              : failed
+                ? "Payment not confirmed"
+                : "Verifying payment"}
           </h1>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-white/75">
-            Your checkout session returned to Octalve. Secure server verification will be connected in the next Flutterwave batch.
+            {message}
           </p>
         </div>
 
         <div className="grid gap-5 p-6 sm:p-8">
-          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+          <div
+            className={[
+              "rounded-2xl border p-4",
+              confirmed
+                ? "border-emerald-200 bg-emerald-50"
+                : failed
+                  ? "border-red-200 bg-red-50"
+                  : "border-blue-100 bg-blue-50",
+            ].join(" ")}
+          >
             <div className="flex gap-3">
-              <CreditCard className="mt-0.5 text-[#0064E0]" size={20} />
+              {confirmed ? (
+                <CheckCircle2 className="mt-0.5 text-emerald-700" size={20} />
+              ) : failed ? (
+                <XCircle className="mt-0.5 text-red-700" size={20} />
+              ) : (
+                <Loader2 className="mt-0.5 animate-spin text-[#0064E0]" size={20} />
+              )}
+
               <div>
                 <strong className="block text-sm font-bold text-slate-950">
-                  Verification pending
+                  {confirmed
+                    ? "Verified by server"
+                    : failed
+                      ? "Verification needs attention"
+                      : "Server verification in progress"}
                 </strong>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  This return page does not confirm payment yet. Final confirmation will require secure server-side Flutterwave verification and webhook handling.
+                  {confirmed
+                    ? "Your payment has been confirmed and your project access has been updated."
+                    : failed
+                      ? "Do not retry immediately if your account was debited. Contact support with your reference."
+                      : "Please wait while Octalve confirms this payment with Flutterwave."}
                 </p>
               </div>
             </div>
@@ -260,7 +350,7 @@ export function FlutterwavePaymentCallbackPage({
             {status ? (
               <div>
                 <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                  Flutterwave Status
+                  Flutterwave Return Status
                 </span>
                 <strong className="mt-1 block break-all text-slate-800">{status}</strong>
               </div>
@@ -292,16 +382,29 @@ export function FlutterwavePaymentCallbackPage({
                 <strong className="mt-1 block break-all text-slate-800">{paymentId}</strong>
               </div>
             ) : null}
+
+            {result?.transactionReference ? (
+              <div>
+                <span className="block text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                  Internal Transaction
+                </span>
+                <strong className="mt-1 block break-all text-slate-800">
+                  {result.transactionReference}
+                </strong>
+              </div>
+            ) : null}
           </div>
 
-          <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-            <div className="flex gap-3">
-              <AlertCircle className="mt-0.5 text-orange-600" size={20} />
-              <p className="text-sm font-semibold leading-6 text-orange-800">
-                Do not retry immediately if you were debited. Keep the transaction reference for support until verification is active.
-              </p>
+          {!confirmed ? (
+            <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+              <div className="flex gap-3">
+                <AlertCircle className="mt-0.5 text-orange-600" size={20} />
+                <p className="text-sm font-semibold leading-6 text-orange-800">
+                  Server verification is active, but webhook confirmation will still be added next for stronger provider-grade reliability.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="flex flex-wrap gap-3">
             <Link href="/client/payments">
