@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
+import {
+  PAYMENT_CONFIRMATION_SOURCES,
+  PAYMENT_PROVIDERS,
+} from "@/lib/payment-constants";
+import { confirmProjectPayment } from "@/lib/payment-confirmation";
 
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/payments/[id]/confirm — Admin confirms payment received.
- * Handles the state machine:
- * - deposit confirmation opens the project and first phase
- * - balance confirmation opens the final phase
+ * POST /api/payments/[id]/confirm — Admin confirms manual bank payment.
+ * Uses the shared payment confirmation state machine.
  */
 export async function POST(_request: Request, { params }: Params) {
   const { id } = await params;
@@ -20,13 +23,7 @@ export async function POST(_request: Request, { params }: Params) {
 
   const payment = await prisma.projectPayment.findUnique({
     where: { id },
-    include: {
-      project: {
-        include: {
-          phases: { orderBy: { phaseNumber: "asc" } },
-        },
-      },
-    },
+    include: { project: true },
   });
 
   if (!payment) return errorResponse("Payment not found", 404);
@@ -43,60 +40,11 @@ export async function POST(_request: Request, { params }: Params) {
     return errorResponse("Balance payment is not awaiting confirmation for this project.", 400);
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.projectPayment.update({
-      where: { id },
-      data: {
-        status: "CONFIRMED",
-        confirmedAt: new Date(),
-        confirmedById: result.user.id,
-        note: null,
-      },
-    });
-
-    const project = payment.project;
-    const phases = project.phases;
-
-    if (payment.type === "DEPOSIT") {
-      await tx.project.update({
-        where: { id: project.id },
-        data: { status: "ACTIVE" },
-      });
-
-      const firstPhase = phases[0];
-
-      if (firstPhase && firstPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: firstPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    if (payment.type === "BALANCE") {
-      await tx.project.update({
-        where: { id: project.id },
-        data: { status: "ACTIVE" },
-      });
-
-      const finalPhase = phases[phases.length - 1];
-
-      if (finalPhase && finalPhase.status === "LOCKED") {
-        await tx.projectPhase.update({
-          where: { id: finalPhase.id },
-          data: { status: "IN_PROGRESS" },
-        });
-      }
-    }
-
-    await tx.notification.create({
-      data: {
-        userId: project.clientId,
-        title: "Payment confirmed",
-        body: `Your ${payment.type.toLowerCase()} payment for ${project.title} has been confirmed.`,
-        href: "/client",
-      },
-    });
+  await confirmProjectPayment({
+    paymentId: id,
+    provider: PAYMENT_PROVIDERS.MANUAL_BANK,
+    source: PAYMENT_CONFIRMATION_SOURCES.ADMIN_MANUAL,
+    confirmedById: result.user.id,
   });
 
   return NextResponse.json({ success: true });
