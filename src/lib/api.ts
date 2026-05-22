@@ -15,6 +15,8 @@ import type {
   WalletSummary,
   PaymentBankDetails,
   PaymentGatewaySetting,
+  PaymentInitializeResponse,
+  PaymentMethodOption,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -115,9 +117,16 @@ export const api = {
 
   // Payments
   payments: {
-    markPaid: (id: string) => post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
-    confirm: (id: string) => post<{ success: boolean }>(`/api/payments/${id}/confirm`),
-    reject: (id: string, note?: string) => post<{ success: boolean }>(`/api/payments/${id}/reject`, { note }),
+    methods: (id: string) =>
+      fetchJson<PaymentMethodOption[]>(`/api/payments/${id}/methods`),
+    initialize: (id: string, provider: string) =>
+      post<PaymentInitializeResponse>(`/api/payments/${id}/initialize`, { provider }),
+    markPaid: (id: string) =>
+      post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
+    confirm: (id: string) =>
+      post<{ success: boolean }>(`/api/payments/${id}/confirm`),
+    reject: (id: string, note?: string) =>
+      post<{ success: boolean }>(`/api/payments/${id}/reject`, { note }),
   },
 
   // Phases

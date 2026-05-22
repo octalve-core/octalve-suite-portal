@@ -61,6 +61,26 @@ export type PaymentGatewaySetting = {
   updatedAt: string;
 };
 
+
+export type PaymentMethodOption = {
+  provider: PaymentProvider | (string & {});
+  displayName: string;
+  isEnabled: boolean;
+  isReady: boolean;
+  isAutomated: boolean;
+  sortOrder: number;
+  unavailableReason?: string;
+};
+
+export type PaymentInitializeResponse = {
+  provider: PaymentProvider | (string & {});
+  paymentId: string;
+  paymentReference: string;
+  transactionReference?: string;
+  authorizationUrl?: string;
+  status: string;
+  message: string;
+};
 export type PaymentTransaction = {
   id: string;
   paymentId: string;

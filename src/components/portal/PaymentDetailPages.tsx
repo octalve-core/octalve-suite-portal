@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -20,7 +20,8 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { PaymentStatus, Project, ProjectPayment, User } from "@/lib/types";
+import type { PaymentMethodOption, PaymentStatus, Project, ProjectPayment, User } from "@/lib/types";
+import { api } from "@/lib/api";
 import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import { getPackageTitle } from "./packageCatalog";
 import { useApp } from "./AppContext";
@@ -330,6 +331,115 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
   );
 }
 
+function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
+  const [methods, setMethods] = useState<PaymentMethodOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadMethods() {
+      if (payment.status !== "UNPAID") return;
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await api.payments.methods(payment.id);
+        if (mounted) setMethods(data);
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : "Unable to load payment methods.");
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadMethods();
+
+    return () => {
+      mounted = false;
+    };
+  }, [payment.id, payment.status]);
+
+  if (payment.status !== "UNPAID") return null;
+
+  return (
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+      <div className="flex items-center gap-3">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
+          <CreditCard size={20} />
+        </span>
+        <div>
+          <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+            Payment methods
+          </h2>
+          <p className="text-sm font-medium text-slate-500">
+            Choose a secure payment path. Online gateways are prepared but will connect in the provider batch.
+          </p>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-orange-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-3">
+        {loading ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+            Loading payment methods...
+          </div>
+        ) : methods.length ? (
+          methods.map((method) => {
+            const isManual = method.provider === "MANUAL_BANK";
+            const available = method.isReady || isManual;
+
+            return (
+              <div
+                key={method.provider}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <strong className="block text-sm text-slate-950">
+                      {method.displayName}
+                    </strong>
+                    <span className="mt-1 block text-sm leading-6 text-slate-500">
+                      {available
+                        ? isManual
+                          ? "Available now. Use the bank details below."
+                          : "Ready for secure online payment."
+                        : method.unavailableReason ?? "Not available yet."}
+                    </span>
+                  </div>
+
+                  <span
+                    className={[
+                      "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
+                      available
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-500",
+                    ].join(" ")}
+                  >
+                    {available ? "Available" : "Not Ready"}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+            No payment methods are available yet.
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
 export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
   const router = useRouter();
   const { state, confirmPayment, rejectPayment } = useApp();
@@ -565,6 +675,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
         </main>
 
         <aside className="space-y-5">
+          <ClientPaymentMethodsCard payment={payment} />
           <BankDetails payment={payment} />
 
           <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
