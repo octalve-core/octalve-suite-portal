@@ -20,7 +20,7 @@ import type { ProjectRequest, Role } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { getPackageTitle } from "./packageCatalog";
 import { Badge, Button, Card, Input, Select, Textarea, statusClass, statusLabel } from "./UI";
-import { calculateProjectPaymentSplit, DEFAULT_PROJECT_DEPOSIT_PERCENTAGE } from "@/lib/payment-policy";
+import { calculateProjectPaymentSplit } from "@/lib/payment-policy";
 
 type RequestWithClient = ProjectRequest & {
   client?: {
@@ -34,6 +34,7 @@ type RequestWithClient = ProjectRequest & {
 type ApprovalForm = {
   totalAmount: number;
   depositAmount: number;
+  depositPercentage: number;
   projectManagerId: string;
   targetDate: string;
   internalNotes: string;
@@ -45,6 +46,7 @@ const DEFAULT_APPROVAL_SPLIT = calculateProjectPaymentSplit(DEFAULT_APPROVAL_AMO
 const DEFAULT_APPROVAL_FORM: ApprovalForm = {
   totalAmount: DEFAULT_APPROVAL_SPLIT.totalAmount,
   depositAmount: DEFAULT_APPROVAL_SPLIT.depositAmount,
+  depositPercentage: DEFAULT_APPROVAL_SPLIT.depositPercentage,
   projectManagerId: "",
   targetDate: "",
   internalNotes: "",
@@ -202,6 +204,7 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
         totalAmount: paymentSplit.totalAmount,
         depositAmount,
         balanceAmount,
+        depositPercentage: paymentSplit.depositPercentage,
         projectManagerId: form.projectManagerId || undefined,
         targetDate: form.targetDate || undefined,
         internalNotes: form.internalNotes || undefined,
@@ -377,7 +380,7 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
                   disabled={!isPending}
                   onChange={(event) =>
                     setForm((current) => {
-                      const split = calculateProjectPaymentSplit(Number(event.target.value));
+                      const split = calculateProjectPaymentSplit(Number(event.target.value), current.depositPercentage);
 
                       return {
                         ...current,
@@ -391,7 +394,30 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
               </label>
 
               <label className="block">
-                <span className="text-sm font-bold text-slate-800">Deposit Amount ({DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)</span>
+                <span className="text-sm font-bold text-slate-800">Deposit Percentage</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={form.depositPercentage}
+                  disabled={!isPending}
+                  onChange={(event) =>
+                    setForm((current) => {
+                      const split = calculateProjectPaymentSplit(current.totalAmount, Number(event.target.value));
+
+                      return {
+                        ...current,
+                        depositPercentage: split.depositPercentage,
+                        depositAmount: split.depositAmount,
+                      };
+                    })
+                  }
+                  className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-bold text-slate-800">Deposit Amount ({form.depositPercentage}%)</span>
                 <Input
                   type="number"
                   min={0}

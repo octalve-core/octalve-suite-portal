@@ -230,6 +230,7 @@ export type Project = {
   totalAmount: number;
   depositAmount: number;
   balanceAmount: number;
+  depositPercentage: number;
   phases: ProjectPhase[];
   payments: ProjectPayment[];
   paymentTransactions?: PaymentTransaction[];

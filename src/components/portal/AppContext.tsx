@@ -46,6 +46,7 @@ type AppContextValue = {
       totalAmount: number;
       depositAmount: number;
       balanceAmount: number;
+      depositPercentage: number;
       projectManagerId?: string;
       targetDate?: string;
       internalNotes?: string;
@@ -61,6 +62,7 @@ type AppContextValue = {
     totalAmount: number;
     depositAmount: number;
     balanceAmount: number;
+    depositPercentage: number;
     projectManagerId?: string;
     internalNotes?: string;
   }) => Promise<string>;
@@ -280,6 +282,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       totalAmount: number;
       depositAmount: number;
       balanceAmount: number;
+      depositPercentage: number;
       projectManagerId?: string;
       targetDate?: string;
       internalNotes?: string;
@@ -299,6 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     totalAmount: number;
     depositAmount: number;
     balanceAmount: number;
+    depositPercentage: number;
     projectManagerId?: string;
     internalNotes?: string;
   }) {

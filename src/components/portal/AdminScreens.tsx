@@ -44,7 +44,7 @@ import {
   statusLabel,
 } from "./UI";
 import { getPackageCatalogItem, getPackageTitle } from "./packageCatalog";
-import { calculateProjectPaymentSplit, DEFAULT_PROJECT_DEPOSIT_PERCENTAGE } from "@/lib/payment-policy";
+import { calculateProjectPaymentSplit } from "@/lib/payment-policy";
 
 type WorkspaceRole = "CLIENT" | "STAFF" | "PROJECT_MANAGER" | "SUPER_ADMIN";
 
@@ -415,6 +415,7 @@ export function AdminCreateProject() {
       totalAmount: split.totalAmount,
       depositAmount: split.depositAmount,
       balanceAmount: split.balanceAmount,
+      depositPercentage: split.depositPercentage,
       projectManagerId: "",
       internalNotes: "",
     };
@@ -549,7 +550,7 @@ export function AdminCreateProject() {
                   type="number"
                   value={form.totalAmount}
                   onChange={(event) => {
-                    const split = calculateProjectPaymentSplit(Number(event.target.value));
+                    const split = calculateProjectPaymentSplit(Number(event.target.value), form.depositPercentage);
                     setForm({
                       ...form,
                       totalAmount: split.totalAmount,
@@ -561,7 +562,26 @@ export function AdminCreateProject() {
                 />
               </Field>
 
-              <Field label={`Deposit Amount (${DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)`}>
+              <Field label="Deposit Percentage">
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={form.depositPercentage}
+                  onChange={(event) => {
+                    const split = calculateProjectPaymentSplit(form.totalAmount, Number(event.target.value));
+                    setForm({
+                      ...form,
+                      depositPercentage: split.depositPercentage,
+                      depositAmount: split.depositAmount,
+                      balanceAmount: split.balanceAmount,
+                    });
+                  }}
+                  className="h-12 rounded-2xl border-slate-200 text-sm"
+                />
+              </Field>
+
+              <Field label={`Deposit Amount (${form.depositPercentage}%)`}>
                 <Input
                   type="number"
                   value={form.depositAmount}
@@ -701,6 +721,7 @@ function RequestReviewModal({
     totalAmount: number;
     depositAmount: number;
     balanceAmount: number;
+    depositPercentage: number;
     projectManagerId?: string;
     targetDate?: string;
     internalNotes?: string;
@@ -716,6 +737,7 @@ function RequestReviewModal({
       totalAmount: split.totalAmount,
       depositAmount: split.depositAmount,
       balanceAmount: split.balanceAmount,
+      depositPercentage: split.depositPercentage,
       projectManagerId: staffOptions[0]?.id ?? "",
       targetDate: "",
       internalNotes: "",
@@ -753,7 +775,7 @@ function RequestReviewModal({
               value={form.totalAmount}
               disabled={!isPending}
               onChange={(event) => {
-                    const split = calculateProjectPaymentSplit(Number(event.target.value));
+                    const split = calculateProjectPaymentSplit(Number(event.target.value), form.depositPercentage);
                     setForm({
                       ...form,
                       totalAmount: split.totalAmount,
@@ -764,7 +786,26 @@ function RequestReviewModal({
             />
           </Field>
 
-          <Field label={`Deposit Amount (${DEFAULT_PROJECT_DEPOSIT_PERCENTAGE}%)`}>
+          <Field label="Deposit Percentage">
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={form.depositPercentage}
+              disabled={!isPending}
+              onChange={(event) => {
+                    const split = calculateProjectPaymentSplit(form.totalAmount, Number(event.target.value));
+                    setForm({
+                      ...form,
+                      depositPercentage: split.depositPercentage,
+                      depositAmount: split.depositAmount,
+                      balanceAmount: split.balanceAmount,
+                    });
+                  }}
+            />
+          </Field>
+
+          <Field label={`Deposit Amount (${form.depositPercentage}%)`}>
             <Input
               type="number"
               value={form.depositAmount}

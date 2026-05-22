@@ -102,7 +102,8 @@ export async function POST(request: Request) {
   } = body;
 
   if (!title?.trim()) return errorResponse("Project title is required", 400);
-  if (!clientEmail?.trim()) return errorResponse("Client email is required", 400);
+  if (!clientEmail?.trim())
+    return errorResponse("Client email is required", 400);
 
   const paymentValidation = validateProjectPaymentSplit({
     totalAmount,
@@ -134,7 +135,10 @@ export async function POST(request: Request) {
       });
 
   if (!template) {
-    return errorResponse("Active template not found. Please choose another template.", 400);
+    return errorResponse(
+      "Active template not found. Please choose another template.",
+      400,
+    );
   }
 
   const code = makeProjectCode();

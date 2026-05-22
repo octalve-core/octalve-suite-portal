@@ -241,6 +241,7 @@ model Project {
   totalAmount       Int              @default(0)
   depositAmount     Int              @default(0)
   balanceAmount     Int              @default(0)
+  depositPercentage Int              @default(70)
   internalNotes     String?
   clientBrief       String?
   createdAt         DateTime         @default(now())

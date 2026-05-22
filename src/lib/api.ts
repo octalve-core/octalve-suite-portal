@@ -77,7 +77,7 @@ export const api = {
     list: () => fetchJson<(ProjectRequest & { client?: { id: string; name: string; email: string; company?: string } })[]>("/api/project-requests"),
     create: (data: Omit<ProjectRequest, "id" | "clientId" | "status" | "createdAt">) =>
       post<ProjectRequest>("/api/project-requests", data),
-    approve: (id: string, data: { totalAmount: number; depositAmount: number; balanceAmount: number; projectManagerId?: string; targetDate?: string; internalNotes?: string }) =>
+    approve: (id: string, data: { totalAmount: number; depositAmount: number; balanceAmount: number; depositPercentage: number; projectManagerId?: string; targetDate?: string; internalNotes?: string }) =>
       post<Project>(`/api/project-requests/${id}/approve`, data),
   },
 
@@ -95,6 +95,7 @@ export const api = {
       totalAmount: number;
       depositAmount: number;
       balanceAmount: number;
+      depositPercentage: number;
       projectManagerId?: string;
       internalNotes?: string;
     }) => post<Project>("/api/projects", data),

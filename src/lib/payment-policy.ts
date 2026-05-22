@@ -1,4 +1,4 @@
-export const DEFAULT_PROJECT_DEPOSIT_PERCENTAGE = 50 as const;
+export const DEFAULT_PROJECT_DEPOSIT_PERCENTAGE = 70 as const;
 
 export type ProjectPaymentSplit = {
   totalAmount: number;
@@ -28,7 +28,7 @@ function toIntegerAmount(value: unknown): number {
 function normalizeDepositPercentage(value?: number): number {
   if (!Number.isFinite(value)) return DEFAULT_PROJECT_DEPOSIT_PERCENTAGE;
 
-  return Math.min(100, Math.max(0, Math.round(Number(value))));
+  return Math.min(100, Math.max(1, Math.round(Number(value))));
 }
 
 export function calculateProjectPaymentSplit(
@@ -73,6 +73,10 @@ export function validateProjectPaymentSplit(input: ProjectPaymentSplitInput):
 
   if (requestedDeposit < 0 || requestedBalance < 0) {
     return { ok: false, message: "Payment amounts cannot be negative" };
+  }
+
+  if (requestedDeposit <= 0) {
+    return { ok: false, message: "Deposit amount must be greater than zero" };
   }
 
   if (requestedDeposit + requestedBalance !== split.totalAmount) {

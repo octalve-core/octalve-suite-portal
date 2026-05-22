@@ -117,6 +117,8 @@ export async function POST(request: Request, { params }: Params) {
 
   if (!projectRequest) return errorResponse("Request not found", 404);
 
+  const requestTemplateId = (projectRequest as { templateId?: string | null }).templateId ?? null;
+
   if (projectRequest.status !== "PENDING_REVIEW") {
     return errorResponse("Request has already been processed", 400);
   }
@@ -140,7 +142,10 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
-  const template = await loadTemplateForRequest(projectRequest);
+  const template = await loadTemplateForRequest({
+    templateId: requestTemplateId,
+    packageType: projectRequest.packageType,
+  });
 
   if (!template) {
     return errorResponse("No active template found for this request", 400);
@@ -154,7 +159,7 @@ export async function POST(request: Request, { params }: Params) {
       where: { id },
       data: {
         status: "APPROVED",
-        templateId: projectRequest.templateId ?? template.id,
+        templateId: requestTemplateId ?? template.id,
         packageType: template.packageType,
       },
     });
