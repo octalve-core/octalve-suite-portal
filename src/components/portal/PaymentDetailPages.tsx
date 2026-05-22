@@ -332,9 +332,11 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
 }
 
 function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
+  const router = useRouter();
   const [methods, setMethods] = useState<PaymentMethodOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [initializingProvider, setInitializingProvider] = useState("");
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -369,6 +371,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
     if (provider === "MANUAL_BANK") return;
 
     setInitializingProvider(provider);
+    setNotice("");
     setError("");
 
     try {
@@ -379,9 +382,18 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         return;
       }
 
+      if (provider === "WALLET") {
+        setNotice(response.message || "Payment completed from Octalve Wallet.");
+        window.setTimeout(() => {
+          router.push("/client/payments");
+          router.refresh();
+        }, 700);
+        return;
+      }
+
       setError(response.message || "We could not open the checkout page. Please try again or use bank transfer.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start online payment. Please try again or use bank transfer.");
+      setError(err instanceof Error ? err.message : "Unable to start payment. Please try again or use bank transfer.");
     } finally {
       setInitializingProvider("");
     }
@@ -405,6 +417,12 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         </div>
       </div>
 
+      {notice ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+          {notice}
+        </div>
+      ) : null}
+
       {error ? (
         <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-orange-700">
           {error}
@@ -419,10 +437,13 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         ) : methods.length ? (
           methods.map((method) => {
             const isManual = method.provider === "MANUAL_BANK";
+            const isWallet = method.provider === "WALLET";
             const available = method.isReady || isManual;
             const canStartOnline =
               available &&
-              (method.provider === "PAYSTACK" || method.provider === "FLUTTERWAVE");
+              (method.provider === "PAYSTACK" ||
+                method.provider === "FLUTTERWAVE" ||
+                isWallet);
             const isInitializing = initializingProvider === method.provider;
 
             return (
@@ -439,7 +460,9 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
                       {available
                         ? isManual
                           ? "Available now. Use the bank details below."
-                          : "Available now. Continue to secure checkout."
+                          : isWallet
+                            ? "Available now. Pay instantly from your Octalve Wallet balance."
+                            : "Available now. Continue to secure checkout."
                         : method.unavailableReason ?? "Currently unavailable."}
                     </span>
                   </div>
@@ -462,7 +485,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
                         loading={isInitializing}
                         disabled={Boolean(initializingProvider)}
                       >
-                        Continue
+                        {isWallet ? "Pay from Wallet" : "Continue"}
                       </Button>
                     ) : null}
                   </div>

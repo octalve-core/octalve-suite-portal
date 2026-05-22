@@ -2,9 +2,11 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, errorResponse } from "@/lib/api-helpers";
 import {
+  PAYMENT_CONFIRMATION_SOURCES,
   PAYMENT_PROVIDERS,
   PAYMENT_TRANSACTION_STATUSES,
 } from "@/lib/payment-constants";
+import { confirmProjectPayment } from "@/lib/payment-confirmation";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -443,10 +445,50 @@ export async function POST(request: Request, { params }: Params) {
     });
   }
 
-  if (
-    provider === PAYMENT_PROVIDERS.PAYPAL ||
-    provider === PAYMENT_PROVIDERS.WALLET
-  ) {
+  if (provider === PAYMENT_PROVIDERS.WALLET) {
+    const gateway = await prisma.paymentGatewaySetting.findUnique({
+      where: { provider },
+    });
+
+    if (gateway && !gateway.isEnabled) {
+      return errorResponse("Octalve Wallet is currently unavailable.", 400);
+    }
+
+    try {
+      const resultPayload = await confirmProjectPayment({
+        paymentId: payment.id,
+        provider: PAYMENT_PROVIDERS.WALLET,
+        source: PAYMENT_CONFIRMATION_SOURCES.WALLET_LEDGER,
+        gatewayReference: `WALLET-${payment.reference}`,
+        providerReference: `WALLET-${payment.id}`,
+        paidVia: "Octalve Wallet",
+        providerDisplayName: "Octalve Wallet",
+        walletDebit: true,
+      });
+
+      return noStoreJson({
+        provider,
+        paymentId: payment.id,
+        paymentReference: payment.reference,
+        transactionReference: `WALLET-${payment.reference}`,
+        status: resultPayload.status,
+        message:
+          resultPayload.status === "ALREADY_CONFIRMED"
+            ? "This payment has already been confirmed."
+            : "Payment completed from Octalve Wallet.",
+        projectStatus: resultPayload.projectStatus,
+      });
+    } catch (error) {
+      return errorResponse(
+        error instanceof Error
+          ? error.message
+          : "Unable to complete wallet payment.",
+        400,
+      );
+    }
+  }
+
+  if (provider === PAYMENT_PROVIDERS.PAYPAL) {
     return errorResponse("This payment option is currently unavailable.", 400);
   }
 

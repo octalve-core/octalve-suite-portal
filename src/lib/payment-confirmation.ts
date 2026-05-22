@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import type { ProjectStatus } from "@prisma/client";
+import { Prisma, type ProjectStatus } from "@prisma/client";
 import {
   PAYMENT_CONFIRMATION_SOURCES,
   PAYMENT_PROVIDERS,
   PAYMENT_TRANSACTION_STATUSES,
   WEBHOOK_PROCESSING_STATUSES,
 } from "@/lib/payment-constants";
-import { recordExternalProjectPaymentLedgerSettlement } from "@/lib/wallet-ledger";
+import {
+  recordExternalProjectPaymentLedgerSettlement,
+  recordWalletProjectPaymentDebit,
+} from "@/lib/wallet-ledger";
 
 export type ConfirmProjectPaymentInput = {
   paymentId: string;
@@ -20,6 +23,7 @@ export type ConfirmProjectPaymentInput = {
   transactionId?: string | null;
   webhookEventId?: string | null;
   providerDisplayName?: string;
+  walletDebit?: boolean;
 };
 
 export type ConfirmProjectPaymentResult = {
@@ -197,6 +201,18 @@ export async function confirmProjectPayment(
       Object.assign(paymentUpdateData, { paidVia: input.paidVia });
     }
 
+    if (input.walletDebit) {
+      await recordWalletProjectPaymentDebit(tx, {
+        userId: freshPayment.project.clientId,
+        projectId: freshPayment.projectId,
+        projectTitle: freshPayment.project.title,
+        paymentId: freshPayment.id,
+        paymentReference: freshPayment.reference,
+        paymentType: freshPayment.type,
+        amount: freshPayment.amount,
+        currency: "NGN",
+      });
+    }
     await tx.projectPayment.update({
       where: { id: freshPayment.id },
       data: paymentUpdateData,
@@ -278,5 +294,7 @@ export async function confirmProjectPayment(
       projectStatus: nextProjectStatus,
       paymentType: freshPayment.type,
     };
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   });
 }

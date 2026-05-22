@@ -71,6 +71,8 @@ export type PaymentMethodOption = {
   isAutomated: boolean;
   sortOrder: number;
   unavailableReason?: string;
+  walletBalance?: number;
+  requiredAmount?: number;
 };
 
 

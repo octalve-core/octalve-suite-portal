@@ -118,7 +118,7 @@ function cleanMetadata(input: RecordExternalProjectPaymentLedgerInput) {
   return metadata;
 }
 
-async function getCurrentWalletBalance(tx: WalletLedgerTx, userId: string) {
+export async function getCurrentWalletBalance(tx: WalletLedgerTx, userId: string) {
   const entries = await tx.walletLedgerEntry.findMany({
     where: { userId },
     select: {
@@ -132,6 +132,80 @@ async function getCurrentWalletBalance(tx: WalletLedgerTx, userId: string) {
     if (entry.direction === WALLET_LEDGER_DIRECTIONS.OUT) return balance - entry.amount;
     return balance;
   }, 0);
+}
+
+
+export type RecordWalletProjectPaymentDebitInput = {
+  userId: string;
+  projectId: string;
+  projectTitle: string;
+  paymentId: string;
+  paymentReference: string;
+  paymentType: string;
+  amount: number;
+  currency?: string;
+};
+
+function walletProjectPaymentDebitReference(paymentReference: string) {
+  return `WALLET-PROJECT-OUT-${cleanReference(paymentReference)}`;
+}
+
+/**
+ * Records a project payment made from Octalve Wallet as PROJECT_PAYMENT / OUT.
+ * This must run inside the same transaction as project payment confirmation.
+ */
+export async function recordWalletProjectPaymentDebit(
+  tx: WalletLedgerTx,
+  input: RecordWalletProjectPaymentDebitInput,
+) {
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    return { created: false, reason: "invalid_amount" as const, balanceAfter: null };
+  }
+
+  const reference = walletProjectPaymentDebitReference(input.paymentReference);
+  const existing = await tx.walletLedgerEntry.findUnique({
+    where: { reference },
+  });
+
+  if (existing) {
+    return {
+      created: false,
+      reason: "already_recorded" as const,
+      balanceAfter: existing.balanceAfter ?? null,
+    };
+  }
+
+  const balance = await getCurrentWalletBalance(tx, input.userId);
+
+  if (balance < input.amount) {
+    throw new Error("Insufficient wallet balance for this payment.");
+  }
+
+  const currency = input.currency ?? "NGN";
+  const balanceAfter = balance - input.amount;
+
+  await tx.walletLedgerEntry.create({
+    data: {
+      userId: input.userId,
+      projectId: input.projectId,
+      paymentId: input.paymentId,
+      entryType: WALLET_LEDGER_ENTRY_TYPES.PROJECT_PAYMENT,
+      direction: WALLET_LEDGER_DIRECTIONS.OUT,
+      amount: input.amount,
+      currency,
+      balanceAfter,
+      reference,
+      description: `${input.paymentType.toLowerCase()} payment applied from Octalve Wallet to ${input.projectTitle}`,
+      metadata: {
+        paymentType: input.paymentType,
+        provider: PAYMENT_PROVIDERS.WALLET,
+        source: PAYMENT_CONFIRMATION_SOURCES.WALLET_LEDGER,
+        paymentReference: input.paymentReference,
+      },
+    },
+  });
+
+  return { created: true, reason: "recorded" as const, balanceAfter };
 }
 
 /**

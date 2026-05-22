@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, errorResponse } from "@/lib/api-helpers";
-import { PAYMENT_PROVIDERS } from "@/lib/payment-constants";
+import {
+  PAYMENT_PROVIDERS,
+  WALLET_LEDGER_DIRECTIONS,
+} from "@/lib/payment-constants";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -36,23 +39,31 @@ const DEFAULT_METHODS: MethodDefault[] = [
     requiresEnv: ["FLUTTERWAVE_SECRET_KEY"],
   },
   {
-    provider: PAYMENT_PROVIDERS.PAYPAL,
-    displayName: "PayPal",
-    sortOrder: 40,
-    automated: false,
-    requiresEnv: ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET"],
-  },
-  {
     provider: PAYMENT_PROVIDERS.WALLET,
     displayName: "Octalve Wallet",
+    sortOrder: 40,
+    automated: true,
+    requiresEnv: [],
+  },
+  {
+    provider: PAYMENT_PROVIDERS.PAYPAL,
+    displayName: "PayPal",
     sortOrder: 50,
     automated: false,
-    requiresEnv: [],
+    requiresEnv: ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET"],
   },
 ];
 
 function envReady(names: string[]) {
   return names.every((name) => Boolean(process.env[name]?.trim()));
+}
+
+function formatNaira(value: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(value) ? value : 0);
 }
 
 function noStoreJson(data: unknown, init?: ResponseInit) {
@@ -61,6 +72,21 @@ function noStoreJson(data: unknown, init?: ResponseInit) {
   response.headers.set("Pragma", "no-cache");
   response.headers.set("Expires", "0");
   return response;
+}
+
+async function getWalletBalance(userId: string) {
+  const [totalIn, totalOut] = await Promise.all([
+    prisma.walletLedgerEntry.aggregate({
+      where: { userId, direction: WALLET_LEDGER_DIRECTIONS.IN },
+      _sum: { amount: true },
+    }),
+    prisma.walletLedgerEntry.aggregate({
+      where: { userId, direction: WALLET_LEDGER_DIRECTIONS.OUT },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  return Number(totalIn._sum.amount ?? 0) - Number(totalOut._sum.amount ?? 0);
 }
 
 export async function GET(_request: Request, { params }: Params) {
@@ -82,22 +108,41 @@ export async function GET(_request: Request, { params }: Params) {
     return errorResponse("Forbidden", 403);
   }
 
+  const walletBalance = isOwner ? await getWalletBalance(result.user.id) : 0;
   const stored = await prisma.paymentGatewaySetting.findMany();
   const storedByProvider = new Map(stored.map((gateway) => [gateway.provider, gateway]));
 
   const methods = DEFAULT_METHODS.map((defaults) => {
     const setting = storedByProvider.get(defaults.provider);
+
     const isEnabled =
       defaults.provider === PAYMENT_PROVIDERS.MANUAL_BANK
         ? setting?.isEnabled ?? true
-        : setting?.isEnabled ?? false;
+        : defaults.provider === PAYMENT_PROVIDERS.WALLET
+          ? setting?.isEnabled ?? true
+          : setting?.isEnabled ?? false;
 
     const hasEnv = envReady(defaults.requiresEnv);
-    const isReady = isEnabled && hasEnv && defaults.automated;
-
+    let isReady = isEnabled && hasEnv && defaults.automated;
     let unavailableReason: string | undefined;
 
-    if (!isEnabled) {
+    if (defaults.provider === PAYMENT_PROVIDERS.WALLET) {
+      const hasEnoughBalance = walletBalance >= payment.amount;
+
+      isReady =
+        isOwner &&
+        payment.status === "UNPAID" &&
+        isEnabled &&
+        hasEnoughBalance;
+
+      if (!isOwner) {
+        unavailableReason = "Wallet payment is available to the project client only.";
+      } else if (!isEnabled) {
+        unavailableReason = "Octalve Wallet is currently unavailable.";
+      } else if (!hasEnoughBalance) {
+        unavailableReason = `Insufficient wallet balance. Available: ${formatNaira(walletBalance)}.`;
+      }
+    } else if (!isEnabled) {
       unavailableReason = "This payment option is currently unavailable.";
     } else if (!hasEnv) {
       unavailableReason = "This payment option is temporarily unavailable.";
@@ -113,6 +158,10 @@ export async function GET(_request: Request, { params }: Params) {
       isAutomated: defaults.automated,
       sortOrder: setting?.sortOrder ?? defaults.sortOrder,
       unavailableReason,
+      walletBalance:
+        defaults.provider === PAYMENT_PROVIDERS.WALLET ? walletBalance : undefined,
+      requiredAmount:
+        defaults.provider === PAYMENT_PROVIDERS.WALLET ? payment.amount : undefined,
     };
   }).sort((a, b) => a.sortOrder - b.sortOrder);
 
