@@ -191,9 +191,11 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
 export function ProfileSettings({
   title = "Settings",
   subtitle = "Manage your profile and workspace preferences",
+  showProjectCountdown = true,
 }: {
   title?: string;
   subtitle?: string;
+  showProjectCountdown?: boolean;
 }) {
   const { currentUser, selectedProject, refresh } = useApp();
 
@@ -376,7 +378,8 @@ export function ProfileSettings({
           </div>
         </Card>
 
-        <Card className="card-body">
+        {showProjectCountdown ? (
+<Card className="card-body">
           <div className="deliverable-main" style={{ marginBottom: 18 }}>
             <div className="deliverable-icon">
               <CalendarClock size={18} />
@@ -419,6 +422,7 @@ export function ProfileSettings({
             </div>
           </div>
         </Card>
+        ) : null}
 
         <Card className="card-body">
           <div className="deliverable-main">

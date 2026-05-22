@@ -83,6 +83,7 @@ export function AdminSettingsHub() {
                   >
                     {tab.icon}
                   </span>
+
                   <span>
                     <strong className="block text-sm font-bold">{tab.label}</strong>
                     <span className="mt-1 block text-sm leading-5 text-slate-500">
@@ -100,6 +101,7 @@ export function AdminSettingsHub() {
         <ProfileSettings
           title="Admin Profile"
           subtitle="Manage your admin profile, contact details, and account security"
+          showProjectCountdown={false}
         />
       ) : (
         <AdminSystemSettings />
