@@ -20,6 +20,7 @@ import type {
   PaymentInitializeResponse,
   PaymentMethodOption,
   PaymentVerifyResponse,
+  AdminPaymentFinanceAudit,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -139,6 +140,8 @@ export const api = {
       post<PaymentVerifyResponse>("/api/payments/paystack/verify", data),
     verifyFlutterwave: (data: { txRef?: string; transactionId?: string; paymentId?: string }) =>
       post<PaymentVerifyResponse>("/api/payments/flutterwave/verify", data),
+    financeAudit: (id: string) =>
+      fetchJson<AdminPaymentFinanceAudit>(`/api/admin/payments/${id}/finance-audit`),
     markPaid: (id: string) =>
       post<{ success: boolean }>(`/api/payments/${id}/mark-paid`),
     confirm: (id: string) =>

@@ -361,6 +361,32 @@ export type NotificationItem = {
   createdAt: string;
 };
 
+
+export type AdminPaymentFinanceAudit = {
+  payment: ProjectPayment & {
+    confirmedBy?: Pick<User, "id" | "name" | "email" | "role"> | null;
+  };
+  project: Pick<
+    Project,
+    "id" | "title" | "businessName" | "clientEmail" | "projectCode" | "status" | "totalAmount"
+  > & {
+    client?: Pick<User, "id" | "name" | "email" | "phone" | "company"> | null;
+  };
+  transactions: PaymentTransaction[];
+  webhookEvents: PaymentWebhookEvent[];
+  walletLedgerEntries: WalletLedgerEntry[];
+  linkedTopUps: WalletTopUp[];
+  summary: {
+    currency: string;
+    transactionCount: number;
+    webhookCount: number;
+    ledgerEntryCount: number;
+    ledgerTotalIn: number;
+    ledgerTotalOut: number;
+    ledgerNet: number;
+  };
+};
+
 export type AppState = {
   users: User[];
   templates: ProjectTemplate[];

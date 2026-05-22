@@ -20,7 +20,14 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { PaymentMethodOption, PaymentStatus, Project, ProjectPayment, User } from "@/lib/types";
+import type {
+  AdminPaymentFinanceAudit,
+  PaymentMethodOption,
+  PaymentStatus,
+  Project,
+  ProjectPayment,
+  User,
+} from "@/lib/types";
 import { api } from "@/lib/api";
 import { resolvePaymentBankDetails } from "@/lib/payment-bank";
 import { getPackageTitle } from "./packageCatalog";
@@ -502,6 +509,274 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
     </Card>
   );
 }
+
+function formatDateTime(value?: string) {
+  if (!value) return "Not set";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Not set";
+
+  return date.toLocaleString("en-NG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function providerLabel(value?: string) {
+  if (!value) return "Not set";
+
+  return value
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function FinanceAuditMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+        {label}
+      </span>
+      <strong className="mt-1 block break-words text-sm font-semibold leading-6 text-slate-900">
+        {value || "Not set"}
+      </strong>
+    </div>
+  );
+}
+
+function AuditRecordCard({
+  title,
+  status,
+  children,
+}: {
+  title: string;
+  status?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <strong className="text-sm font-bold text-slate-950">{title}</strong>
+        {status ? (
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+            {providerLabel(status)}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+
+function EmptyAuditState({ label }: { label: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+      {label}
+    </div>
+  );
+}
+
+function AdminFinanceAuditPanel({
+  paymentId,
+  payment,
+}: {
+  paymentId: string;
+  payment: ProjectPayment;
+}) {
+  const [audit, setAudit] = useState<AdminPaymentFinanceAudit | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAudit() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await api.payments.financeAudit(paymentId);
+        if (mounted) setAudit(data);
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : "Unable to load finance audit.");
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadAudit();
+
+    return () => {
+      mounted = false;
+    };
+  }, [paymentId]);
+
+  const auditPayment = audit?.payment ?? payment;
+  const transactions = audit?.transactions ?? payment.transactions ?? [];
+  const ledgerEntries = audit?.walletLedgerEntries ?? payment.walletLedgerEntries ?? [];
+  const webhookEvents = audit?.webhookEvents ?? [];
+
+  return (
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+            Finance Audit Trail
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+            Provider, gateway, webhook and wallet ledger records connected to this payment.
+          </p>
+        </div>
+
+        {loading ? (
+          <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-[#0064E0]">
+            Loading audit
+          </span>
+        ) : null}
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FinanceAuditMetric label="Provider" value={providerLabel(auditPayment.provider)} />
+        <FinanceAuditMetric label="Paid Via" value={auditPayment.paidVia ?? "Not set"} />
+        <FinanceAuditMetric label="Confirmed Source" value={providerLabel(auditPayment.confirmedSource)} />
+        <FinanceAuditMetric label="Confirmed At" value={formatDateTime(auditPayment.confirmedAt)} />
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <FinanceAuditMetric
+          label="Gateway Reference"
+          value={auditPayment.gatewayReference ? <CopyInlineValue value={auditPayment.gatewayReference} /> : "Not set"}
+        />
+        <FinanceAuditMetric
+          label="Provider Reference"
+          value={auditPayment.providerReference ? <CopyInlineValue value={auditPayment.providerReference} /> : "Not set"}
+        />
+      </div>
+
+      {audit ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <FinanceAuditMetric label="Transactions" value={audit.summary.transactionCount} />
+          <FinanceAuditMetric label="Webhook Events" value={audit.summary.webhookCount} />
+          <FinanceAuditMetric
+            label="Ledger Net"
+            value={formatMoney(audit.summary.ledgerNet)}
+          />
+        </div>
+      ) : null}
+
+      <div className="mt-6 grid gap-5">
+        <div>
+          <h3 className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            Transactions
+          </h3>
+
+          {transactions.length ? (
+            <div className="grid gap-3">
+              {transactions.map((transaction) => (
+                <AuditRecordCard
+                  key={transaction.id}
+                  title={transaction.reference}
+                  status={transaction.status}
+                >
+                  <FinanceAuditMetric label="Provider" value={providerLabel(transaction.provider)} />
+                  <FinanceAuditMetric label="Amount" value={formatMoney(transaction.amount)} />
+                  <FinanceAuditMetric label="Provider Status" value={transaction.providerStatus ?? "Not set"} />
+                  <FinanceAuditMetric label="Created" value={formatDateTime(transaction.createdAt)} />
+                  <FinanceAuditMetric
+                    label="Provider Reference"
+                    value={transaction.providerReference ? <CopyInlineValue value={transaction.providerReference} /> : "Not set"}
+                  />
+                  <FinanceAuditMetric
+                    label="Webhook Event"
+                    value={transaction.webhookEventId ? <CopyInlineValue value={transaction.webhookEventId} /> : "Not linked"}
+                  />
+                </AuditRecordCard>
+              ))}
+            </div>
+          ) : (
+            <EmptyAuditState label="No payment transaction record is linked to this payment yet." />
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            Wallet Ledger Entries
+          </h3>
+
+          {ledgerEntries.length ? (
+            <div className="grid gap-3">
+              {ledgerEntries.map((entry) => (
+                <AuditRecordCard
+                  key={entry.id}
+                  title={entry.reference}
+                  status={`${entry.entryType} / ${entry.direction}`}
+                >
+                  <FinanceAuditMetric label="Amount" value={formatMoney(entry.amount)} />
+                  <FinanceAuditMetric
+                    label="Balance After"
+                    value={typeof entry.balanceAfter === "number" ? formatMoney(entry.balanceAfter) : "Not set"}
+                  />
+                  <FinanceAuditMetric label="Description" value={entry.description ?? "Not set"} />
+                  <FinanceAuditMetric label="Created" value={formatDateTime(entry.createdAt)} />
+                </AuditRecordCard>
+              ))}
+            </div>
+          ) : (
+            <EmptyAuditState label="No wallet ledger entry is linked to this payment yet." />
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            Webhook Events
+          </h3>
+
+          {webhookEvents.length ? (
+            <div className="grid gap-3">
+              {webhookEvents.map((event) => (
+                <AuditRecordCard key={event.id} title={event.eventType} status={event.status}>
+                  <FinanceAuditMetric label="Provider" value={providerLabel(event.provider)} />
+                  <FinanceAuditMetric label="Signature Valid" value={event.signatureValid ? "Yes" : "No"} />
+                  <FinanceAuditMetric label="Reference" value={event.reference ?? "Not set"} />
+                  <FinanceAuditMetric label="Processed At" value={formatDateTime(event.processedAt)} />
+                  <FinanceAuditMetric
+                    label="Event ID"
+                    value={event.eventId ? <CopyInlineValue value={event.eventId} /> : "Not set"}
+                  />
+                  <FinanceAuditMetric
+                    label="Processing Error"
+                    value={event.processingError ?? "None"}
+                  />
+                </AuditRecordCard>
+              ))}
+            </div>
+          ) : (
+            <EmptyAuditState label="No webhook event is linked to this payment yet." />
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
   const router = useRouter();
   const { state, confirmPayment, rejectPayment } = useApp();
