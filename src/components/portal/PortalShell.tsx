@@ -90,6 +90,7 @@ function navForRole(role: Role, counts: CountState): NavItem[] {
     { label: "Templates", shortLabel: "Templates", href: "/admin/templates", icon: navIcon(FileText) },
     { label: "Team", shortLabel: "Team", href: "/admin/team", icon: navIcon(UserRoundCog) },
     { label: "Payments", shortLabel: "Payments", href: "/admin/payments", icon: navIcon(CreditCard), badge: counts.payments },
+    { label: "Wallet", shortLabel: "Wallet", href: "/admin/wallet", icon: navIcon(WalletCards) },
     { label: "Analytics", shortLabel: "Data", href: "/admin/analytics", icon: navIcon(BarChart3) },
     { label: "Reviews", shortLabel: "Reviews", href: "/admin/reviews", icon: navIcon(Star) },
     { label: "Settings", shortLabel: "Settings", href: "/admin/settings", icon: navIcon(Settings2) },

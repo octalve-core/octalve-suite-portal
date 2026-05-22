@@ -21,6 +21,7 @@ import type {
   PaymentMethodOption,
   PaymentVerifyResponse,
   AdminPaymentFinanceAudit,
+  AdminWalletOverview,
   PackageType,
   Role,
 } from "@/lib/types";
@@ -128,6 +129,11 @@ export const api = {
       transactionId?: string;
       topUpId?: string;
     }) => post<WalletTopUpVerifyResponse>("/api/wallet/topups/flutterwave/verify", data),
+  },
+
+  // Admin Wallet
+  adminWallet: {
+    overview: () => fetchJson<AdminWalletOverview>("/api/admin/wallet"),
   },
 
   // Payments

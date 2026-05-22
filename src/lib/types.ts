@@ -362,6 +362,48 @@ export type NotificationItem = {
 };
 
 
+
+export type AdminWalletClientSummary = {
+  user: Pick<User, "id" | "name" | "email" | "phone" | "company">;
+  balance: number;
+  availableBalance: number;
+  totalIn: number;
+  totalOut: number;
+  topUpCount: number;
+  confirmedTopUpTotal: number;
+  ledgerEntryCount: number;
+  lastActivityAt?: string;
+};
+
+export type AdminWalletOverview = {
+  currency: string;
+  summary: {
+    clientCount: number;
+    activeWalletCount: number;
+    totalBalance: number;
+    totalCredited: number;
+    totalSpent: number;
+    confirmedTopUpTotal: number;
+    pendingTopUpCount: number;
+    failedTopUpCount: number;
+    ledgerEntryCount: number;
+  };
+  clients: AdminWalletClientSummary[];
+  topUps: Array<
+    WalletTopUp & {
+      user?: Pick<User, "id" | "name" | "email" | "phone" | "company"> | null;
+    }
+  >;
+  ledgerEntries: Array<
+    WalletLedgerEntry & {
+      user?: Pick<User, "id" | "name" | "email" | "phone" | "company"> | null;
+      project?: Pick<Project, "id" | "title" | "businessName" | "projectCode"> | null;
+      payment?: Pick<ProjectPayment, "id" | "reference" | "type" | "status" | "amount"> | null;
+      topUp?: Pick<WalletTopUp, "id" | "reference" | "provider" | "status" | "amount"> | null;
+    }
+  >;
+};
+
 export type AdminPaymentFinanceAudit = {
   payment: ProjectPayment & {
     confirmedBy?: Pick<User, "id" | "name" | "email" | "role"> | null;
