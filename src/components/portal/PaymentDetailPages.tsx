@@ -397,10 +397,10 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         </span>
         <div>
           <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
-            Payment methods
+            Complete your payment
           </h2>
           <p className="text-sm font-medium text-slate-500">
-            Choose a secure payment option. Manual transfer remains available, and approved online gateways can redirect you to secure checkout when enabled.
+            Choose how you want to pay for this project record. Use bank transfer for manual confirmation, or continue with an available online checkout option for secure processing.
           </p>
         </div>
       </div>
