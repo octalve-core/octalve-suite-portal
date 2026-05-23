@@ -1,7 +1,5 @@
 "use client";
 
-export {
-  ClientProjects,
-  ClientProjectDetail,
-  ClientCreateProject,
-} from "../../ClientScreensLegacy";
+export { ClientProjectsView as ClientProjects } from "./ClientProjectsView";
+export { ClientProjectDetail } from "./ClientProjectDetail";
+export { ClientCreateProject } from "./ClientCreateProject";
