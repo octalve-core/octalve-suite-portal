@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Project } from "@/lib/types";
 import { useApp } from "../../AppContext";
 import { ClientManualPaymentModal } from "../shared/ClientManualPaymentModal";
@@ -11,7 +11,7 @@ import { ClientPaymentsHeader } from "./ClientPaymentsHeader";
 import type { PaymentRow, PaymentStatusFilter } from "./client-payments-utils";
 import { rowMatchesSearch, STATUS_ORDER } from "./client-payments-utils";
 
-export function ClientPaymentsView() {
+export function ClientPaymentsView({ initialPaymentId }: { initialPaymentId?: string } = {}) {
   const { clientProjects, selectedProject } = useApp();
 
   const [query, setQuery] = useState("");
@@ -39,6 +39,25 @@ export function ClientPaymentsView() {
         return a.project.title.localeCompare(b.project.title);
       });
   }, [clientProjects]);
+
+  const openedInitialPaymentRef = useRef(false);
+
+  useEffect(() => {
+    if (!initialPaymentId || openedInitialPaymentRef.current) return;
+
+    const row = rows.find((item) => item.payment.id === initialPaymentId);
+
+    if (!row) return;
+
+    openedInitialPaymentRef.current = true;
+
+    if (row.payment.status === "UNPAID") {
+      setActivePayment({
+        project: row.project,
+        paymentId: row.payment.id,
+      });
+    }
+  }, [initialPaymentId, rows]);
 
   const filteredRows = useMemo(() => {
     return rows

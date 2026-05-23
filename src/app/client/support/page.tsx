@@ -1,10 +1,10 @@
-﻿import { PortalShell } from "@/components/portal/PortalShell";
-import { SupportScreen } from "@/components/portal/SupportScreen";
+import { PortalShell } from "@/components/portal/PortalShell";
+import { ClientSupport } from "@/components/portal/client/support/ClientSupport";
 
 export default function Page() {
   return (
     <PortalShell role="CLIENT">
-      <SupportScreen />
+      <ClientSupport />
     </PortalShell>
   );
 }
