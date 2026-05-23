@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ShieldCheck, WalletCards } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 import { api } from "@/lib/api";
 import type { WalletSummary } from "@/lib/types";
@@ -9,7 +9,7 @@ import { useApp } from "../../AppContext";
 import { ClientWalletFundingCard } from "./ClientWalletFundingCard";
 import { ClientWalletHero } from "./ClientWalletHero";
 import { ClientWalletLedger } from "./ClientWalletLedger";
-import { ClientWalletMetrics } from "./ClientWalletMetrics";
+import { ClientWalletTools } from "./ClientWalletTools";
 
 export function ClientWalletView() {
   const { currentUser } = useApp();
@@ -45,6 +45,12 @@ export function ClientWalletView() {
 
   const entries = useMemo(() => wallet?.entries ?? [], [wallet]);
 
+  function scrollToFundingPanel() {
+    document
+      .getElementById("wallet-funding-panel")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   if (loading) {
     return (
       <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
@@ -60,11 +66,15 @@ export function ClientWalletView() {
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid gap-6">
-        <ClientWalletHero
-          wallet={wallet}
-          userName={currentUser?.name ?? "Client"}
-        />
+      <div className="grid gap-5">
+        <header>
+          <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.065em] text-slate-950 sm:text-[42px]">
+            Wallet
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm font-medium leading-7 text-slate-500 sm:text-[15px]">
+            Manage your balance, top up your wallet, and track payment activity in one place.
+          </p>
+        </header>
 
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
@@ -72,9 +82,13 @@ export function ClientWalletView() {
           </div>
         ) : null}
 
-        <ClientWalletMetrics wallet={wallet} />
+        <ClientWalletHero
+          wallet={wallet}
+          userName={currentUser?.name ?? "Client"}
+          onFundWallet={scrollToFundingPanel}
+        />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <ClientWalletLedger
             entries={entries}
             refreshing={refreshing}
@@ -82,21 +96,23 @@ export function ClientWalletView() {
           />
 
           <aside className="grid gap-4 self-start">
-            <section className="rounded-[28px] border border-blue-100 bg-blue-50 p-5 shadow-[0_14px_34px_rgba(0,100,224,0.06)]">
+            <ClientWalletFundingCard onSuccess={() => loadWallet("refresh")} />
+
+            <ClientWalletTools />
+
+            <section className="rounded-[24px] border border-blue-100 bg-blue-50 p-5 shadow-[0_14px_34px_rgba(0,100,224,0.06)]">
               <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 text-[#0064E0]" size={21} />
+                <ShieldCheck className="mt-0.5 shrink-0 text-[#0064E0]" size={21} />
                 <div>
                   <strong className="block text-sm font-bold text-blue-950">
                     Ledger-backed wallet
                   </strong>
                   <p className="mt-1 text-sm leading-6 text-blue-800">
-                    The wallet does not trust browser values. Balance is calculated from server-side ledger entries only.
+                    Balance is calculated from server-side ledger entries. The client UI cannot credit, edit, or confirm wallet balance.
                   </p>
                 </div>
               </div>
             </section>
-
-            <ClientWalletFundingCard onSuccess={() => loadWallet("refresh")} />
           </aside>
         </section>
       </div>

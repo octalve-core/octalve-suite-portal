@@ -5,11 +5,19 @@ export type WalletFundingProvider = {
   displayName: string;
 };
 
-export function formatWalletMoney(value: number) {
+export type WalletEntryKind = "credit" | "debit" | "refund" | "hold" | "adjustment";
+
+export const WALLET_TOP_UP_LIMITS = {
+  min: 1000,
+  max: 5000000,
+};
+
+export function formatWalletMoney(value: number, showDecimals = true) {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: showDecimals ? 2 : 0,
+    maximumFractionDigits: showDecimals ? 2 : 0,
   }).format(Number.isFinite(value) ? value : 0);
 }
 
@@ -27,24 +35,64 @@ export function formatWalletDate(value?: string) {
   });
 }
 
-export function entryTone(entry: WalletLedgerEntry) {
-  if (entry.direction === "IN") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
+export function formatWalletTime(value?: string) {
+  if (!value) return "";
 
-  if (entry.entryType === "HOLD") {
-    return "border-orange-200 bg-orange-50 text-orange-700";
-  }
+  const date = new Date(value);
 
-  if (entry.entryType === "REVERSAL") {
-    return "border-red-200 bg-red-50 text-red-700";
-  }
+  if (Number.isNaN(date.getTime())) return "";
 
-  return "border-slate-200 bg-slate-50 text-slate-600";
+  return date.toLocaleTimeString("en-NG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function normalizeEntryLabel(value: string) {
-  return value.replaceAll("_", " ").toLowerCase();
+  return value
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (item) => item.toUpperCase());
+}
+
+export function walletEntryKind(entry: WalletLedgerEntry): WalletEntryKind {
+  if (entry.entryType === "REFUND" || entry.entryType === "REVERSAL") return "refund";
+  if (entry.entryType === "HOLD") return "hold";
+  if (entry.direction === "IN") return "credit";
+  if (entry.direction === "OUT") return "debit";
+
+  return "adjustment";
+}
+
+export function entryTone(entry: WalletLedgerEntry) {
+  const kind = walletEntryKind(entry);
+
+  if (kind === "credit") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+  }
+
+  if (kind === "debit") {
+    return "bg-red-50 text-red-700 ring-red-100";
+  }
+
+  if (kind === "refund") {
+    return "bg-blue-50 text-[#0064E0] ring-blue-100";
+  }
+
+  if (kind === "hold") {
+    return "bg-orange-50 text-orange-700 ring-orange-100";
+  }
+
+  return "bg-slate-50 text-slate-600 ring-slate-200";
+}
+
+export function entryAmountClass(entry: WalletLedgerEntry) {
+  return entry.direction === "IN" ? "text-emerald-600" : "text-slate-950";
+}
+
+export function signedWalletAmount(entry: WalletLedgerEntry) {
+  const amount = formatWalletMoney(entry.amount);
+  return entry.direction === "IN" ? `+ ${amount}` : `- ${amount}`;
 }
 
 export function isSafeCheckoutUrl(value?: string) {
@@ -56,6 +104,32 @@ export function isSafeCheckoutUrl(value?: string) {
   } catch {
     return false;
   }
+}
+
+export function sanitizeFundingAmountInput(value: string) {
+  return value.replace(/[^\d]/g, "").slice(0, 9);
+}
+
+export function parseFundingAmount(value: string) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) return 0;
+
+  return Math.round(amount);
+}
+
+export function validateFundingAmount(value: string) {
+  const amount = parseFundingAmount(value);
+
+  if (amount < WALLET_TOP_UP_LIMITS.min) {
+    return `Minimum wallet funding amount is ${formatWalletMoney(WALLET_TOP_UP_LIMITS.min, false)}.`;
+  }
+
+  if (amount > WALLET_TOP_UP_LIMITS.max) {
+    return `Maximum wallet funding amount is ${formatWalletMoney(WALLET_TOP_UP_LIMITS.max, false)}.`;
+  }
+
+  return "";
 }
 
 export function getWalletFundingProviders(
@@ -72,4 +146,11 @@ export function getWalletFundingProviders(
       provider: String(gateway.provider),
       displayName: gateway.displayName,
     }));
+}
+
+export function walletEntryActionHref(entry: WalletLedgerEntry) {
+  if (entry.paymentId) return `/client/payments/${entry.paymentId}`;
+  if (entry.projectId) return `/client/projects/${entry.projectId}`;
+
+  return "";
 }
