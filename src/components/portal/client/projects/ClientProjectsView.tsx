@@ -7,12 +7,17 @@ import { ClientProjectFilters } from "./ClientProjectFilters";
 import { ClientProjectList } from "./ClientProjectList";
 import { ClientProjectsHeader } from "./ClientProjectsHeader";
 import { ClientProjectsStats } from "./ClientProjectsStats";
+import { ClientRecentProjectActivity } from "./ClientRecentProjectActivity";
 import { ClientPendingRequestsPanel } from "./ClientPendingRequestsPanel";
 import type {
   ProjectPackageFilter,
+  ProjectSortOption,
   ProjectStatusFilter,
 } from "./client-projects-utils";
-import { rowMatchesProjectSearch } from "./client-projects-utils";
+import {
+  rowMatchesProjectSearch,
+  sortProjects,
+} from "./client-projects-utils";
 
 export function ClientProjectsView() {
   const { clientProjects, currentUser, setSelectedProjectId, state } = useApp();
@@ -20,6 +25,7 @@ export function ClientProjectsView() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>("ALL");
   const [packageFilter, setPackageFilter] = useState<ProjectPackageFilter>("ALL");
+  const [sortBy, setSortBy] = useState<ProjectSortOption>("NEWEST");
 
   const pendingRequests = useMemo(() => {
     return (state.requests ?? []).filter((request) => {
@@ -37,7 +43,7 @@ export function ClientProjectsView() {
   }, [clientProjects]);
 
   const filteredProjects = useMemo(() => {
-    return clientProjects
+    const filtered = clientProjects
       .filter((project) =>
         statusFilter === "ALL" ? true : project.status === statusFilter,
       )
@@ -45,53 +51,42 @@ export function ClientProjectsView() {
         packageFilter === "ALL" ? true : project.packageType === packageFilter,
       )
       .filter((project) => rowMatchesProjectSearch(project, query));
-  }, [clientProjects, packageFilter, query, statusFilter]);
+
+    return sortProjects(filtered, sortBy);
+  }, [clientProjects, packageFilter, query, sortBy, statusFilter]);
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid gap-6">
-        <ClientProjectsHeader
-          totalProjects={clientProjects.length}
-          pendingRequests={pendingRequests.length}
-        />
+      <div className="grid gap-5">
+        <ClientProjectsHeader />
 
         <ClientProjectsStats projects={clientProjects} />
 
         <ClientPendingRequestsPanel requests={pendingRequests} />
 
-        <section className="rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-          <div className="border-b border-slate-200 p-5 sm:p-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-                  Project Workspace
-                </h2>
-                <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-                  Open a project to view its phases, deliverables, timeline, team and notes.
-                </p>
-              </div>
+        <section className="grid gap-5">
+          <ClientProjectFilters
+            query={query}
+            setQuery={setQuery}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            packageFilter={packageFilter}
+            setPackageFilter={setPackageFilter}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            packageOptions={packageOptions}
+          />
 
-              <div className="xl:min-w-[780px]">
-                <ClientProjectFilters
-                  query={query}
-                  setQuery={setQuery}
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  packageFilter={packageFilter}
-                  setPackageFilter={setPackageFilter}
-                  packageOptions={packageOptions}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 sm:p-5">
-            <ClientProjectList
-              projects={filteredProjects}
-              onSelect={setSelectedProjectId}
-            />
-          </div>
+          <ClientProjectList
+            projects={filteredProjects}
+            onSelect={setSelectedProjectId}
+          />
         </section>
+
+        <ClientRecentProjectActivity
+          projects={clientProjects}
+          onSelect={setSelectedProjectId}
+        />
       </div>
     </main>
   );
