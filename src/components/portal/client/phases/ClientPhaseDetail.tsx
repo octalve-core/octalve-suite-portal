@@ -1,7 +1,7 @@
 "use client";
 
-import { PhaseWorkspaceDetail } from "../../ProjectWorkspace";
+import { ClientPhaseDetailView } from "./detail/ClientPhaseDetailView";
 
 export function ClientPhaseDetail({ phaseId }: { phaseId: string }) {
-  return <PhaseWorkspaceDetail role="client" phaseId={phaseId} />;
+  return <ClientPhaseDetailView phaseId={phaseId} />;
 }
