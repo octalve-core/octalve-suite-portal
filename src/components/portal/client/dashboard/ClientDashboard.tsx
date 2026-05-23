@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Project } from "@/lib/types";
+import { api } from "@/lib/api";
 import { useApp } from "../../AppContext";
 import { ClientManualPaymentModal } from "../shared/ClientManualPaymentModal";
 import { ClientReviewModal } from "../shared/ClientReviewModal";
-import { ClientActivePhaseCard, ClientNextActionCard } from "./ClientActivePhaseCard";
+import { ClientActivePhaseCard } from "./ClientActivePhaseCard";
 import { ClientDashboardHero } from "./ClientDashboardHero";
 import { ClientDashboardStats } from "./ClientDashboardStats";
 import { ClientDeliverablesPanel } from "./ClientDeliverablesPanel";
@@ -24,6 +25,31 @@ export function ClientDashboard() {
 
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [reviewProjectId, setReviewProjectId] = useState<string | null>(null);
+  const [walletAvailable, setWalletAvailable] = useState<number | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadWallet() {
+      try {
+        const wallet = await api.wallet.get();
+
+        if (mounted) {
+          setWalletAvailable(wallet.availableBalance ?? 0);
+        }
+      } catch {
+        if (mounted) {
+          setWalletAvailable(null);
+        }
+      }
+    }
+
+    void loadWallet();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser?.id]);
 
   if (!clientProjects.length) {
     return (
@@ -57,32 +83,16 @@ export function ClientDashboard() {
     .slice(-4)
     .reverse();
 
-  const nextHref = block
-    ? "/client/payments"
-    : pendingApprovals
-      ? "/client/approvals"
-      : "/client/phases";
-
-  const nextLabel = block
-    ? "Open Payments"
-    : pendingApprovals
-      ? "Review Now"
-      : "View Phases";
-
-  const nextTitle = block
-    ? block.title
-    : pendingApprovals
-      ? `Review and approve ${
-          project.phases.find((phase) => phase.status === "AWAITING_APPROVAL")
-            ?.title ?? "pending phase"
-        }`
-      : "No urgent action needed right now";
+  const outstandingPayments = project.payments.filter(
+    (payment) => payment.status === "UNPAID",
+  ).length;
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid gap-6">
+      <div className="grid gap-5">
         <ClientDashboardHero
           project={project}
+          walletAvailable={walletAvailable}
           userName={
             currentUser?.name ||
             currentUser?.email?.split("@")[0] ||
@@ -90,59 +100,64 @@ export function ClientDashboard() {
           }
         />
 
-        {block ? (
-          <ClientPaymentNotice
-            block={block}
-            onPay={(selectedPaymentId) => setPaymentId(selectedPaymentId)}
-          />
-        ) : null}
-
         <ClientDashboardStats
           progress={progress}
           approvedPhases={approvedPhases}
           totalPhases={project.phases.length}
           pendingApprovals={pendingApprovals}
           linksCount={links.length}
+          outstandingPayments={outstandingPayments}
         />
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.75fr)]">
-          <ClientActivePhaseCard phase={activePhase} progress={progress} />
-          <ClientNextActionCard
-            title={nextTitle}
-            href={nextHref}
-            label={nextLabel}
-          />
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+          {block ? (
+            <ClientPaymentNotice
+              block={block}
+              onPay={(selectedPaymentId) => setPaymentId(selectedPaymentId)}
+            />
+          ) : (
+            <section className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-5">
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-emerald-900">
+                No payment required
+              </h2>
+              <p className="mt-1 text-sm font-medium leading-6 text-emerald-700">
+                There is no immediate payment action required for this project.
+              </p>
+            </section>
+          )}
+
+          <ClientActivePhaseCard phase={activePhase} />
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <ClientPhaseTimeline phases={project.phases} />
           <ClientDeliverablesPanel links={links} />
         </section>
 
-        <ClientRecentActivity messages={recentMessages} />
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+          <ClientRecentActivity messages={recentMessages} />
 
-        {project.status === "COMPLETED" ? (
-          <section className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <strong className="block text-sm font-semibold text-emerald-800">
-                  Leave a project review
-                </strong>
-                <p className="mt-1 text-sm font-medium leading-6 text-emerald-700">
-                  This project is completed. Share your feedback and help us improve future delivery.
-                </p>
-              </div>
+          {project.status === "COMPLETED" ? (
+            <section className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-5">
+              <strong className="block text-sm font-semibold text-emerald-800">
+                Leave a project review
+              </strong>
+              <p className="mt-1 text-sm font-medium leading-6 text-emerald-700">
+                This project is completed. Share your feedback and help us improve future delivery.
+              </p>
 
               <button
                 type="button"
                 onClick={() => setReviewProjectId(project.id)}
-                className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800"
               >
                 Leave Review
               </button>
-            </div>
-          </section>
-        ) : null}
+            </section>
+          ) : (
+            <div className="hidden xl:block" />
+          )}
+        </section>
       </div>
 
       {reviewProjectId ? (

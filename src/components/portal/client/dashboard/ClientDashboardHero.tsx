@@ -1,91 +1,144 @@
+"use client";
+
 import Link from "next/link";
-import { Plus, WalletCards } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlarmClock, CalendarDays, ChevronDown, Eye, Plus, WalletCards } from "lucide-react";
+
 import type { Project } from "@/lib/types";
 import { getPackageTitle } from "../../packageCatalog";
-import { ProjectDateCountdown } from "../../ProjectDateCountdown";
-import { ClientProjectSwitcher } from "../shared/ClientProjectSwitcher";
+import { useApp } from "../../AppContext";
 import {
+  formatCountdown,
+  formatNaira,
+  formatProjectDate,
   getBadgeClasses,
   getToneForStatus,
   statusLabel,
 } from "./client-dashboard-utils";
 
+function Greeting({ userName }: { userName: string }) {
+  const hour = new Date().getHours();
+
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  return (
+    <p className="text-sm font-semibold text-white/85">
+      {greeting}, {userName}.
+    </p>
+  );
+}
+
 export function ClientDashboardHero({
   project,
   userName,
+  walletAvailable,
 }: {
   project: Project;
   userName: string;
+  walletAvailable: number | null;
 }) {
+  const { clientProjects, setSelectedProjectId } = useApp();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const statusTone = getToneForStatus(project.status);
+  const countdownText = formatCountdown(project.targetDate, now);
+  const dateText = formatProjectDate(project.targetDate);
+
   return (
-    <section className="relative overflow-hidden rounded-[32px] bg-[#0064E0] p-5 text-white shadow-[0_24px_70px_rgba(0,100,224,0.24)] sm:p-7 lg:p-8">
-      <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-white/15 blur-2xl" />
-      <div className="pointer-events-none absolute bottom-[-90px] left-[-90px] h-60 w-60 rounded-full bg-[#000A16]/20 blur-2xl" />
+    <section className="relative overflow-hidden rounded-[22px] bg-[#0064E0] p-5 text-white shadow-[0_22px_60px_rgba(0,100,224,0.24)] sm:p-7 lg:p-8">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_12%,rgba(255,255,255,0.18),transparent_30%),radial-gradient(circle_at_40%_120%,rgba(0,10,22,0.22),transparent_36%)]" />
+      <div className="pointer-events-none absolute -right-12 top-6 hidden h-52 w-52 rounded-[46px] border border-white/10 bg-white/5 rotate-12 lg:block" />
 
-      <div className="relative z-10 grid gap-7 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
+      <div className="relative z-10 grid gap-7 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white/80">
-              Client Workspace
-            </span>
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold text-white/85">
-              {getPackageTitle(project.packageType)}
-            </span>
-          </div>
+          <Greeting userName={userName} />
 
-          <p className="mt-7 text-sm font-semibold text-white/75">
-            Welcome back, {userName}.
-          </p>
-
-          <h1 className="mt-2 max-w-4xl text-[34px] font-semibold leading-[1.02] tracking-[-0.065em] sm:text-[44px] lg:text-[58px]">
-            Track your project with clarity.
+          <h1 className="mt-4 max-w-4xl text-[34px] font-semibold leading-[1.04] tracking-[-0.06em] sm:text-[44px] lg:text-[54px]">
+            Welcome to Octalve Workspace
           </h1>
 
-          <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-white/82 sm:text-base">
-            {project.title}
+          <p className="mt-4 max-w-3xl text-sm font-medium leading-7 text-white/82 sm:text-base">
+            Track projects, approvals, payments and delivery timelines in one place.
           </p>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <ClientProjectSwitcher />
-
-            <Link
-              href="/client/projects/new"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-semibold text-[#0064E0] shadow-[0_16px_34px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5"
-            >
-              <Plus size={17} />
-              Create Project
-            </Link>
-          </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/15 bg-white/12 p-5 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-[#0064E0]">
-              <WalletCards size={21} />
-            </span>
-            <div>
-              <span className="block text-xs font-bold uppercase tracking-[0.16em] text-white/60">
-                Current Project
-              </span>
-              <strong className="mt-1 block truncate text-base font-semibold">
-                {project.projectCode}
-              </strong>
-            </div>
+        <div className="rounded-[22px] border border-white/15 bg-white/10 p-5 backdrop-blur-md">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white/85">
+            <span>Wallet Overview</span>
+            <Eye size={16} />
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <span
-              className={[
-                "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
-                getBadgeClasses(getToneForStatus(project.status)),
-              ].join(" ")}
+          <strong className="mt-4 block text-[34px] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[42px]">
+            {walletAvailable === null ? "â€”" : formatNaira(walletAvailable)}
+          </strong>
+
+          <Link
+            href="/client/wallet"
+            className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-semibold text-[#0064E0] shadow-[0_16px_34px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5"
+          >
+            <WalletCards size={17} />
+            Fund Wallet
+          </Link>
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-7 rounded-[20px] border border-white/20 bg-white/10 p-3 backdrop-blur-md">
+        <div className="grid gap-3 lg:grid-cols-[minmax(240px,1.2fr)_minmax(150px,0.65fr)_minmax(220px,1fr)_minmax(190px,0.85fr)_minmax(220px,1fr)]">
+          <label className="relative block">
+            <select
+              value={project.id}
+              onChange={(event) => setSelectedProjectId(event.target.value)}
+              className="h-14 w-full appearance-none rounded-2xl border border-white/20 bg-white px-4 pr-11 text-sm font-semibold text-slate-950 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.03)] outline-none transition focus:ring-4 focus:ring-white/25"
+              aria-label="Select active project"
             >
-              {statusLabel(project.status)}
-            </span>
+              {clientProjects.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.title}
+                </option>
+              ))}
+            </select>
+
+            <ChevronDown
+              size={18}
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"
+            />
+          </label>
+
+          <div className="flex min-h-14 items-center justify-center rounded-2xl border border-white/20 bg-white px-4 text-center text-sm font-semibold text-[#0064E0]">
+            {getPackageTitle(project.packageType)}
           </div>
 
-          <div className="mt-5 rounded-2xl bg-white p-4 text-slate-950">
-            <ProjectDateCountdown targetDate={project.targetDate} compact />
+          <div
+            className={[
+              "flex min-h-14 items-center justify-center rounded-2xl border px-4 text-center text-sm font-semibold",
+              getBadgeClasses(statusTone),
+            ].join(" ")}
+          >
+            {statusLabel(project.status)}
+          </div>
+
+          <div className="flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-white/20 bg-white px-4 text-center text-sm font-semibold text-slate-950">
+            <CalendarDays size={18} className="text-slate-600" />
+            {dateText}
+          </div>
+
+          <div
+            className={[
+              "flex min-h-14 items-center justify-center gap-3 rounded-2xl border px-4 text-center text-sm font-semibold",
+              countdownText.includes("overdue")
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-red-100 bg-white text-red-600",
+            ].join(" ")}
+          >
+            <AlarmClock size={18} />
+            {countdownText}
           </div>
         </div>
       </div>

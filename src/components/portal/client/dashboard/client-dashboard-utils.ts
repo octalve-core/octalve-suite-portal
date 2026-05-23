@@ -8,6 +8,11 @@ export type PaymentBlock = {
   body: string;
 };
 
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
 export function formatNaira(value: number) {
   const safeValue = Number.isFinite(value) ? value : 0;
 
@@ -16,6 +21,49 @@ export function formatNaira(value: number) {
     currency: "NGN",
     maximumFractionDigits: 0,
   }).format(safeValue);
+}
+
+export function formatProjectDate(value?: string) {
+  if (!value) return "No date set";
+
+  const date = new Date(value.includes("T") ? value : `${value}T23:59:59.999`);
+
+  if (Number.isNaN(date.getTime())) return "No date set";
+
+  return date.toLocaleDateString("en-NG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function getCountdownParts(value?: string, now = Date.now()) {
+  if (!value) return null;
+
+  const target = new Date(value.includes("T") ? value : `${value}T23:59:59.999`);
+
+  if (Number.isNaN(target.getTime())) return null;
+
+  const diff = target.getTime() - now;
+  const abs = Math.abs(diff);
+
+  return {
+    overdue: diff < 0,
+    days: Math.floor(abs / DAY),
+    hours: Math.floor((abs % DAY) / HOUR),
+    minutes: Math.floor((abs % HOUR) / MINUTE),
+    seconds: Math.floor((abs % MINUTE) / SECOND),
+  };
+}
+
+export function formatCountdown(value?: string, now = Date.now()) {
+  const parts = getCountdownParts(value, now);
+
+  if (!parts) return "No countdown set";
+
+  const prefix = parts.overdue ? "overdue" : "left";
+
+  return `${parts.days}d ${parts.hours}h ${parts.minutes}m ${parts.seconds}s ${prefix}`;
 }
 
 export function statusLabel(status?: string) {
@@ -56,8 +104,8 @@ export function getPaymentBlock(project: Project): PaymentBlock | null {
   if (project.status === "APPROVED_AWAITING_DEPOSIT" && deposit) {
     return {
       payment: deposit,
-      title: "Deposit payment required",
-      body: "Complete your first deposit to unlock project tracking.",
+      title: "Payment Required",
+      body: "Deposit payment is required to unlock project tracking.",
     };
   }
 
