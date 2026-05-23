@@ -51,6 +51,10 @@ export function ClientWalletView() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function refreshWallet() {
+    void loadWallet("refresh");
+  }
+
   if (loading) {
     return (
       <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
@@ -92,13 +96,17 @@ export function ClientWalletView() {
           <ClientWalletLedger
             entries={entries}
             refreshing={refreshing}
-            onRefresh={() => void loadWallet("refresh")}
+            onRefresh={refreshWallet}
           />
 
           <aside className="grid gap-4 self-start">
             <ClientWalletFundingCard onSuccess={() => loadWallet("refresh")} />
 
-            <ClientWalletTools />
+            <ClientWalletTools
+              onFundWallet={scrollToFundingPanel}
+              onRefreshWallet={refreshWallet}
+              refreshing={refreshing}
+            />
 
             <section className="rounded-[24px] border border-blue-100 bg-blue-50 p-5 shadow-[0_14px_34px_rgba(0,100,224,0.06)]">
               <div className="flex items-start gap-3">

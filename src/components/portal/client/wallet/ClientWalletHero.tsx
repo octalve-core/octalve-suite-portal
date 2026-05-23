@@ -84,7 +84,7 @@ export function ClientWalletHero({
               <button
                 type="button"
                 disabled
-                title="Statement export route is not connected yet."
+                title="Statement export is disabled until an authenticated server export route exists."
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 text-sm font-bold text-white/80 transition disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Download size={17} />
@@ -115,3 +115,4 @@ export function ClientWalletHero({
     </section>
   );
 }
+
