@@ -1,7 +1,7 @@
 "use client";
 
-import { ProjectWorkspaceDetail } from "../../ProjectWorkspace";
+import { ClientProjectDetailView } from "./detail/ClientProjectDetailView";
 
 export function ClientProjectDetail({ projectId }: { projectId: string }) {
-  return <ProjectWorkspaceDetail role="client" projectId={projectId} />;
+  return <ClientProjectDetailView projectId={projectId} />;
 }
