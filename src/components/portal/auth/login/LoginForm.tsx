@@ -139,11 +139,12 @@ export function LoginForm() {
         Need an account?{" "}
         <Link
           href="/signup"
-          className="font-semibold text-[#0064E0] underline underline-offset-4 transition hover:text-[#0052B8]"
+          className="inline-flex rounded-full bg-[#EAF3FF] px-3 py-1 font-semibold text-[#0064E0] ring-1 ring-[#0064E0]/10 transition hover:bg-[#0064E0] hover:text-white"
         >
-          Create one
+          Create account
         </Link>
       </p>
     </form>
   );
 }
+

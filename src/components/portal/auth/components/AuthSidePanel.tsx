@@ -16,6 +16,7 @@ export function AuthSidePanel({ mode }: { mode: AuthMode }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_16%,rgba(0,100,224,0.20),transparent_34%),radial-gradient(circle_at_85%_80%,rgba(0,100,224,0.18),transparent_34%)]" />
 
       <div className="absolute left-1/2 top-1/2 w-[min(430px,calc(100%-80px))] -translate-x-1/2 -translate-y-1/2 rounded-[22px] bg-white/92 p-9 text-slate-950 shadow-[0_28px_80px_rgba(0,0,0,0.28)] backdrop-blur-md">
+        <p className="mb-5 text-xs font-semibold uppercase tracking-[0.24em] text-[#0064E0]">Welcome to Octalve Workspace</p>
         <h2 className="text-[46px] font-semibold leading-[1.08] tracking-[-0.07em] text-black">
           {copy.panelTitle}
         </h2>
@@ -40,3 +41,4 @@ export function AuthSidePanel({ mode }: { mode: AuthMode }) {
     </aside>
   );
 }
+
