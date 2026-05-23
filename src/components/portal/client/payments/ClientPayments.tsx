@@ -1,3 +1,3 @@
 "use client";
 
-export { ClientPayments } from "../../ClientScreensLegacy";
+export { ClientPaymentsView as ClientPayments } from "./ClientPaymentsView";
