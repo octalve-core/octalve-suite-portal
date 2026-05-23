@@ -280,6 +280,7 @@ export function ClientManualPaymentModal({
   }
 
   const hasAnyMethod = Boolean(bankMethod || onlineMethods.length || walletMethod);
+  const isPayable = payment.status === "UNPAID";
 
   return (
     <ClientModalShell title="Payment Details" onClose={onClose} maxWidth="max-w-[560px]">
@@ -322,7 +323,43 @@ export function ClientManualPaymentModal({
           </div>
         ) : null}
 
-        {methodsLoading ? (
+        {!isPayable ? (
+          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4">
+              <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                Status
+              </span>
+              <strong className="text-sm font-semibold text-slate-950">
+                {payment.status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (value) => value.toUpperCase())}
+              </strong>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4">
+              <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                Project
+              </span>
+              <strong className="max-w-[260px] truncate text-right text-sm font-semibold text-slate-950">
+                {project.title}
+              </strong>
+            </div>
+
+            <ClientPaymentCopyRow label="Payment Reference" value={payment.reference} />
+
+            {payment.provider ? (
+              <ClientPaymentCopyRow label="Provider" value={String(payment.provider)} />
+            ) : null}
+
+            {payment.providerReference ? (
+              <ClientPaymentCopyRow label="Provider Reference" value={payment.providerReference} />
+            ) : null}
+
+            {payment.note ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm font-medium leading-6 text-slate-600">
+                {payment.note}
+              </div>
+            ) : null}
+          </div>
+        ) : methodsLoading ? (
           <div className="flex min-h-28 items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-500">
             <Loader2 size={18} className="animate-spin" />
             Loading payment options...

@@ -8,15 +8,28 @@ import { ClientPaymentFilters } from "./ClientPaymentFilters";
 import { ClientPaymentList } from "./ClientPaymentList";
 import { ClientPaymentStats } from "./ClientPaymentStats";
 import { ClientPaymentsHeader } from "./ClientPaymentsHeader";
-import type { PaymentRow, PaymentStatusFilter } from "./client-payments-utils";
-import { rowMatchesSearch, STATUS_ORDER } from "./client-payments-utils";
+import type {
+  PaymentRow,
+  PaymentSortOption,
+  PaymentStatusFilter,
+} from "./client-payments-utils";
+import {
+  rowMatchesSearch,
+  sortPaymentRows,
+  STATUS_ORDER,
+} from "./client-payments-utils";
 
-export function ClientPaymentsView({ initialPaymentId }: { initialPaymentId?: string } = {}) {
+export function ClientPaymentsView({
+  initialPaymentId,
+}: {
+  initialPaymentId?: string;
+} = {}) {
   const { clientProjects, selectedProject } = useApp();
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PaymentStatusFilter>("ALL");
   const [projectFilter, setProjectFilter] = useState(selectedProject?.id ?? "ALL");
+  const [sortBy, setSortBy] = useState<PaymentSortOption>("NEWEST");
   const [activePayment, setActivePayment] = useState<{
     project: Project;
     paymentId: string;
@@ -50,17 +63,14 @@ export function ClientPaymentsView({ initialPaymentId }: { initialPaymentId?: st
     if (!row) return;
 
     openedInitialPaymentRef.current = true;
-
-    if (row.payment.status === "UNPAID") {
-      setActivePayment({
-        project: row.project,
-        paymentId: row.payment.id,
-      });
-    }
+    setActivePayment({
+      project: row.project,
+      paymentId: row.payment.id,
+    });
   }, [initialPaymentId, rows]);
 
   const filteredRows = useMemo(() => {
-    return rows
+    const filtered = rows
       .filter((row) =>
         statusFilter === "ALL" ? true : row.payment.status === statusFilter,
       )
@@ -68,50 +78,41 @@ export function ClientPaymentsView({ initialPaymentId }: { initialPaymentId?: st
         projectFilter === "ALL" ? true : row.project.id === projectFilter,
       )
       .filter((row) => rowMatchesSearch(row, query));
-  }, [projectFilter, query, rows, statusFilter]);
+
+    return sortPaymentRows(filtered, sortBy);
+  }, [projectFilter, query, rows, sortBy, statusFilter]);
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid gap-6">
+      <div className="grid gap-5">
         <ClientPaymentsHeader />
 
         <ClientPaymentStats rows={rows} />
 
-        <section className="rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-          <div className="border-b border-slate-200 p-5 sm:p-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-                  Payment Schedule
-                </h2>
-                <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-                  Open unpaid records to use enabled payment methods securely.
-                </p>
-              </div>
-
-              <ClientPaymentFilters
-                query={query}
-                setQuery={setQuery}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                projectFilter={projectFilter}
-                setProjectFilter={setProjectFilter}
-                projects={clientProjects}
-              />
-            </div>
-          </div>
-
+        <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
           <div className="p-4 sm:p-5">
-            <ClientPaymentList
-              rows={filteredRows}
-              onMakePayment={(row) =>
-                setActivePayment({
-                  project: row.project,
-                  paymentId: row.payment.id,
-                })
-              }
+            <ClientPaymentFilters
+              query={query}
+              setQuery={setQuery}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              projectFilter={projectFilter}
+              setProjectFilter={setProjectFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              projects={clientProjects}
             />
           </div>
+
+          <ClientPaymentList
+            rows={filteredRows}
+            onOpenPayment={(row) =>
+              setActivePayment({
+                project: row.project,
+                paymentId: row.payment.id,
+              })
+            }
+          />
         </section>
       </div>
 

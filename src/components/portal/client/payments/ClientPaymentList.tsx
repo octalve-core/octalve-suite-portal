@@ -1,13 +1,74 @@
-import { WalletCards } from "lucide-react";
+import {
+  ArrowDown,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  MoreVertical,
+  WalletCards,
+  X,
+} from "lucide-react";
+
+import type { PaymentStatus } from "@/lib/types";
 import type { PaymentRow } from "./client-payments-utils";
+import {
+  formatPaymentDate,
+  formatPaymentMoney,
+  formatPaymentTime,
+  getPaymentDateValue,
+  paymentActionLabel,
+  paymentTypeLabel,
+  STATUS_ICON_CLASSES,
+} from "./client-payments-utils";
 import { ClientPaymentCard } from "./ClientPaymentCard";
+import { ClientPaymentStatusChip } from "./ClientPaymentStatusChip";
+
+function PaymentStatusIcon({ status }: { status: PaymentStatus }) {
+  const icon =
+    status === "UNPAID" ? (
+      <ArrowDown size={16} />
+    ) : status === "PENDING_CONFIRMATION" ? (
+      <Clock3 size={16} />
+    ) : status === "CONFIRMED" ? (
+      <Check size={16} />
+    ) : (
+      <X size={16} />
+    );
+
+  return (
+    <span
+      className={[
+        "grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1",
+        STATUS_ICON_CLASSES[status],
+      ].join(" ")}
+    >
+      {icon}
+    </span>
+  );
+}
+
+function actionButtonClass(status: PaymentStatus) {
+  if (status === "UNPAID") {
+    return "border-blue-300 text-[#0064E0] hover:bg-blue-50";
+  }
+
+  if (status === "CONFIRMED") {
+    return "border-slate-200 text-[#0064E0] hover:border-blue-200 hover:bg-blue-50";
+  }
+
+  if (status === "REJECTED") {
+    return "border-red-100 text-[#0064E0] hover:border-blue-200 hover:bg-blue-50";
+  }
+
+  return "border-slate-200 text-[#0064E0] hover:border-blue-200 hover:bg-blue-50";
+}
 
 export function ClientPaymentList({
   rows,
-  onMakePayment,
+  onOpenPayment,
 }: {
   rows: PaymentRow[];
-  onMakePayment: (row: PaymentRow) => void;
+  onOpenPayment: (row: PaymentRow) => void;
 }) {
   if (!rows.length) {
     return (
@@ -26,14 +87,149 @@ export function ClientPaymentList({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      {rows.map((row) => (
-        <ClientPaymentCard
-          key={row.payment.id}
-          row={row}
-          onMakePayment={onMakePayment}
-        />
-      ))}
-    </div>
+    <>
+      <div className="hidden overflow-x-auto lg:block">
+        <table className="w-full min-w-[1040px] border-collapse text-left">
+          <thead>
+            <tr className="border-y border-slate-200 bg-slate-50/60 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+              <th className="px-4 py-4">Payment Type</th>
+              <th className="px-4 py-4">Project</th>
+              <th className="px-4 py-4">Amount</th>
+              <th className="px-4 py-4">Reference</th>
+              <th className="px-4 py-4">Created Date</th>
+              <th className="px-4 py-4">Status</th>
+              <th className="px-4 py-4 text-center">Action</th>
+              <th className="w-10 px-2 py-4" />
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((row) => {
+              const { payment, project } = row;
+              const dateValue = getPaymentDateValue(row);
+
+              return (
+                <tr
+                  key={payment.id}
+                  className="border-b border-slate-200 bg-white text-sm transition hover:bg-slate-50/70"
+                >
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <PaymentStatusIcon status={payment.status} />
+                      <span className="font-semibold text-slate-800">
+                        {paymentTypeLabel(payment.type)}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <strong className="block max-w-[220px] truncate text-sm font-semibold text-slate-950">
+                      {project.title}
+                    </strong>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                      {project.projectCode}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-4 font-semibold text-slate-950">
+                    {formatPaymentMoney(payment.amount)}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <span className="block max-w-[180px] truncate font-semibold text-slate-700">
+                      {payment.reference}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <strong className="block text-sm font-semibold text-slate-800">
+                      {formatPaymentDate(dateValue)}
+                    </strong>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                      {formatPaymentTime(dateValue)}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <ClientPaymentStatusChip status={payment.status} />
+                  </td>
+
+                  <td className="px-4 py-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => onOpenPayment(row)}
+                      className={[
+                        "inline-flex min-h-10 items-center justify-center rounded-xl border bg-white px-4 text-sm font-semibold transition",
+                        actionButtonClass(payment.status),
+                      ].join(" ")}
+                    >
+                      {paymentActionLabel(payment.status)}
+                    </button>
+                  </td>
+
+                  <td className="px-2 py-4">
+                    <button
+                      type="button"
+                      className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="More payment options"
+                    >
+                      <MoreVertical size={17} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 text-sm font-semibold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Showing 1 to {rows.length} of {rows.length} payments
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled
+              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-300"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <span className="grid h-9 min-w-9 place-items-center rounded-xl bg-[#0064E0] px-3 text-white">
+              1
+            </span>
+
+            <button
+              type="button"
+              disabled
+              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-300"
+              aria-label="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            <select
+              value="10"
+              disabled
+              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-500"
+            >
+              <option value="10">10 / page</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 lg:hidden">
+        {rows.map((row) => (
+          <ClientPaymentCard
+            key={row.payment.id}
+            row={row}
+            onOpenPayment={onOpenPayment}
+          />
+        ))}
+      </div>
+    </>
   );
 }
