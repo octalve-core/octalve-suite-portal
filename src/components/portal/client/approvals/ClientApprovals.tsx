@@ -1,3 +1,3 @@
 "use client";
 
-export { ClientApprovals } from "../../ClientScreensLegacy";
+export { ClientApprovalsView as ClientApprovals } from "./ClientApprovalsView";

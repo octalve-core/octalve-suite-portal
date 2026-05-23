@@ -1,6 +1,4 @@
 "use client";
 
-export {
-  ClientPhases,
-  ClientPhaseDetail,
-} from "../../ClientScreensLegacy";
+export { ClientPhasesView as ClientPhases } from "./ClientPhasesView";
+export { ClientPhaseDetail } from "./ClientPhaseDetail";
