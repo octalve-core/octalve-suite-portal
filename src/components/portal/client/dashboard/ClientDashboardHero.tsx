@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlarmClock, CalendarDays, ChevronDown, Eye, Plus, WalletCards } from "lucide-react";
+import { AlarmClock, CalendarDays, ChevronDown, Eye, WalletCards } from "lucide-react";
 
 import type { Project } from "@/lib/types";
 import { getPackageTitle } from "../../packageCatalog";
@@ -38,6 +38,7 @@ export function ClientDashboardHero({
   userName: string;
   walletAvailable: number | null;
 }) {
+  const router = useRouter();
   const { clientProjects, setSelectedProjectId } = useApp();
   const [now, setNow] = useState(() => Date.now());
 
@@ -54,7 +55,7 @@ export function ClientDashboardHero({
   return (
     <section className="relative overflow-hidden rounded-[22px] bg-[#0064E0] p-5 text-white shadow-[0_22px_60px_rgba(0,100,224,0.24)] sm:p-7 lg:p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_12%,rgba(255,255,255,0.18),transparent_30%),radial-gradient(circle_at_40%_120%,rgba(0,10,22,0.22),transparent_36%)]" />
-      <div className="pointer-events-none absolute -right-12 top-6 hidden h-52 w-52 rounded-[46px] border border-white/10 bg-white/5 rotate-12 lg:block" />
+      <div className="pointer-events-none absolute -right-12 top-6 hidden h-52 w-52 rotate-12 rounded-[46px] border border-white/10 bg-white/5 lg:block" />
 
       <div className="relative z-10 grid gap-7 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
         <div className="min-w-0">
@@ -76,16 +77,17 @@ export function ClientDashboardHero({
           </div>
 
           <strong className="mt-4 block text-[34px] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[42px]">
-            {walletAvailable === null ? "â€”" : formatNaira(walletAvailable)}
+            {walletAvailable === null ? "-" : formatNaira(walletAvailable)}
           </strong>
 
-          <Link
-            href="/client/wallet"
-            className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-semibold text-[#0064E0] shadow-[0_16px_34px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5"
+          <button
+            type="button"
+            onClick={() => router.push("/client/wallet")}
+            className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-bold text-[#0064E0] shadow-[0_16px_34px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:bg-blue-50"
           >
             <WalletCards size={17} />
-            Fund Wallet
-          </Link>
+            <span>Fund Wallet</span>
+          </button>
         </div>
       </div>
 
