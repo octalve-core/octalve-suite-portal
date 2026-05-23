@@ -1,3 +1,3 @@
 "use client";
 
-export { ClientSupport } from "../../ClientScreensLegacy";
+export { ClientSupportView as ClientSupport } from "./ClientSupportView";
