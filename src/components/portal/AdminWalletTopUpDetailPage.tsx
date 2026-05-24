@@ -291,17 +291,6 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
               </div>
             ) : null}
 
-            {topUp.authorizationUrl ? (
-              <a
-                href={topUp.authorizationUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
-              >
-                Open Provider Checkout
-                <ExternalLink size={16} />
-              </a>
-            ) : null}
           </Card>
 
           <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">

@@ -184,8 +184,6 @@ export async function GET(_request: Request, { params }: Params) {
       reference: event.reference ?? undefined,
       status: event.status,
       signatureValid: event.signatureValid,
-      payloadHash: event.payloadHash ?? undefined,
-      idempotencyKey: event.idempotencyKey,
       processedAt: serializeDate(event.processedAt),
       processingError: event.processingError ?? undefined,
       createdAt: event.createdAt.toISOString(),
@@ -199,8 +197,8 @@ export async function GET(_request: Request, { params }: Params) {
       },
       {
         label: "Provider Checkout",
-        value: topUp.authorizationUrl ? topUp.updatedAt.toISOString() : undefined,
-        status: topUp.authorizationUrl ? "DONE" : "PENDING",
+        value: topUp.providerStatus ? topUp.updatedAt.toISOString() : undefined,
+        status: topUp.providerStatus ? "DONE" : "PENDING",
       },
       {
         label: "Verified",
