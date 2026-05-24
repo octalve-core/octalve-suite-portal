@@ -55,13 +55,14 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
               </p>
             </div>
 
-            <button
-              type="button"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-              aria-label="More approval options"
+            <Link
+              href={`/client/phases/${phase.id}`}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-blue-50 hover:text-[#0064E0]"
+              aria-label={`Open approval details for ${phase.title}`}
+              title="Open approval details"
             >
               <MoreVertical size={17} />
-            </button>
+            </Link>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   Check,
@@ -23,6 +26,8 @@ import {
 } from "./client-payments-utils";
 import { ClientPaymentCard } from "./ClientPaymentCard";
 import { ClientPaymentStatusChip } from "./ClientPaymentStatusChip";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 function PaymentStatusIcon({ status }: { status: PaymentStatus }) {
   const icon =
@@ -71,6 +76,22 @@ export function ClientPaymentList({
   rows: PaymentRow[];
   onOpenPayment: (row: PaymentRow) => void;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, rows.length);
+
+  const pagedRows = useMemo(() => {
+    return rows.slice(startIndex, endIndex);
+  }, [endIndex, rows, startIndex]);
+
   if (!rows.length) {
     return (
       <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
@@ -85,6 +106,14 @@ export function ClientPaymentList({
         </p>
       </div>
     );
+  }
+
+  function goPrevious() {
+    setCurrentPage((page) => Math.max(1, page - 1));
+  }
+
+  function goNext() {
+    setCurrentPage((page) => Math.min(totalPages, page + 1));
   }
 
   return (
@@ -105,7 +134,7 @@ export function ClientPaymentList({
           </thead>
 
           <tbody>
-            {rows.map((row) => {
+            {pagedRows.map((row) => {
               const { payment, project } = row;
               const dateValue = getPaymentDateValue(row);
 
@@ -186,51 +215,84 @@ export function ClientPaymentList({
 
         <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 text-sm font-semibold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            Showing 1 to {rows.length} of {rows.length} payments
+            Showing {startIndex + 1} to {endIndex} of {rows.length} payments
           </span>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              disabled
-              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-300"
+              disabled={safeCurrentPage <= 1}
+              onClick={goPrevious}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-slate-200 disabled:hover:bg-white"
               aria-label="Previous page"
             >
               <ChevronLeft size={16} />
             </button>
 
             <span className="grid h-9 min-w-9 place-items-center rounded-xl bg-[#0064E0] px-3 text-white">
-              1
+              {safeCurrentPage}
             </span>
 
             <button
               type="button"
-              disabled
-              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-300"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={goNext}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-slate-200 disabled:hover:bg-white"
               aria-label="Next page"
             >
               <ChevronRight size={16} />
             </button>
 
             <select
-              value="10"
-              disabled
-              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-500"
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+              aria-label="Payments per page"
             >
-              <option value="10">10 / page</option>
+              {PAGE_SIZE_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {value} / page
+                </option>
+              ))}
             </select>
           </div>
         </div>
       </div>
 
       <div className="grid gap-3 lg:hidden">
-        {rows.map((row) => (
+        {pagedRows.map((row) => (
           <ClientPaymentCard
             key={row.payment.id}
             row={row}
             onOpenPayment={onOpenPayment}
           />
         ))}
+
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-500">
+          <button
+            type="button"
+            disabled={safeCurrentPage <= 1}
+            onClick={goPrevious}
+            className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <span>
+            Page {safeCurrentPage} of {totalPages}
+          </span>
+
+          <button
+            type="button"
+            disabled={safeCurrentPage >= totalPages}
+            onClick={goNext}
+            className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
+            aria-label="Next page"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </>
   );
