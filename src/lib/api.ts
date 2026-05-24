@@ -20,6 +20,8 @@ import type {
   SupportSetting,
   WorkspaceDefaultSetting,
   NotificationDefaultSetting,
+  EmailTemplate,
+  EmailTemplateUpdateInput,
   WorkspacePublicSettings,
   PaymentInitializeResponse,
   PaymentMethodOption,
@@ -261,6 +263,11 @@ export const api = {
         fetchJson<NotificationDefaultSetting>("/api/system-settings/notification-defaults"),
       update: (data: Partial<NotificationDefaultSetting>) =>
         patch<NotificationDefaultSetting>("/api/system-settings/notification-defaults", data),
+    },
+    emailTemplates: {
+      list: () => fetchJson<EmailTemplate[]>("/api/system-settings/email-templates"),
+      update: (data: EmailTemplateUpdateInput) =>
+        patch<EmailTemplate>("/api/system-settings/email-templates", data),
     },
   },
   // Notifications

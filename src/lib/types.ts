@@ -505,6 +505,15 @@ export type EmailTemplate = {
   updatedAt: string;
 };
 
+export type EmailTemplateUpdateInput = {
+  eventKey: string;
+  title: string;
+  subject: string;
+  body: string;
+  channel?: string;
+  isEnabled: boolean;
+};
+
 export type WorkspacePublicSettings = {
   support: Pick<
     SupportSetting,
