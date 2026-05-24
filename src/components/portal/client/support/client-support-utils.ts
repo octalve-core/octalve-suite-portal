@@ -4,10 +4,14 @@ import type {
   ProjectPhase,
   ProjectStatus,
   User,
+  WorkspacePublicSettings,
 } from "@/lib/types";
 
 export const SUPPORT_EMAIL = "info@octalve.com";
 export const SUPPORT_TRENDS_URL = "https://octalve.com/trends";
+
+export const DEFAULT_PAYMENT_DISPUTE_SAFETY_TEXT =
+  "For payment disputes, include the payment reference only. Do not send card details, OTPs, passwords, private keys, or admin credentials.";
 
 export type SupportFaqItem = {
   question: string;
@@ -49,26 +53,53 @@ export const SUPPORT_FAQS: SupportFaqItem[] = [
   },
 ];
 
-export const SUPPORT_RESOURCES: SupportResourceItem[] = [
-  {
-    title: "Workspace Guide",
-    description: "Understand projects, phases, approvals, messages and deliverables.",
-    href: SUPPORT_TRENDS_URL,
-    label: "View Guide",
-  },
-  {
-    title: "Approval Best Practices",
-    description: "Review submitted work carefully before approving or requesting changes.",
-    href: SUPPORT_TRENDS_URL,
-    label: "View Guide",
-  },
-  {
-    title: "Payments & Wallet",
-    description: "Track payments, wallet funding, confirmations and billing status.",
-    href: SUPPORT_TRENDS_URL,
-    label: "View Guide",
-  },
-];
+export function getSupportEmail(settings?: WorkspacePublicSettings | null) {
+  return settings?.support.supportEmail || SUPPORT_EMAIL;
+}
+
+export function getSupportGuideUrl(settings?: WorkspacePublicSettings | null) {
+  return settings?.support.guideUrl || SUPPORT_TRENDS_URL;
+}
+
+export function getPaymentDisputeSafetyText(settings?: WorkspacePublicSettings | null) {
+  return (
+    settings?.support.paymentDisputeSafetyText ||
+    DEFAULT_PAYMENT_DISPUTE_SAFETY_TEXT
+  );
+}
+
+export function preferPhaseThreadSupport(settings?: WorkspacePublicSettings | null) {
+  return settings?.support.preferPhaseThreadSupport ?? true;
+}
+
+export function getSupportResources(
+  settings?: WorkspacePublicSettings | null,
+): SupportResourceItem[] {
+  const href = getSupportGuideUrl(settings);
+
+  return [
+    {
+      title: "Workspace Guide",
+      description: "Understand projects, phases, approvals, messages and deliverables.",
+      href,
+      label: "View Guide",
+    },
+    {
+      title: "Approval Best Practices",
+      description: "Review submitted work carefully before approving or requesting changes.",
+      href,
+      label: "View Guide",
+    },
+    {
+      title: "Payments & Wallet",
+      description: "Track payments, wallet funding, confirmations and billing status.",
+      href,
+      label: "View Guide",
+    },
+  ];
+}
+
+export const SUPPORT_RESOURCES = getSupportResources();
 
 export function getActiveSupportPhase(project?: Project): ProjectPhase | undefined {
   return (

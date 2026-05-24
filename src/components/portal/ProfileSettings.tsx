@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
+import { api } from "@/lib/api";
+import type { WorkspacePublicSettings } from "@/lib/types";
 import { useApp } from "./AppContext";
 import { Button, Modal } from "./UI";
 
@@ -60,6 +62,15 @@ function formatAccountId(id?: string) {
   if (!id) return "Not available";
   if (id.length <= 12) return id;
   return `${id.slice(0, 4)}-${id.slice(-8)}`;
+}
+
+function formatSettingLabel(value?: string) {
+  if (!value) return "Not set";
+
+  return value
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function ReadinessBadge({
@@ -469,6 +480,8 @@ export function ProfileSettings({
 }) {
   const { currentUser, refresh } = useApp();
 
+  const [workspacePublicSettings, setWorkspacePublicSettings] =
+    useState<WorkspacePublicSettings | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -501,16 +514,51 @@ export function ProfileSettings({
     currentUser?.specialty,
   ]);
 
+  useEffect(() => {
+    let alive = true;
+
+    api.workspacePublicSettings
+      .get()
+      .then((settings) => {
+        if (alive) setWorkspacePublicSettings(settings);
+      })
+      .catch(() => {
+        if (alive) setWorkspacePublicSettings(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const notificationCount = useMemo(
     () => ({
-      emailAlerts: true,
-      paymentUpdates: true,
-      approvalNotifications: true,
-      projectUpdates: true,
-      supportMessages: false,
+      emailAlerts: workspacePublicSettings?.notifications.emailAlertsEnabled ?? false,
+      paymentUpdates:
+        workspacePublicSettings?.notifications.paymentUpdatesEnabled ?? true,
+      approvalNotifications:
+        workspacePublicSettings?.notifications.approvalNotificationsEnabled ?? true,
+      projectUpdates:
+        workspacePublicSettings?.notifications.projectUpdatesEnabled ?? true,
+      supportMessages:
+        workspacePublicSettings?.notifications.supportMessagesEnabled ?? false,
     }),
-    [],
+    [workspacePublicSettings?.notifications],
   );
+
+  const workspaceDefaults = workspacePublicSettings?.workspaceDefaults;
+  const timezoneValue = workspaceDefaults?.defaultTimezone ?? "Africa/Lagos";
+  const languageValue = workspaceDefaults?.defaultLanguage ?? "English (US)";
+  const updateFrequencyValue = workspaceDefaults?.updateFrequency ?? "WEEKLY_DIGEST";
+  const emailDigestValue =
+    workspaceDefaults?.emailDigest ?? "SUMMARY_OF_ALL_ACTIVITY";
+  const timezoneLabel =
+    timezoneValue === "Africa/Lagos"
+      ? "(GMT+01:00) West Africa Time (Lagos)"
+      : formatSettingLabel(timezoneValue);
+  const clientOverrideLabel = workspaceDefaults?.allowClientPreferenceOverride
+    ? "Personal override allowed by admin."
+    : "Controlled by workspace administrator.";
 
   async function updateProfile() {
     setError("");
@@ -736,7 +784,7 @@ export function ProfileSettings({
             icon={<Bell size={20} />}
           >
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold leading-6 text-blue-900">
-              Notification alerts are active in-app. Email preference saving will be added when admin notification controls are configured.
+              Notification defaults are controlled by the workspace administrator. Email alerts only appear active when admin enables them.
             </div>
 
             <div className="mt-3">
@@ -779,24 +827,28 @@ export function ProfileSettings({
             icon={<SlidersHorizontal size={20} />}
           >
             <div className="grid gap-4">
-              <SelectField label="Preferred Timezone" value="GMT+01" disabled>
-                <option value="GMT+01">(GMT+01:00) West Africa Time (Lagos)</option>
+              <SelectField label="Preferred Timezone" value={timezoneValue} disabled>
+                <option value={timezoneValue}>{timezoneLabel}</option>
               </SelectField>
 
-              <SelectField label="Update Frequency" value="Weekly Digest" disabled>
-                <option value="Weekly Digest">Weekly Digest</option>
+              <SelectField label="Update Frequency" value={updateFrequencyValue} disabled>
+                <option value={updateFrequencyValue}>
+                  {formatSettingLabel(updateFrequencyValue)}
+                </option>
               </SelectField>
 
-              <SelectField label="Language" value="English (US)" disabled>
-                <option value="English (US)">English (US)</option>
+              <SelectField label="Language" value={languageValue} disabled>
+                <option value={languageValue}>{languageValue}</option>
               </SelectField>
 
-              <SelectField label="Email Digest" value="Summary of all activity" disabled>
-                <option value="Summary of all activity">Summary of all activity</option>
+              <SelectField label="Email Digest" value={emailDigestValue} disabled>
+                <option value={emailDigestValue}>
+                  {formatSettingLabel(emailDigestValue)}
+                </option>
               </SelectField>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-600">
-                These preferences are display-only until admin-managed workspace preference controls are enabled.
+                These preferences are read from admin workspace defaults. {clientOverrideLabel}
               </div>
             </div>
           </SettingsCard>

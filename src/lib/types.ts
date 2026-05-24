@@ -504,6 +504,31 @@ export type EmailTemplate = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type WorkspacePublicSettings = {
+  support: Pick<
+    SupportSetting,
+    "supportEmail" | "guideUrl" | "preferPhaseThreadSupport" | "paymentDisputeSafetyText"
+  >;
+  workspaceDefaults: Pick<
+    WorkspaceDefaultSetting,
+    | "defaultTimezone"
+    | "defaultLanguage"
+    | "updateFrequency"
+    | "emailDigest"
+    | "allowClientPreferenceOverride"
+  >;
+  notifications: Pick<
+    NotificationDefaultSetting,
+    | "inAppAlertsEnabled"
+    | "emailAlertsEnabled"
+    | "paymentUpdatesEnabled"
+    | "approvalNotificationsEnabled"
+    | "projectUpdatesEnabled"
+    | "supportMessagesEnabled"
+  >;
+  updatedAt: string;
+};
 export type AppState = {
   users: User[];
   templates: ProjectTemplate[];

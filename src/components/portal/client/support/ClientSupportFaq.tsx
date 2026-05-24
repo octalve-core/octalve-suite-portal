@@ -3,12 +3,19 @@ import {
   Headphones,
 } from "lucide-react";
 
+import type { WorkspacePublicSettings } from "@/lib/types";
 import {
+  getSupportGuideUrl,
   SUPPORT_FAQS,
-  SUPPORT_TRENDS_URL,
 } from "./client-support-utils";
 
-export function ClientSupportFaq() {
+export function ClientSupportFaq({
+  settings,
+}: {
+  settings?: WorkspacePublicSettings | null;
+}) {
+  const guideUrl = getSupportGuideUrl(settings);
+
   const tones = [
     "bg-blue-50 text-[#0064E0] ring-blue-100",
     "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -59,7 +66,7 @@ export function ClientSupportFaq() {
       </div>
 
       <a
-        href={SUPPORT_TRENDS_URL}
+        href={guideUrl}
         target="_blank"
         rel="noreferrer"
         className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-white px-5 text-sm font-bold text-[#0064E0] transition hover:bg-blue-50"

@@ -9,8 +9,11 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import type { Project, ProjectPhase } from "@/lib/types";
-import { SUPPORT_RESOURCES } from "./client-support-utils";
+import type { Project, ProjectPhase, WorkspacePublicSettings } from "@/lib/types";
+import {
+  getPaymentDisputeSafetyText,
+  getSupportResources,
+} from "./client-support-utils";
 
 function ToolCard({
   title,
@@ -89,10 +92,15 @@ function ResourceCard({
 export function ClientSupportResources({
   project,
   activePhase,
+  settings,
 }: {
   project?: Project;
   activePhase?: ProjectPhase;
+  settings?: WorkspacePublicSettings | null;
 }) {
+  const resources = getSupportResources(settings);
+  const paymentDisputeSafetyText = getPaymentDisputeSafetyText(settings);
+
   const resourceIcons = [
     <BookOpen key="book" size={21} />,
     <ShieldCheck key="shield" size={21} />,
@@ -133,7 +141,7 @@ export function ClientSupportResources({
       </h2>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        {SUPPORT_RESOURCES.map((item, index) => (
+        {resources.map((item, index) => (
           <ResourceCard
             key={item.title}
             title={item.title}
@@ -148,7 +156,7 @@ export function ClientSupportResources({
       <div className="mt-5 flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
         <ShieldCheck size={19} className="mt-0.5 shrink-0 text-[#0064E0]" />
         <p className="m-0 text-sm font-semibold leading-6 text-blue-950">
-          For payment disputes, include the payment reference only. Do not send card details, OTPs, passwords, private keys, or admin credentials.
+          {paymentDisputeSafetyText}
         </p>
       </div>
     </section>

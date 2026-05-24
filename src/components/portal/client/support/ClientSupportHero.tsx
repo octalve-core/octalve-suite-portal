@@ -7,23 +7,29 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import type { Project, ProjectPhase } from "@/lib/types";
+import type { Project, ProjectPhase, WorkspacePublicSettings } from "@/lib/types";
 import {
   buildSupportMailto,
   getProjectStatusLabel,
   getProjectStatusTone,
-  SUPPORT_EMAIL,
+  getSupportEmail,
+  preferPhaseThreadSupport,
 } from "./client-support-utils";
 
 export function ClientSupportHero({
   project,
   activePhase,
+  settings,
 }: {
   project?: Project;
   activePhase?: ProjectPhase;
+  settings?: WorkspacePublicSettings | null;
 }) {
+  const supportEmail = getSupportEmail(settings);
+  const phaseSupportPreferred = preferPhaseThreadSupport(settings);
+
   const mailto = buildSupportMailto({
-    email: SUPPORT_EMAIL,
+    email: supportEmail,
     project,
     phase: activePhase,
   });
@@ -84,7 +90,7 @@ export function ClientSupportHero({
                   Email Support
                 </a>
 
-                {activePhase ? (
+                {activePhase && phaseSupportPreferred ? (
                   <Link
                     href={`/client/phases/${activePhase.id}`}
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
@@ -99,7 +105,7 @@ export function ClientSupportHero({
                     className="inline-flex min-h-12 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-400"
                   >
                     <MessageSquareText size={17} />
-                    No Phase Thread
+                    {activePhase ? "Email Preferred" : "No Phase Thread"}
                   </button>
                 )}
               </div>

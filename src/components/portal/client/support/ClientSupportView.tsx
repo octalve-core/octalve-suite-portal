@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { api } from "@/lib/api";
+import type { WorkspacePublicSettings } from "@/lib/types";
 import { useApp } from "../../AppContext";
 import {
   getActiveSupportPhase,
@@ -15,6 +17,24 @@ import { ClientSupportResources } from "./ClientSupportResources";
 
 export function ClientSupportView() {
   const { selectedProject } = useApp();
+  const [settings, setSettings] = useState<WorkspacePublicSettings | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    api.workspacePublicSettings
+      .get()
+      .then((data) => {
+        if (alive) setSettings(data);
+      })
+      .catch(() => {
+        if (alive) setSettings(null);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const activePhase = useMemo(
     () => getActiveSupportPhase(selectedProject),
@@ -35,6 +55,7 @@ export function ClientSupportView() {
         <ClientSupportHero
           project={selectedProject}
           activePhase={activePhase}
+          settings={settings}
         />
 
         <ClientSupportProjectContext
@@ -46,9 +67,10 @@ export function ClientSupportView() {
           <ClientSupportResources
             project={selectedProject}
             activePhase={activePhase}
+            settings={settings}
           />
 
-          <ClientSupportFaq />
+          <ClientSupportFaq settings={settings} />
         </section>
       </div>
     </main>

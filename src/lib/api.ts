@@ -20,6 +20,7 @@ import type {
   SupportSetting,
   WorkspaceDefaultSetting,
   NotificationDefaultSetting,
+  WorkspacePublicSettings,
   PaymentInitializeResponse,
   PaymentMethodOption,
   PaymentVerifyResponse,
@@ -74,6 +75,11 @@ function del<T = { success: boolean }>(url: string): Promise<T> {
 export const api = {
   // Session
   me: () => fetchJson<User>("/api/me"),
+
+  // Safe authenticated settings exposed to client/staff/admin UI.
+  workspacePublicSettings: {
+    get: () => fetchJson<WorkspacePublicSettings>("/api/workspace-public-settings"),
+  },
 
   // Templates
   templates: {
