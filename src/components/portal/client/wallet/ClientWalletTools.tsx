@@ -19,6 +19,7 @@ function WalletToolRow({
   disabled,
   onClick,
   loading,
+  download,
 }: {
   title: string;
   description: string;
@@ -27,6 +28,7 @@ function WalletToolRow({
   disabled?: boolean;
   onClick?: () => void;
   loading?: boolean;
+  download?: boolean;
 }) {
   const content = (
     <>
@@ -59,6 +61,14 @@ function WalletToolRow({
       <button type="button" disabled className={className}>
         {content}
       </button>
+    );
+  }
+
+  if (href && download) {
+    return (
+      <a href={href} className={className}>
+        {content}
+      </a>
     );
   }
 
@@ -128,9 +138,10 @@ export function ClientWalletTools({
 
         <WalletToolRow
           title="Download Statement"
-          description="Disabled until server statement export route exists"
+          description="Export authenticated CSV statement"
           icon={<Download size={18} />}
-          disabled
+          href="/api/wallet/statement"
+          download
         />
 
         <WalletToolRow
@@ -145,7 +156,7 @@ export function ClientWalletTools({
         <div className="flex items-start gap-3">
           <ShieldAlert size={17} className="mt-0.5 shrink-0 text-orange-700" />
           <p className="m-0 text-xs font-semibold leading-5 text-orange-800">
-            Statement export and auto top-up are intentionally disabled because no authenticated backend routes exist for them yet. They should not be activated from frontend-only data.
+            Auto top-up remains disabled until a secure mandate and authorization flow exists.
           </p>
         </div>
       </div>

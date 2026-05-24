@@ -81,15 +81,13 @@ export function ClientWalletHero({
                 Fund Wallet
               </button>
 
-              <button
-                type="button"
-                disabled
-                title="Statement export is disabled until an authenticated server export route exists."
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 text-sm font-bold text-white/80 transition disabled:cursor-not-allowed disabled:opacity-70"
+              <a
+                href="/api/wallet/statement"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/15"
               >
                 <Download size={17} />
                 Download Statement
-              </button>
+              </a>
             </div>
           </div>
 
@@ -115,4 +113,3 @@ export function ClientWalletHero({
     </section>
   );
 }
-
