@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArrowDown,
   Check,
@@ -168,13 +169,14 @@ export function ClientPaymentList({
                   </td>
 
                   <td className="px-2 py-4">
-                    <button
-                      type="button"
-                      className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                      aria-label="More payment options"
+                    <Link
+                      href={`/client/payments/${payment.id}`}
+                      className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-blue-50 hover:text-[#0064E0]"
+                      aria-label={`Open payment details for ${payment.reference}`}
+                      title="Open payment details"
                     >
                       <MoreVertical size={17} />
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               );
