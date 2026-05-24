@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CreditCard } from "lucide-react";
 
 import { useApp } from "../../../AppContext";
+import { ClientManualPaymentModal } from "../../shared/ClientManualPaymentModal";
 import { ClientPaymentDetailHero } from "./ClientPaymentDetailHero";
-import { ClientPaymentMethodsPanel } from "./ClientPaymentMethodsPanel";
 import { ClientPaymentSecurityPanel } from "./ClientPaymentSecurityPanel";
 import { ClientPaymentSummaryPanel } from "./ClientPaymentSummaryPanel";
 
@@ -52,6 +52,7 @@ export function ClientPaymentDetailView({
   paymentId: string;
 }) {
   const { clientProjects, setSelectedProjectId } = useApp();
+  const [openPaymentId, setOpenPaymentId] = useState<string | null>(null);
 
   const row = useMemo(() => {
     for (const project of clientProjects) {
@@ -79,21 +80,39 @@ export function ClientPaymentDetailView({
   }
 
   const { project, payment } = row;
+  const canPayNow = payment.status === "UNPAID";
 
   return (
-    <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="grid gap-5">
-        <ClientPaymentDetailHero payment={payment} project={project} />
+    <>
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid gap-5">
+          <ClientPaymentDetailHero
+            payment={payment}
+            project={project}
+            onPayNow={canPayNow ? () => setOpenPaymentId(payment.id) : undefined}
+          />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-5">
-            <ClientPaymentSummaryPanel payment={payment} project={project} />
-            <ClientPaymentMethodsPanel payment={payment} project={project} />
-          </div>
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="grid gap-5">
+              <ClientPaymentSummaryPanel payment={payment} project={project} />
+            </div>
 
-          <ClientPaymentSecurityPanel payment={payment} project={project} />
-        </section>
-      </div>
-    </main>
+            <ClientPaymentSecurityPanel
+              payment={payment}
+              project={project}
+              onPayNow={canPayNow ? () => setOpenPaymentId(payment.id) : undefined}
+            />
+          </section>
+        </div>
+      </main>
+
+      {openPaymentId ? (
+        <ClientManualPaymentModal
+          project={project}
+          paymentId={openPaymentId}
+          onClose={() => setOpenPaymentId(null)}
+        />
+      ) : null}
+    </>
   );
 }

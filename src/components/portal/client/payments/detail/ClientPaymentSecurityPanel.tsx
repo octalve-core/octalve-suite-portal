@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ArrowRight,
   BriefcaseBusiness,
   FileText,
   ShieldCheck,
@@ -15,25 +16,24 @@ import {
 export function ClientPaymentSecurityPanel({
   payment,
   project,
+  onPayNow,
 }: {
   payment: ProjectPayment;
   project: Project;
+  onPayNow?: () => void;
 }) {
   return (
     <aside className="grid gap-4 self-start">
-      <section className="rounded-[24px] border border-blue-100 bg-blue-50 p-5 shadow-[0_14px_34px_rgba(0,100,224,0.06)]">
-        <div className="flex items-start gap-3">
-          <ShieldCheck size={21} className="mt-0.5 shrink-0 text-[#0064E0]" />
-          <div>
-            <strong className="block text-sm font-bold text-blue-950">
-              Secure payment handling
-            </strong>
-            <p className="mt-1 text-sm font-medium leading-6 text-blue-800">
-              Checkout and wallet payment are initialized by the backend only. This page does not expose secret keys, confirm payments directly, or store payment data in browser storage.
-            </p>
-          </div>
-        </div>
-      </section>
+      {onPayNow ? (
+        <button
+          type="button"
+          onClick={onPayNow}
+          className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8]"
+        >
+          Pay Now
+          <ArrowRight size={17} />
+        </button>
+      ) : null}
 
       <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
         <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
@@ -53,9 +53,10 @@ export function ClientPaymentSecurityPanel({
                 Open Project
               </strong>
               <small className="mt-1 block truncate text-xs font-semibold text-slate-500">
-                View project phases and details
+                View phases and details
               </small>
             </span>
+            <ArrowRight size={16} className="text-slate-400" />
           </Link>
 
           <Link
@@ -70,10 +71,25 @@ export function ClientPaymentSecurityPanel({
                 All Payments
               </strong>
               <small className="mt-1 block truncate text-xs font-semibold text-slate-500">
-                Return to payment records
+                View payment history
               </small>
             </span>
+            <ArrowRight size={16} className="text-slate-400" />
           </Link>
+        </div>
+      </section>
+
+      <section className="rounded-[24px] border border-blue-100 bg-blue-50 p-5 shadow-[0_14px_34px_rgba(0,100,224,0.06)]">
+        <div className="flex items-start gap-3">
+          <ShieldCheck size={21} className="mt-0.5 shrink-0 text-[#0064E0]" />
+          <div>
+            <strong className="block text-sm font-bold text-blue-950">
+              Secure Payment
+            </strong>
+            <p className="mt-1 text-sm font-medium leading-6 text-blue-800">
+              Your payment is processed securely through Octalve approved payment channels.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -90,7 +106,7 @@ export function ClientPaymentSecurityPanel({
             <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
               This is a {paymentTypeLabel(payment.type).toLowerCase()} of{" "}
               <strong className="text-slate-950">{formatPaymentMoney(payment.amount)}</strong>.
-              Use the exact reference when paying by bank transfer. Online and wallet payments are completed through secure server verification.
+              Use the exact payment reference when making bank transfer.
             </p>
           </div>
         </div>

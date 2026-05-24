@@ -1,60 +1,83 @@
 import type React from "react";
 import {
-  BriefcaseBusiness,
+  Bell,
   CalendarDays,
+  CheckCircle2,
+  Clock3,
   CreditCard,
-  FileText,
   ReceiptText,
-  UserRound,
-  WalletCards,
 } from "lucide-react";
 
 import type { Project, ProjectPayment } from "@/lib/types";
-import { getPackageTitle } from "../../../packageCatalog";
 import {
-  formatPaymentDate,
   formatPaymentDateTime,
   formatPaymentMoney,
-  paymentTypeLabel,
-  providerLabel,
-  shortReference,
 } from "./client-payment-detail-utils";
-import { ClientPaymentStatusChip } from "./ClientPaymentDetailHero";
 
-function SummaryItem({
+function OverviewItem({
   label,
   value,
-  helper,
   icon,
+  tone = "blue",
 }: {
   label: string;
   value: React.ReactNode;
-  helper?: React.ReactNode;
   icon: React.ReactNode;
+  tone?: "blue" | "green" | "red" | "purple" | "orange" | "slate";
 }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#0064E0] ring-1 ring-blue-100">
-          {icon}
-        </span>
+  const toneClass = {
+    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    red: "bg-red-50 text-red-700 ring-red-100",
+    purple: "bg-violet-50 text-violet-700 ring-violet-100",
+    orange: "bg-orange-50 text-orange-700 ring-orange-100",
+    slate: "bg-slate-50 text-slate-500 ring-slate-200",
+  }[tone];
 
-        <div className="min-w-0">
-          <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-            {label}
-          </span>
-          <strong className="mt-1 block break-words text-sm font-semibold leading-6 text-slate-950">
-            {value}
-          </strong>
-          {helper ? (
-            <span className="mt-1 block break-words text-xs font-semibold leading-5 text-slate-500">
-              {helper}
-            </span>
-          ) : null}
-        </div>
+  return (
+    <div className="flex items-center gap-4 border-b border-slate-100 py-4 last:border-b-0">
+      <span
+        className={[
+          "grid h-11 w-11 shrink-0 place-items-center rounded-2xl ring-1",
+          toneClass,
+        ].join(" ")}
+      >
+        {icon}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-slate-500">
+          {label}
+        </span>
       </div>
+
+      <strong className="shrink-0 text-right text-sm font-semibold text-slate-950">
+        {value}
+      </strong>
     </div>
   );
+}
+
+function getPaymentDate(payment: ProjectPayment) {
+  const paymentRecord = payment as ProjectPayment & {
+    updatedAt?: string;
+    createdAt?: string;
+  };
+
+  return paymentRecord.updatedAt || payment.confirmedAt || paymentRecord.createdAt;
+}
+
+function getDueDate(project: Project, payment: ProjectPayment) {
+  const projectRecord = project as Project & {
+    targetDate?: string;
+    dueDate?: string;
+  };
+
+  const paymentRecord = payment as ProjectPayment & {
+    dueDate?: string;
+  };
+
+  return paymentRecord.dueDate || projectRecord.dueDate || projectRecord.targetDate;
 }
 
 export function ClientPaymentSummaryPanel({
@@ -64,99 +87,71 @@ export function ClientPaymentSummaryPanel({
   payment: ProjectPayment;
   project: Project;
 }) {
+  const paidAmount = project.payments
+    .filter((item) => item.status === "CONFIRMED")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const amountDue = payment.status === "CONFIRMED" ? 0 : payment.amount;
+  const dueDate = getDueDate(project, payment);
+  const updatedAt = getPaymentDate(payment);
+
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)] sm:p-6">
       <div>
         <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-          Payment Summary
+          Payment Overview
         </h2>
         <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-          Project payment record, amount, status and related references.
+          Summary of this payment.
         </p>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <SummaryItem
-          label="Project"
-          value={project.title}
-          helper={`${project.businessName} - ${project.projectCode}`}
-          icon={<BriefcaseBusiness size={18} />}
-        />
-
-        <SummaryItem
-          label="Client"
-          value={project.clientEmail}
-          helper="Payment owner"
-          icon={<UserRound size={18} />}
-        />
-
-        <SummaryItem
-          label="Payment Type"
-          value={paymentTypeLabel(payment.type)}
-          helper={getPackageTitle(project.packageType)}
-          icon={<ReceiptText size={18} />}
-        />
-
-        <SummaryItem
-          label="Amount"
-          value={formatPaymentMoney(payment.amount)}
-          helper={`Project total: ${formatPaymentMoney(project.totalAmount)}`}
+      <div className="mt-5 grid gap-x-8 lg:grid-cols-2">
+        <OverviewItem
+          label="Total Amount"
+          value={formatPaymentMoney(project.totalAmount)}
           icon={<CreditCard size={18} />}
         />
 
-        <SummaryItem
-          label="Status"
-          value={<ClientPaymentStatusChip status={payment.status} />}
-          helper={
-            payment.confirmedAt
-              ? `Confirmed ${formatPaymentDate(payment.confirmedAt)}`
-              : "Current payment state"
-          }
-          icon={<WalletCards size={18} />}
+        <OverviewItem
+          label="Amount Paid"
+          value={formatPaymentMoney(paidAmount)}
+          icon={<CheckCircle2 size={18} />}
+          tone="green"
         />
 
-        <SummaryItem
-          label="Reference"
-          value={shortReference(payment.reference)}
-          helper={payment.reference}
-          icon={<FileText size={18} />}
-        />
-
-        <SummaryItem
-          label="Provider"
-          value={providerLabel(String(payment.provider ?? ""))}
-          helper={payment.paidVia || "Not set"}
-          icon={<CreditCard size={18} />}
-        />
-
-        <SummaryItem
-          label="Provider Reference"
+        <OverviewItem
+          label="Amount Due"
           value={
-            payment.providerReference
-              ? shortReference(payment.providerReference)
-              : "Not set"
+            <span className={amountDue > 0 ? "text-[#E61525]" : "text-emerald-700"}>
+              {formatPaymentMoney(amountDue)}
+            </span>
           }
-          helper={payment.gatewayReference || undefined}
-          icon={<FileText size={18} />}
+          icon={<ReceiptText size={18} />}
+          tone="red"
         />
 
-        <SummaryItem
-          label="Last Confirmation"
-          value={formatPaymentDateTime(payment.confirmedAt)}
-          helper={
-            payment.confirmedSource
-              ? providerLabel(String(payment.confirmedSource))
-              : undefined
-          }
+        <OverviewItem
+          label="Due Date"
+          value={dueDate ? formatPaymentDateTime(dueDate) : "Not set"}
           icon={<CalendarDays size={18} />}
+          tone="purple"
+        />
+
+        <OverviewItem
+          label="Last Reminder"
+          value="Not sent yet"
+          icon={<Bell size={18} />}
+          tone="orange"
+        />
+
+        <OverviewItem
+          label="Last Updated"
+          value={updatedAt ? formatPaymentDateTime(updatedAt) : "Not set"}
+          icon={<Clock3 size={18} />}
+          tone="slate"
         />
       </div>
-
-      {payment.note ? (
-        <div className="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold leading-6 text-orange-800">
-          {payment.note}
-        </div>
-      ) : null}
     </section>
   );
 }
