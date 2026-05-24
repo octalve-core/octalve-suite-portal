@@ -1,5 +1,5 @@
 import { PortalShell } from "@/components/portal/PortalShell";
-import { ClientPaymentsView } from "@/components/portal/client/payments/ClientPaymentsView";
+import { ClientPaymentDetailView } from "@/components/portal/client/payments/detail/ClientPaymentDetailView";
 
 export default async function Page({
   params,
@@ -10,7 +10,7 @@ export default async function Page({
 
   return (
     <PortalShell role="CLIENT">
-      <ClientPaymentsView initialPaymentId={paymentId} />
+      <ClientPaymentDetailView paymentId={paymentId} />
     </PortalShell>
   );
 }
