@@ -104,7 +104,7 @@ export type PaymentTransaction = {
   amount: number;
   currency: string;
   reference: string;
-  idempotencyKey: string;
+  idempotencyKey?: string;
   providerReference?: string;
   providerStatus?: string;
   authorizationUrl?: string;
@@ -142,7 +142,7 @@ export type WalletTopUp = {
   amount: number;
   currency: string;
   reference: string;
-  idempotencyKey: string;
+  idempotencyKey?: string;
   providerReference?: string;
   providerStatus?: string;
   authorizationUrl?: string;

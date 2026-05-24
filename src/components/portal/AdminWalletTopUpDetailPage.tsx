@@ -278,7 +278,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
               <DetailMetric label="Client" value={`${user.name} • ${user.email}`} icon={<UserRound size={17} />} />
               <DetailMetric label="Wallet Balance" value={formatNaira(audit.walletBalance)} icon={<WalletCards size={17} />} />
               <DetailMetric label="Reference" value={<CopyInlineValue value={topUp.reference} />} icon={<FileText size={17} />} />
-              <DetailMetric label="Idempotency Key" value={<CopyInlineValue value={topUp.idempotencyKey} />} icon={<ShieldCheck size={17} />} />
+              <DetailMetric label="Audit Reference" value={<CopyInlineValue value={topUp.id} />} icon={<ShieldCheck size={17} />} />
               <DetailMetric label="Provider Reference" value={topUp.providerReference ? <CopyInlineValue value={topUp.providerReference} /> : "Not set"} icon={<CreditCard size={17} />} />
               <DetailMetric label="Provider Status" value={topUp.providerStatus ?? "Not set"} icon={<Clock3 size={17} />} />
               <DetailMetric label="Created" value={formatDateTime(topUp.createdAt)} icon={<Clock3 size={17} />} />
