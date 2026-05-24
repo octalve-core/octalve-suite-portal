@@ -1,13 +1,13 @@
 import Link from "next/link";
 import {
-  ArrowRight,
+  FolderKanban,
   Headphones,
   Mail,
   MessageSquareText,
   ShieldCheck,
 } from "lucide-react";
 
-import type { Project, ProjectPhase, User } from "@/lib/types";
+import type { Project, ProjectPhase } from "@/lib/types";
 import {
   buildSupportMailto,
   getProjectStatusLabel,
@@ -18,103 +18,96 @@ import {
 export function ClientSupportHero({
   project,
   activePhase,
-  projectManager,
 }: {
   project?: Project;
   activePhase?: ProjectPhase;
-  projectManager?: User;
 }) {
-  const email = projectManager?.email || SUPPORT_EMAIL;
   const mailto = buildSupportMailto({
-    email,
+    email: SUPPORT_EMAIL,
     project,
     phase: activePhase,
   });
 
   return (
-    <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#000A16] via-[#001F4F] to-[#0064E0] p-6 text-white sm:p-8">
-        <div className="absolute right-[-90px] top-[-110px] h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute bottom-[-120px] left-[-120px] h-72 w-72 rounded-full bg-white/10 blur-2xl" />
+    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="p-6 sm:p-8">
+          <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.065em] text-slate-950 sm:text-[46px]">
+            Help & Support
+          </h1>
 
-        <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
-          <div className="min-w-0">
-            <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-white/80">
-              Support Desk
+          <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-slate-600">
+            We're here to help you succeed.
+          </p>
+          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+            Get assistance or continue the conversation in your active phase thread.
+          </p>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <span className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.035)]">
+              <FolderKanban size={17} className="text-[#0064E0]" />
+              {project?.title ?? "No active project"}
             </span>
 
-            <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.03] tracking-[-0.065em] sm:text-5xl">
-              Help & Support
-            </h1>
-
-            <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-white/75 sm:text-[15px]">
-              Reach the Octalve support team, contact your project manager, or continue directly from your active phase thread.
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <span
-                className={[
-                  "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
-                  project
-                    ? "border-white/20 bg-white/10 text-white"
-                    : "border-white/15 bg-white/5 text-white/70",
-                ].join(" ")}
-              >
-                {project?.title ?? "No active project"}
-              </span>
-
-              <span
-                className={[
-                  "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
-                  project
-                    ? "border-white/20 bg-white/10 text-white"
-                    : "border-white/15 bg-white/5 text-white/70",
-                ].join(" ")}
-              >
-                {getProjectStatusLabel(project?.status)}
-              </span>
-            </div>
+            <span
+              className={[
+                "inline-flex min-h-11 items-center rounded-2xl border px-4 text-sm font-bold shadow-[0_10px_24px_rgba(15,23,42,0.035)]",
+                getProjectStatusTone(project?.status),
+              ].join(" ")}
+            >
+              <span className="mr-2 h-2.5 w-2.5 rounded-full bg-current" />
+              {getProjectStatusLabel(project?.status)}
+            </span>
           </div>
+        </div>
 
-          <div className="rounded-[26px] border border-white/15 bg-white/10 p-5 backdrop-blur">
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-[#0064E0]">
-                <Headphones size={22} />
-              </span>
-              <div>
-                <strong className="block text-base font-semibold text-white">
-                  Need support now?
-                </strong>
-                <span className="mt-1 block text-sm font-medium text-white/65">
-                  Use the safest project-linked channel.
-                </span>
-              </div>
-            </div>
+        <div className="border-t border-slate-200 p-6 sm:p-8 lg:border-l lg:border-t-0">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-3xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
+              <Headphones size={30} />
+            </span>
 
-            <div className="mt-5 grid gap-3">
-              <a
-                href={mailto}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-bold text-[#0064E0] shadow-[0_16px_34px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:bg-blue-50"
-              >
-                <Mail size={17} />
-                Email {projectManager ? "Project Manager" : "Support"}
-              </a>
-
-              <Link
-                href={activePhase ? `/client/phases/${activePhase.id}` : "/client/phases"}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 text-sm font-bold text-white transition hover:bg-white/15"
-              >
-                <MessageSquareText size={17} />
-                {activePhase ? "Send Phase Message" : "Open Phase Messages"}
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-white/15 bg-white/8 p-4">
-              <ShieldCheck size={18} className="mt-0.5 shrink-0 text-white" />
-              <p className="m-0 text-sm font-medium leading-6 text-white/70">
-                We do not ask clients to share passwords, OTPs, secret keys, or private payment credentials through support.
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+                Need support now?
+              </h2>
+              <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                Use the safest project-linked channel.
               </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <a
+                  href={mailto}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8]"
+                >
+                  <Mail size={17} />
+                  Email Support
+                </a>
+
+                {activePhase ? (
+                  <Link
+                    href={`/client/phases/${activePhase.id}`}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    <MessageSquareText size={17} />
+                    Send Phase Message
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex min-h-12 cursor-not-allowed items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-400"
+                  >
+                    <MessageSquareText size={17} />
+                    No Phase Thread
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-5 flex items-start gap-3 text-sm font-semibold leading-6 text-slate-500">
+                <ShieldCheck size={17} className="mt-0.5 shrink-0 text-slate-500" />
+                <span>We never ask for passwords, OTPs or payment details.</span>
+              </div>
             </div>
           </div>
         </div>

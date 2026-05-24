@@ -1,6 +1,13 @@
-import type { Project, ProjectPhase, ProjectStatus, User } from "@/lib/types";
+import type {
+  Project,
+  ProjectPayment,
+  ProjectPhase,
+  ProjectStatus,
+  User,
+} from "@/lib/types";
 
 export const SUPPORT_EMAIL = "info@octalve.com";
+export const SUPPORT_TRENDS_URL = "https://octalve.com/trends";
 
 export type SupportFaqItem = {
   question: string;
@@ -18,48 +25,48 @@ export const SUPPORT_FAQS: SupportFaqItem[] = [
   {
     question: "How do I approve a phase?",
     answer:
-      "Open Approvals, review the submitted deliverables and messages, then approve the phase or request changes.",
+      "Open Approvals, review the submitted deliverables and phase messages, then approve the phase or request changes from the phase detail page.",
   },
   {
     question: "Where do I send feedback?",
     answer:
-      "Open the relevant phase detail page and use the message thread. That keeps feedback tied to the correct project phase.",
+      "Send feedback inside the active phase thread. This keeps every correction, note and approval tied to the right project phase.",
   },
   {
     question: "How do I make payment?",
     answer:
-      "Open Payments, choose an enabled payment option, then complete payment through bank transfer, online checkout, or wallet if available.",
+      "Open Payments, choose the unpaid payment record, then use Bank Transfer, Online Payment or Octalve Wallet if enabled for your account.",
   },
   {
     question: "Where are my deliverable links?",
     answer:
-      "Open the phase detail page. Client-visible deliverables and links are listed inside the relevant phase workspace.",
+      "Open the relevant phase detail page. Client-visible deliverables and links are listed inside the active phase workspace.",
   },
   {
     question: "What should I do if payment was deducted but not confirmed?",
     answer:
-      "Do not retry immediately. Contact support with the payment reference, gateway used, amount, and project code.",
+      "Do not retry repeatedly. Contact support with only your payment reference, gateway used, amount and project code.",
   },
 ];
 
 export const SUPPORT_RESOURCES: SupportResourceItem[] = [
   {
-    title: "Project Workspace Guide",
+    title: "Workspace Guide",
     description: "Understand projects, phases, approvals, messages and deliverables.",
-    href: "/client/projects",
-    label: "Open Projects",
+    href: SUPPORT_TRENDS_URL,
+    label: "View Guide",
   },
   {
     title: "Approval Best Practices",
     description: "Review submitted work carefully before approving or requesting changes.",
-    href: "/client/approvals",
-    label: "Open Approvals",
+    href: SUPPORT_TRENDS_URL,
+    label: "View Guide",
   },
   {
     title: "Payments & Wallet",
-    description: "Track payments, wallet funding, confirmation and project billing status.",
-    href: "/client/payments",
-    label: "Open Payments",
+    description: "Track payments, wallet funding, confirmations and billing status.",
+    href: SUPPORT_TRENDS_URL,
+    label: "View Guide",
   },
 ];
 
@@ -108,6 +115,14 @@ export function getProjectStatusTone(status?: ProjectStatus) {
   }
 
   return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+export function getPrimaryPayment(project?: Project): ProjectPayment | undefined {
+  return (
+    project?.payments.find((payment) => payment.status === "UNPAID") ??
+    project?.payments.find((payment) => payment.status === "PENDING_CONFIRMATION") ??
+    project?.payments[0]
+  );
 }
 
 export function buildSupportMailto({
