@@ -17,6 +17,9 @@ import type {
   WalletTopUpVerifyResponse,
   PaymentBankDetails,
   PaymentGatewaySetting,
+  SupportSetting,
+  WorkspaceDefaultSetting,
+  NotificationDefaultSetting,
   PaymentInitializeResponse,
   PaymentMethodOption,
   PaymentVerifyResponse,
@@ -235,6 +238,23 @@ export const api = {
       get: () => fetchJson<PaymentBankDetails>("/api/system-settings/payment-bank"),
       update: (data: PaymentBankDetails) =>
         patch<PaymentBankDetails>("/api/system-settings/payment-bank", data),
+    },
+    support: {
+      get: () => fetchJson<SupportSetting>("/api/system-settings/support"),
+      update: (data: Partial<SupportSetting>) =>
+        patch<SupportSetting>("/api/system-settings/support", data),
+    },
+    workspaceDefaults: {
+      get: () =>
+        fetchJson<WorkspaceDefaultSetting>("/api/system-settings/workspace-defaults"),
+      update: (data: Partial<WorkspaceDefaultSetting>) =>
+        patch<WorkspaceDefaultSetting>("/api/system-settings/workspace-defaults", data),
+    },
+    notificationDefaults: {
+      get: () =>
+        fetchJson<NotificationDefaultSetting>("/api/system-settings/notification-defaults"),
+      update: (data: Partial<NotificationDefaultSetting>) =>
+        patch<NotificationDefaultSetting>("/api/system-settings/notification-defaults", data),
     },
   },
   // Notifications

@@ -458,6 +458,52 @@ export type AdminPaymentFinanceAudit = {
   };
 };
 
+
+export type SupportSetting = {
+  id: string;
+  supportEmail: string;
+  guideUrl: string;
+  preferPhaseThreadSupport: boolean;
+  paymentDisputeSafetyText: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkspaceDefaultSetting = {
+  id: string;
+  defaultTimezone: string;
+  defaultLanguage: string;
+  updateFrequency: string;
+  emailDigest: string;
+  allowClientPreferenceOverride: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationDefaultSetting = {
+  id: string;
+  inAppAlertsEnabled: boolean;
+  emailAlertsEnabled: boolean;
+  paymentUpdatesEnabled: boolean;
+  approvalNotificationsEnabled: boolean;
+  projectUpdatesEnabled: boolean;
+  supportMessagesEnabled: boolean;
+  emailProvider: "NONE" | "RESEND" | "BREVO" | "SMTP" | (string & {});
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EmailTemplate = {
+  id: string;
+  eventKey: string;
+  title: string;
+  subject: string;
+  body: string;
+  channel: string;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 export type AppState = {
   users: User[];
   templates: ProjectTemplate[];

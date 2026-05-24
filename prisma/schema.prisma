@@ -569,3 +569,50 @@ model Notification {
   @@index([role])
 }
 
+model SupportSetting {
+  id                       String   @id @default("official")
+  supportEmail             String   @default("info@octalve.com")
+  guideUrl                 String   @default("https://octalve.com/trends")
+  preferPhaseThreadSupport Boolean  @default(true)
+  paymentDisputeSafetyText String   @default("For payment disputes, include the payment reference only. Do not send card details, OTPs, passwords, private keys, or admin credentials.")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model WorkspaceDefaultSetting {
+  id                            String   @id @default("official")
+  defaultTimezone               String   @default("Africa/Lagos")
+  defaultLanguage               String   @default("English (US)")
+  updateFrequency               String   @default("WEEKLY_DIGEST")
+  emailDigest                   String   @default("SUMMARY_OF_ALL_ACTIVITY")
+  allowClientPreferenceOverride Boolean  @default(false)
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+}
+
+model NotificationDefaultSetting {
+  id                            String   @id @default("official")
+  inAppAlertsEnabled             Boolean  @default(true)
+  emailAlertsEnabled             Boolean  @default(false)
+  paymentUpdatesEnabled          Boolean  @default(true)
+  approvalNotificationsEnabled   Boolean  @default(true)
+  projectUpdatesEnabled          Boolean  @default(true)
+  supportMessagesEnabled         Boolean  @default(false)
+  emailProvider                  String   @default("NONE")
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  eventKey  String   @unique
+  title     String
+  subject   String
+  body      String
+  channel   String   @default("EMAIL")
+  isEnabled Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([channel, isEnabled])
+}
