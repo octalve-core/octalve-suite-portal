@@ -344,3 +344,18 @@ export async function sendTemplateEmail(input: SendTemplateEmailInput): Promise<
     reason: "Unsupported email provider.",
   };
 }
+
+export async function sendAuthVerificationEmail(input: {
+  to: string;
+  name?: string | null;
+  verificationUrl: string;
+}) {
+  return sendTemplateEmail({
+    to: input.to,
+    eventKey: "AUTH_VERIFICATION",
+    variables: {
+      clientName: input.name ?? "User",
+      verificationUrl: input.verificationUrl,
+    },
+  });
+}
