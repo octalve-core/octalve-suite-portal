@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOfficialPaymentBankDetails } from "@/lib/payment-settings";
 import { validateProjectPaymentSplit } from "@/lib/payment-policy";
+import { notifyWorkspace } from "@/lib/notification-service";
 import {
   getSessionOrThrow,
   requireRoles,
@@ -246,6 +247,25 @@ export async function POST(request: Request, { params }: Params) {
   const full = await prisma.project.findUnique({
     where: { id: project.id },
     include: projectIncludes,
+  });
+
+  await notifyWorkspace({
+    userId: projectRequest.clientId,
+    eventKey: "PROJECT_APPROVED",
+    skipInApp: true,
+    title: "Project approved",
+    body: `Your project "${projectRequest.projectName}" has been approved. Please complete the deposit payment to unlock project tracking.`,
+    href: `/client/projects/${project.id}`,
+    email: {
+      to: projectRequest.client.email,
+      eventKey: "PROJECT_APPROVED",
+      variables: {
+        clientName: projectRequest.client.name ?? "Client",
+        projectTitle: projectRequest.projectName,
+        projectName: projectRequest.projectName,
+        businessName: projectRequest.businessName,
+      },
+    },
   });
 
   return NextResponse.json(full, { status: 201 });

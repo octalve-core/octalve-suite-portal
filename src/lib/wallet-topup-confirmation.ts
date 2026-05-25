@@ -5,6 +5,7 @@ import {
   WALLET_TOPUP_STATUSES,
 } from "@/lib/payment-constants";
 import { recordWalletTopUpCredit } from "@/lib/wallet-ledger";
+import { notifyWorkspace } from "@/lib/notification-service";
 
 export type ConfirmWalletTopUpInput = {
   topUpId: string;
@@ -33,10 +34,12 @@ function safeProviderLabel(provider: string) {
 export async function confirmWalletTopUp(
   input: ConfirmWalletTopUpInput,
 ): Promise<ConfirmWalletTopUpResult> {
-  return prisma.$transaction(async (tx) => {
+  const result: ConfirmWalletTopUpResult = await prisma.$transaction(
+    async (tx): Promise<ConfirmWalletTopUpResult> => {
     const topUp = await tx.walletTopUp.findUnique({
       where: { id: input.topUpId },
-    });
+      },
+  );
 
     if (!topUp) {
       throw new Error("Wallet top-up not found");
@@ -53,7 +56,8 @@ export async function confirmWalletTopUp(
         currency: topUp.currency,
         gatewayReference: input.gatewayReference ?? topUp.reference,
         providerReference: input.providerReference ?? topUp.providerReference,
-      });
+        },
+  );
 
       return {
         status: "ALREADY_CONFIRMED",
@@ -81,7 +85,8 @@ export async function confirmWalletTopUp(
         providerStatus: input.providerStatus ?? topUp.providerStatus,
         providerReference: input.providerReference ?? topUp.providerReference,
       },
-    });
+      },
+  );
 
     await recordWalletTopUpCredit(tx, {
       userId: updated.userId,
@@ -93,7 +98,8 @@ export async function confirmWalletTopUp(
       currency: updated.currency,
       gatewayReference: input.gatewayReference ?? updated.reference,
       providerReference: input.providerReference ?? updated.providerReference,
-    });
+      },
+  );
 
     await tx.notification.create({
       data: {
@@ -102,7 +108,8 @@ export async function confirmWalletTopUp(
         body: `Your wallet top-up of ₦${updated.amount.toLocaleString("en-NG")} has been confirmed via ${safeProviderLabel(input.provider)}.`,
         href: "/client/wallet",
       },
-    });
+      },
+  );
 
     if (input.source !== PAYMENT_CONFIRMATION_SOURCES.WALLET_LEDGER) {
       await tx.notification.create({
@@ -112,7 +119,8 @@ export async function confirmWalletTopUp(
           body: `A client wallet top-up of ₦${updated.amount.toLocaleString("en-NG")} was confirmed via ${safeProviderLabel(input.provider)}.`,
           href: `/admin/wallet/${updated.id}`,
         },
-      });
+        },
+  );
     }
 
     return {
@@ -121,5 +129,45 @@ export async function confirmWalletTopUp(
       userId: updated.userId,
       walletStatus: updated.status,
     };
-  });
+    },
+  );
+
+  if (result.status === "CONFIRMED") {
+    const topUp = await prisma.walletTopUp.findUnique({
+      where: { id: result.topUpId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      },
+  );
+
+    if (topUp?.user?.email) {
+      const amountLabel = `${topUp.currency} ${topUp.amount.toLocaleString("en-NG")}`;
+
+      await notifyWorkspace({
+        userId: topUp.userId,
+        eventKey: "WALLET_TOPUP_CONFIRMED",
+        skipInApp: true,
+        title: "Wallet funded",
+        body: `Your wallet top-up of ${amountLabel} has been confirmed via ${safeProviderLabel(input.provider)}.`,
+        href: "/client/wallet",
+        email: {
+          to: topUp.user.email,
+          eventKey: "WALLET_TOPUP_CONFIRMED",
+          variables: {
+            clientName: topUp.user.name ?? "Client",
+            amount: amountLabel,
+          },
+        },
+        },
+  );
+    }
+  }
+
+  return result;
 }

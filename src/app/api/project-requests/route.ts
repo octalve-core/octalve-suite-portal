@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
+import { notifyWorkspace } from "@/lib/notification-service";
 
 /**
  * GET /api/project-requests — List project requests.
@@ -138,21 +139,28 @@ export async function POST(request: Request) {
     },
   });
 
-  await prisma.notification.create({
-    data: {
-      role: "SUPER_ADMIN",
-      title: "New project request",
-      body: `${created.businessName} submitted a new ${template.name} project request.`,
-      href: `/admin/project-requests/${created.id}`,
-    },
+  await notifyWorkspace({
+    role: "SUPER_ADMIN",
+    eventKey: "PROJECT_REQUEST_RECEIVED",
+    title: "New project request",
+    body: `${created.businessName} submitted a new ${template.name} project request.`,
+    href: `/admin/project-requests/${created.id}`,
   });
 
-  await prisma.notification.create({
-    data: {
-      userId: result.user.id,
-      title: "Project request received",
-      body: "Your project request has been received and is now under admin review. Octalve will update you once it is approved.",
-      href: "/client/projects",
+  await notifyWorkspace({
+    userId: result.user.id,
+    eventKey: "PROJECT_REQUEST_SUBMITTED",
+    title: "Project request received",
+    body: "Your project request has been received and is now under admin review. Octalve will update you once it is approved.",
+    href: "/client/projects",
+    email: {
+      to: result.user.email,
+      eventKey: "PROJECT_REQUEST_SUBMITTED",
+      variables: {
+        clientName: result.user.name ?? "Client",
+        businessName: created.businessName,
+        projectName: created.projectName,
+      },
     },
   });
 

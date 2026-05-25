@@ -10,6 +10,7 @@ import {
   recordExternalProjectPaymentLedgerSettlement,
   recordWalletProjectPaymentDebit,
 } from "@/lib/wallet-ledger";
+import { notifyWorkspace } from "@/lib/notification-service";
 
 export type ConfirmProjectPaymentInput = {
   paymentId: string;
@@ -112,7 +113,8 @@ async function updateLinkedAutomationRecords(
 export async function confirmProjectPayment(
   input: ConfirmProjectPaymentInput,
 ): Promise<ConfirmProjectPaymentResult> {
-  return prisma.$transaction(async (tx) => {
+  const result: ConfirmProjectPaymentResult = await prisma.$transaction(
+    async (tx): Promise<ConfirmProjectPaymentResult> => {
     const freshPayment = await tx.projectPayment.findUnique({
       where: { id: input.paymentId },
       include: {
@@ -294,7 +296,53 @@ export async function confirmProjectPayment(
       projectStatus: nextProjectStatus,
       paymentType: freshPayment.type,
     };
-  }, {
-    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-  });
+    },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    },
+  );
+
+  if (result.status === "CONFIRMED") {
+    const payment = await prisma.projectPayment.findUnique({
+      where: { id: result.paymentId },
+      include: {
+        project: {
+          include: {
+            client: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (payment?.project.clientEmail) {
+      const amountLabel = `NGN ${payment.amount.toLocaleString("en-NG")}`;
+
+      await notifyWorkspace({
+        userId: payment.project.clientId,
+        eventKey: "PAYMENT_CONFIRMED",
+        skipInApp: true,
+        title: "Payment confirmed",
+        body: `Your ${payment.type.toLowerCase()} payment for ${payment.project.title} has been confirmed.`,
+        href: `/client/payments/${payment.id}`,
+        email: {
+          to: payment.project.client.email || payment.project.clientEmail,
+          eventKey: "PAYMENT_CONFIRMED",
+          variables: {
+            clientName: payment.project.client.name ?? "Client",
+            projectTitle: payment.project.title,
+            projectName: payment.project.title,
+            paymentReference: payment.reference,
+            amount: amountLabel,
+          },
+        },
+      });
+    }
+  }
+
+  return result;
 }

@@ -12,6 +12,8 @@ export type NotifyWorkspaceInput = {
   title: string;
   body: string;
   href?: string | null;
+  eventKey?: EmailTemplateEventKey | (string & {});
+  skipInApp?: boolean;
   email?: {
     to?: string | null;
     eventKey: EmailTemplateEventKey | (string & {});
@@ -23,10 +25,60 @@ function cleanText(value: unknown, max = 240) {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function eventToggleEnabled(
+  settings: {
+    paymentUpdatesEnabled: boolean;
+    approvalNotificationsEnabled: boolean;
+    projectUpdatesEnabled: boolean;
+    supportMessagesEnabled: boolean;
+  } | null,
+  eventKey?: string | null,
+) {
+  if (!eventKey) return true;
+  if (!settings) return true;
+
+  if (
+    [
+      "PAYMENT_INITIALIZED",
+      "PAYMENT_CONFIRMED",
+      "WALLET_TOPUP_CONFIRMED",
+    ].includes(eventKey)
+  ) {
+    return settings.paymentUpdatesEnabled;
+  }
+
+  if (
+    [
+      "PHASE_APPROVAL_REQUESTED",
+      "PHASE_APPROVED",
+      "PHASE_CHANGES_REQUESTED",
+    ].includes(eventKey)
+  ) {
+    return settings.approvalNotificationsEnabled;
+  }
+
+  if (
+    [
+      "PROJECT_REQUEST_RECEIVED",
+      "PROJECT_REQUEST_SUBMITTED",
+      "PROJECT_APPROVED",
+    ].includes(eventKey)
+  ) {
+    return settings.projectUpdatesEnabled;
+  }
+
+  if (eventKey === "SUPPORT_MESSAGE_RECEIVED") {
+    return settings.supportMessagesEnabled;
+  }
+
+  return true;
+}
+
 export async function notifyWorkspace(input: NotifyWorkspaceInput) {
   const title = cleanText(input.title, 120);
   const body = cleanText(input.body, 280);
   const href = input.href ? cleanText(input.href, 240) : null;
+  const eventKey = input.email?.eventKey ?? input.eventKey ?? null;
 
   if (!title || !body) {
     return {
@@ -41,10 +93,15 @@ export async function notifyWorkspace(input: NotifyWorkspaceInput) {
     where: { id: "official" },
   });
 
-  const shouldCreateInApp = settings?.inAppAlertsEnabled ?? true;
+  const eventEnabled = eventToggleEnabled(settings, eventKey);
+  const shouldCreateInApp =
+    !input.skipInApp && (settings?.inAppAlertsEnabled ?? true) && eventEnabled;
 
-  const notification = shouldCreateInApp
-    ? await prisma.notification.create({
+  let notification = null;
+
+  if (shouldCreateInApp) {
+    try {
+      notification = await prisma.notification.create({
         data: {
           userId: input.userId ?? null,
           role: input.userId ? null : input.role ?? null,
@@ -52,17 +109,41 @@ export async function notifyWorkspace(input: NotifyWorkspaceInput) {
           body,
           href,
         },
-      })
-    : null;
+      });
+    } catch (error) {
+      console.error("[notification-service] In-app notification failed", error);
+    }
+  }
 
-  const emailResult =
-    input.email?.to
-      ? await sendTemplateEmail({
+  let emailResult = null;
+
+  if (input.email?.to && eventKey) {
+    if (!eventEnabled) {
+      emailResult = {
+        sent: false,
+        skipped: true,
+        provider: settings?.emailProvider ?? "NONE",
+        reason: "Notification event is disabled.",
+      };
+    } else {
+      try {
+        emailResult = await sendTemplateEmail({
           to: input.email.to,
-          eventKey: input.email.eventKey,
+          eventKey,
           variables: input.email.variables,
-        })
-      : null;
+        });
+      } catch (error) {
+        console.error("[notification-service] Email notification failed", error);
+
+        emailResult = {
+          sent: false,
+          skipped: false,
+          provider: settings?.emailProvider ?? "UNKNOWN",
+          reason: "Email notification failed without blocking the source event.",
+        };
+      }
+    }
+  }
 
   return {
     notification,
