@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
+import { sendAuthVerificationEmail } from "@/lib/email-service";
 import {
   ac,
   clientRole,
