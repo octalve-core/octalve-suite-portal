@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
+import { notifyWorkspace } from "@/lib/notification-service";
+import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/phases/[id]/approve — Client approves a phase.
- * Handles the complex unlock chain: approve → unlock next → check balance → complete project.
+ * POST /api/phases/[id]/approve   Client approves a phase.
+ * Handles the complex unlock chain: approve -> unlock next -> check balance -> complete project.
  * Role: CLIENT only.
  */
 export async function POST(_request: Request, { params }: Params) {
   const { id } = await params;
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "CLIENT");
   if (forbidden) return forbidden;
 
@@ -39,9 +41,12 @@ export async function POST(_request: Request, { params }: Params) {
   const currentIndex = phases.findIndex((p) => p.id === id);
   const nextIndex = currentIndex + 1;
   const finalIndex = phases.length - 1;
+  const notifyUserId = phase.assignedStaffId ?? project.projectManagerId ?? null;
+  const notifyHref = phase.assignedStaffId
+    ? `/staff/phases/${id}`
+    : `/admin/projects/${project.id}`;
 
   await prisma.$transaction(async (tx) => {
-    // 1. Approve the phase
     await tx.projectPhase.update({
       where: { id },
       data: {
@@ -50,13 +55,11 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    // 2. Approve all deliverables
     await tx.deliverable.updateMany({
       where: { phaseId: id },
       data: { status: "APPROVED", visibleToClient: true },
     });
 
-    // 3. System message
     await tx.phaseMessage.create({
       data: {
         phaseId: id,
@@ -68,50 +71,75 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    // 4. Handle next phase / project completion
     if (nextIndex < phases.length) {
-      // There is a next phase
       if (nextIndex === finalIndex) {
-        // Next is the FINAL phase — check balance payment
         const balance = project.payments.find((p) => p.type === "BALANCE");
+
         if (balance && balance.amount > 0 && balance.status !== "CONFIRMED") {
-          // Balance not paid — set project to AWAITING_BALANCE, don't unlock
           await tx.project.update({
             where: { id: project.id },
             data: { status: "AWAITING_BALANCE" },
           });
         } else {
-          // Balance already paid or zero — unlock final phase
           await tx.projectPhase.update({
             where: { id: phases[nextIndex].id },
             data: { status: "IN_PROGRESS" },
           });
         }
       } else {
-        // Normal next phase — unlock it
         await tx.projectPhase.update({
           where: { id: phases[nextIndex].id },
           data: { status: "IN_PROGRESS" },
         });
       }
     } else {
-      // This was the last phase — project is complete
       await tx.project.update({
         where: { id: project.id },
         data: { status: "COMPLETED" },
       });
     }
 
-    // 5. Notify staff/PM
     await tx.notification.create({
       data: {
-        userId: project.projectManagerId,
-        role: "SUPER_ADMIN",
+        userId: notifyUserId,
+        role: notifyUserId ? null : "SUPER_ADMIN",
         title: "Phase approved by client",
         body: `"${phase.title}" in ${project.title} has been approved.`,
-        href: `/admin/projects/${project.id}`,
+        href: notifyHref,
       },
     });
+  });
+
+  const recipient = notifyUserId
+    ? await prisma.user.findUnique({
+        where: { id: notifyUserId },
+        select: {
+          name: true,
+          email: true,
+        },
+      })
+    : null;
+
+  await notifyWorkspace({
+    userId: notifyUserId,
+    role: notifyUserId ? null : "SUPER_ADMIN",
+    eventKey: "PHASE_APPROVED",
+    skipInApp: true,
+    title: "Phase approved by client",
+    body: `"${phase.title}" in ${project.title} has been approved.`,
+    href: notifyHref,
+    email: recipient?.email
+      ? {
+          to: recipient.email,
+          eventKey: "PHASE_APPROVED",
+          variables: {
+            clientName: recipient.name ?? "Team",
+            projectTitle: project.title,
+            projectName: project.title,
+            phaseTitle: phase.title,
+          },
+        }
+      : undefined,
   });
 
   return NextResponse.json({ success: true });

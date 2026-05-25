@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
+import { notifyWorkspace } from "@/lib/notification-service";
+import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/phases/[id]/request-approval — PM/Admin requests client approval for a phase.
+ * POST /api/phases/[id]/request-approval   PM/Admin requests client approval for a phase.
  * Sets phase to AWAITING_APPROVAL, makes deliverables visible, creates system message.
  * Role: PROJECT_MANAGER, SUPER_ADMIN.
  */
@@ -13,6 +14,7 @@ export async function POST(_request: Request, { params }: Params) {
   const { id } = await params;
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "PROJECT_MANAGER", "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
@@ -20,7 +22,18 @@ export async function POST(_request: Request, { params }: Params) {
     where: { id },
     include: {
       deliverables: true,
-      project: { select: { clientId: true, title: true } },
+      project: {
+        select: {
+          clientId: true,
+          title: true,
+          client: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -29,7 +42,6 @@ export async function POST(_request: Request, { params }: Params) {
   if (phase.status === "LOCKED") return errorResponse("Phase is locked", 400);
 
   await prisma.$transaction(async (tx) => {
-    // Update phase status
     await tx.projectPhase.update({
       where: { id },
       data: {
@@ -38,7 +50,6 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    // Mark non-approved deliverables as READY_FOR_REVIEW and visible
     await tx.deliverable.updateMany({
       where: {
         phaseId: id,
@@ -50,7 +61,6 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    // System message
     await tx.phaseMessage.create({
       data: {
         phaseId: id,
@@ -62,7 +72,6 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    // Notify client
     await tx.notification.create({
       data: {
         userId: phase.project.clientId,
@@ -71,6 +80,25 @@ export async function POST(_request: Request, { params }: Params) {
         href: "/client/approvals",
       },
     });
+  });
+
+  await notifyWorkspace({
+    userId: phase.project.clientId,
+    eventKey: "PHASE_APPROVAL_REQUESTED",
+    skipInApp: true,
+    title: "Phase approval requested",
+    body: `"${phase.title}" is ready for your review.`,
+    href: "/client/approvals",
+    email: {
+      to: phase.project.client.email,
+      eventKey: "PHASE_APPROVAL_REQUESTED",
+      variables: {
+        clientName: phase.project.client.name ?? "Client",
+        projectTitle: phase.project.title,
+        projectName: phase.project.title,
+        phaseTitle: phase.title,
+      },
+    },
   });
 
   return NextResponse.json({ success: true });
