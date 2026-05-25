@@ -30,6 +30,7 @@ import type {
   WorkspaceDefaultSetting,
 } from "@/lib/types";
 import { AdminSystemSettings } from "./AdminSystemSettings";
+import { AdminEmailTemplateSettings } from "./AdminEmailTemplateSettings";
 import { ProfileSettings } from "./ProfileSettings";
 
 type AdminSettingsTab =
@@ -902,6 +903,8 @@ function NotificationControlsPanel() {
           />
         </section>
       ) : null}
+
+      <AdminEmailTemplateSettings />
     </PanelShell>
   );
 }
