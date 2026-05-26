@@ -53,3 +53,4 @@ node_modules/
 tsconfig.tsbuildinfo
 
 _audit/
+inspection-exports/

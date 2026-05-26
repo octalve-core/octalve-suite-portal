@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowRight,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
   FileText,
-  MoreVertical,
+  MessageSquareText,
   XCircle,
 } from "lucide-react";
 
@@ -24,7 +25,7 @@ import {
 } from "./client-approvals-utils";
 import { ClientApprovalCard } from "./ClientApprovalCard";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50];
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 function iconForStatus(status: ApprovalRow["phase"]["status"]) {
   if (status === "APPROVED") return <CheckCircle2 size={17} />;
@@ -34,22 +35,42 @@ function iconForStatus(status: ApprovalRow["phase"]["status"]) {
   return <FileText size={17} />;
 }
 
+function clampPage(page: number, totalPages: number) {
+  return Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+}
+
 export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safeCurrentPage = clampPage(currentPage, totalPages);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [rows, pageSize]);
+  }, [pageSize, rows.length]);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const startIndex = (safeCurrentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, rows.length);
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
 
   const pagedRows = useMemo(() => {
-    return rows.slice(startIndex, endIndex);
-  }, [endIndex, rows, startIndex]);
+    const start = (safeCurrentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [pageSize, rows, safeCurrentPage]);
+
+  const startItem = rows.length ? (safeCurrentPage - 1) * pageSize + 1 : 0;
+  const endItem = rows.length ? Math.min(rows.length, safeCurrentPage * pageSize) : 0;
+
+  function goPrevious() {
+    setCurrentPage((page) => clampPage(page - 1, totalPages));
+  }
+
+  function goNext() {
+    setCurrentPage((page) => clampPage(page + 1, totalPages));
+  }
 
   if (!rows.length) {
     return (
@@ -67,14 +88,6 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
     );
   }
 
-  function goPrevious() {
-    setCurrentPage((page) => Math.max(1, page - 1));
-  }
-
-  function goNext() {
-    setCurrentPage((page) => Math.min(totalPages, page + 1));
-  }
-
   return (
     <>
       <div className="hidden overflow-x-auto lg:block">
@@ -88,7 +101,6 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
               <th className="px-5 py-4">Messages</th>
               <th className="px-5 py-4">Status</th>
               <th className="px-5 py-4 text-center">Action</th>
-              <th className="w-10 px-2 py-4" />
             </tr>
           </thead>
 
@@ -114,22 +126,22 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                       </span>
 
                       <div className="min-w-0">
-                        <strong className="block max-w-[240px] truncate text-sm font-semibold text-slate-950">
+                        <strong className="block truncate text-sm font-semibold text-slate-950">
                           {phase.title}
                         </strong>
-                        <span className="mt-1 block text-xs font-semibold text-slate-500">
-                          {project.projectCode}
+                        <span className="mt-1 block truncate text-xs font-semibold text-slate-500">
+                          Phase {phase.phaseNumber}
                         </span>
                       </div>
                     </div>
                   </td>
 
                   <td className="px-5 py-5">
-                    <strong className="block max-w-[220px] truncate text-sm font-semibold text-slate-950">
+                    <strong className="block max-w-[230px] truncate text-sm font-semibold text-slate-950">
                       {project.title}
                     </strong>
-                    <span className="mt-1 block max-w-[260px] truncate text-xs font-semibold text-slate-500">
-                      {phase.description || project.businessName}
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                      {project.projectCode}
                     </span>
                   </td>
 
@@ -143,20 +155,15 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                   </td>
 
                   <td className="px-5 py-5">
-                    <strong className="block text-sm text-slate-950">
-                      {phase.deliverables.length}
-                    </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
-                      deliverables
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+                      {phase.deliverables.length} item{phase.deliverables.length === 1 ? "" : "s"}
                     </span>
                   </td>
 
                   <td className="px-5 py-5">
-                    <strong className="block text-sm text-slate-950">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+                      <MessageSquareText size={14} />
                       {phase.messages.length}
-                    </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
-                      {phase.messages.length === 1 ? "message" : "messages"}
                     </span>
                   </td>
 
@@ -174,20 +181,10 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                   <td className="px-5 py-5 text-center">
                     <Link
                       href={`/client/phases/${phase.id}`}
-                      className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 text-sm font-semibold text-[#0064E0] transition hover:bg-blue-50"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(0,100,224,0.16)] transition hover:bg-[#0052B8]"
                     >
                       {approvalActionLabel(phase.status)}
-                    </Link>
-                  </td>
-
-                  <td className="px-2 py-5">
-                    <Link
-                      href={`/client/phases/${phase.id}`}
-                      className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-blue-50 hover:text-[#0064E0]"
-                      aria-label={`Open approval details for ${phase.title}`}
-                      title="Open approval details"
-                    >
-                      <MoreVertical size={17} />
+                      <ArrowRight size={15} />
                     </Link>
                   </td>
                 </tr>
@@ -198,10 +195,11 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
 
         <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 text-sm font-semibold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            Showing {startIndex + 1} to {endIndex} of {rows.length} approvals
+            Showing {startItem} to {endItem} of {rows.length} approval
+            {rows.length === 1 ? "" : "s"}
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               disabled={safeCurrentPage <= 1}
@@ -229,7 +227,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
             <select
               value={pageSize}
               onChange={(event) => setPageSize(Number(event.target.value))}
-              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+              className="ml-2 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
               aria-label="Approvals per page"
             >
               {PAGE_SIZE_OPTIONS.map((value) => (
@@ -244,33 +242,56 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
 
       <div className="grid gap-3 p-4 lg:hidden">
         {pagedRows.map((row) => (
-          <ClientApprovalCard key={`${row.project.id}-${row.phase.id}`} row={row} />
+          <ClientApprovalCard
+            key={`${row.project.id}-${row.phase.id}`}
+            row={row}
+          />
         ))}
 
-        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-500">
-          <button
-            type="button"
-            disabled={safeCurrentPage <= 1}
-            onClick={goPrevious}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
-            aria-label="Previous page"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-500">
           <span>
-            Page {safeCurrentPage} of {totalPages}
+            Showing {startItem} to {endItem} of {rows.length} approval
+            {rows.length === 1 ? "" : "s"}
           </span>
 
-          <button
-            type="button"
-            disabled={safeCurrentPage >= totalPages}
-            onClick={goNext}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
-            aria-label="Next page"
-          >
-            <ChevronRight size={16} />
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              disabled={safeCurrentPage <= 1}
+              onClick={goPrevious}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <span className="grid h-10 min-w-10 place-items-center rounded-xl bg-[#0064E0] px-3 text-white">
+              {safeCurrentPage} / {totalPages}
+            </span>
+
+            <button
+              type="button"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={goNext}
+              className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-500 disabled:cursor-not-allowed disabled:text-slate-300"
+              aria-label="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            <select
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-600 outline-none"
+              aria-label="Approvals per page"
+            >
+              {PAGE_SIZE_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {value} / page
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
     </>
