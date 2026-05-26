@@ -229,7 +229,7 @@ export function ClientProjectPhaseAccordion({
           <article
             key={phase.id}
             className={cn(
-              "overflow-hidden rounded-[22px] border border-l-4 border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.04)]",
+              "overflow-hidden rounded-[22px] border border-l-4 border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.02)]",
               phaseAccent(phase.status),
             )}
           >

@@ -28,7 +28,7 @@ export function ClientProjectList({
 
         <Link
           href="/client/projects/new"
-          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,100,224,0.18)] transition hover:bg-[#0052B8]"
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8]"
         >
           <Plus size={16} />
           Start a Project

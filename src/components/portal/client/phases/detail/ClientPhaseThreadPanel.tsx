@@ -293,7 +293,7 @@ export function ClientPhaseThreadPanel({
   }
 
   return (
-    <aside className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+    <aside className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="border-b border-slate-100 bg-white px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -351,7 +351,7 @@ export function ClientPhaseThreadPanel({
           )}
         </div>
 
-        <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_12px_28px_rgba(15,23,42,0.07)]">
+        <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-2 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
           <div className="flex items-center gap-2">
             <textarea
               value={message}
@@ -372,7 +372,7 @@ export function ClientPhaseThreadPanel({
               type="button"
               onClick={() => void submitMessage()}
               disabled={!message.trim() || sending}
-              className="inline-flex h-12 min-w-12 items-center justify-center rounded-2xl bg-[#0064E0] px-4 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(0,100,224,0.18)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-12 min-w-12 items-center justify-center rounded-2xl bg-[#0064E0] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(0,100,224,0.07)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
               aria-label="Send message"
             >
               {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
@@ -381,7 +381,7 @@ export function ClientPhaseThreadPanel({
         </div>
 
         {canRequestChanges ? (
-          <div className="mt-4 rounded-[24px] border border-orange-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
+          <div className="mt-4 rounded-[24px] border border-orange-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
             <label className="block text-base font-semibold tracking-[-0.03em] text-slate-950">
               Request Changes
             </label>

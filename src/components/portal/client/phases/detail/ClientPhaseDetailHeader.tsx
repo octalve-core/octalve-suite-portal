@@ -22,7 +22,7 @@ export function ClientPhaseDetailHeader({
   onApprove: () => Promise<void>;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)] sm:p-6">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
       <Link
         href={backHref}
         className="inline-flex items-center gap-2 text-sm font-bold text-slate-700 transition hover:text-[#0064E0]"
@@ -63,7 +63,7 @@ export function ClientPhaseDetailHeader({
             type="button"
             onClick={() => void onApprove()}
             disabled={approveLoading}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {approveLoading ? (
               <>

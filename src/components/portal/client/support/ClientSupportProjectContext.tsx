@@ -70,7 +70,7 @@ export function ClientSupportProjectContext({
   const payment = getPrimaryPayment(project);
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.045)]">
+    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="grid md:grid-cols-2 xl:grid-cols-5">
         <SupportMetric
           label="Active Phase"

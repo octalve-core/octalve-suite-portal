@@ -84,7 +84,7 @@ export function ClientActivePhaseCard({
         {phase ? (
           <Link
             href={`/client/phases/${phase.id}`}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,100,224,0.16)] transition hover:bg-[#0052B8]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8]"
           >
             Open Phase
             <ArrowRight size={16} />

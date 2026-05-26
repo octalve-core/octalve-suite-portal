@@ -21,7 +21,7 @@ function WalletMetricCard({
   icon: React.ReactNode;
 }) {
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.045)]">
+    <article className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <span className="text-sm font-bold text-slate-500">{label}</span>

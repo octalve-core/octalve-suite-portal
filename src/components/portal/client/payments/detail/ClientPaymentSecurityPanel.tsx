@@ -28,14 +28,14 @@ export function ClientPaymentSecurityPanel({
         <button
           type="button"
           onClick={onPayNow}
-          className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8]"
+          className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8]"
         >
           Pay Now
           <ArrowRight size={17} />
         </button>
       ) : null}
 
-      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
         <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
           Payment Tools
         </h2>
@@ -93,7 +93,7 @@ export function ClientPaymentSecurityPanel({
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-50 text-slate-500 ring-1 ring-slate-200">
             <FileText size={18} />

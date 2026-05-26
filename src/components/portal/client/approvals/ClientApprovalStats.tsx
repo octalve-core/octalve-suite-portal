@@ -17,7 +17,7 @@ function ApprovalStatCard({
   return (
     <article
       className={[
-        "rounded-[18px] border border-slate-200 border-l-2 bg-white p-6 shadow-[0_12px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
+        "rounded-[18px] border border-slate-200 border-l-2 bg-white p-6 shadow-[0_6px_16px_rgba(15,23,42,0.02)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
         accent,
       ].join(" ")}
     >

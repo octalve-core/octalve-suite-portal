@@ -141,7 +141,7 @@ export function ClientWalletLedger({
   return (
     <section
       id="wallet-transactions"
-      className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]"
+      className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]"
     >
       <div className="flex flex-col gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>

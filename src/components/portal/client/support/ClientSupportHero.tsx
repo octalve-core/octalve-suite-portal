@@ -35,7 +35,7 @@ export function ClientSupportHero({
   });
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+    <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_520px]">
         <div className="p-6 sm:p-8">
           <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.065em] text-slate-950 sm:text-[46px]">
@@ -84,7 +84,7 @@ export function ClientSupportHero({
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <a
                   href={mailto}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8]"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8]"
                 >
                   <Mail size={17} />
                   Email Support

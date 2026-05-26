@@ -41,7 +41,7 @@ export function ClientRecentProjectActivity({
   if (!items.length) return null;
 
   return (
-    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+    <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
           Recent Project Activity

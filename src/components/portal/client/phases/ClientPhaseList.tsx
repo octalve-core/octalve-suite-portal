@@ -48,7 +48,7 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1100px] border-collapse text-left">
           <thead>

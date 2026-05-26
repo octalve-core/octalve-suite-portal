@@ -65,7 +65,7 @@ export function ClientProjectDetailSummary({
   const approved = approvedPhaseCount(project);
 
   return (
-    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+    <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="grid gap-0 lg:grid-cols-[minmax(280px,1.25fr)_repeat(5,minmax(120px,1fr))]">
         <div className="flex min-w-0 items-center gap-4 p-5">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#000A16] text-white shadow-[0_14px_28px_rgba(15,23,42,0.18)]">

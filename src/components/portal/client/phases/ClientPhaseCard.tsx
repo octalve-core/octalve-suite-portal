@@ -26,7 +26,7 @@ export function ClientPhaseCard({ row }: { row: ClientPhaseRow }) {
   const progress = phaseProgress(phase);
 
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0064E0] text-sm font-black text-white">
           {phase.phaseNumber}

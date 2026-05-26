@@ -181,7 +181,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                   <td className="px-5 py-5 text-center">
                     <Link
                       href={`/client/phases/${phase.id}`}
-                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(0,100,224,0.16)] transition hover:bg-[#0052B8]"
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_6px_14px_rgba(0,100,224,0.07)] transition hover:bg-[#0052B8]"
                     >
                       {approvalActionLabel(phase.status)}
                       <ArrowRight size={15} />

@@ -16,7 +16,7 @@ export function ClientProjectsHeader() {
 
       <Link
         href="/client/projects/new"
-        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(0,100,224,0.22)] transition hover:bg-[#0052B8] lg:min-w-[180px]"
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8] lg:min-w-[180px]"
       >
         <Plus size={18} />
         Create Project

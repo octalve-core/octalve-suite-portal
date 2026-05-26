@@ -63,7 +63,7 @@ export function ClientProjectCard({
   const lastUpdated = latestProjectActivityDate(project);
 
   return (
-    <article className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_22px_50px_rgba(0,100,224,0.10)]">
+    <article className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_6px_16px_rgba(15,23,42,0.02)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_8px_20px_rgba(0,100,224,0.08)]">
       <div className="flex min-h-[350px] flex-col justify-between p-5">
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -140,7 +140,7 @@ export function ClientProjectCard({
           <Link
             href={`/client/projects/${project.id}`}
             onClick={() => onSelect(project.id)}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,100,224,0.16)] transition hover:bg-[#0052B8]"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8]"
           >
             Open Project
             <CheckCircle2 size={16} />

@@ -21,7 +21,7 @@ function PaymentNotFound() {
         Back to Payments
       </Link>
 
-      <section className="mt-6 grid min-h-80 place-items-center rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+      <section className="mt-6 grid min-h-80 place-items-center rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
         <div>
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
             <CreditCard size={24} />

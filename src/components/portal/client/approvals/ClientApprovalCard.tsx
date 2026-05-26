@@ -32,7 +32,7 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
   const dateValue = getApprovalDate(row);
 
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex items-start gap-3">
         <span
           className={[
@@ -117,7 +117,7 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
 
             <Link
               href={`/client/phases/${phase.id}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(0,100,224,0.16)] transition hover:bg-[#0052B8]"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-4 text-sm font-bold text-white shadow-[0_6px_14px_rgba(0,100,224,0.07)] transition hover:bg-[#0052B8]"
             >
               {approvalActionLabel(phase.status)}
               <ArrowRight size={15} />

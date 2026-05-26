@@ -111,7 +111,7 @@ function SettingsCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)] sm:p-6">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
       <div className="mb-5 flex items-start gap-3">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
           {icon}
@@ -613,7 +613,7 @@ export function ProfileSettings({
           </p>
         </header>
 
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.055)] sm:p-6">
+        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_1.7fr] lg:items-center">
             <div className="flex min-w-0 items-center gap-5">
               <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-blue-50 text-3xl font-semibold text-[#0064E0] ring-1 ring-blue-100 sm:h-24 sm:w-24">
@@ -730,7 +730,7 @@ export function ProfileSettings({
                   type="button"
                   onClick={updateProfile}
                   disabled={saving}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(0,100,224,0.18)] transition hover:bg-[#0052B8] disabled:cursor-wait disabled:opacity-70 md:w-auto"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0064E0] px-5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8] disabled:cursor-wait disabled:opacity-70 md:w-auto"
                 >
                   <Save size={16} />
                   {saving ? "Updating..." : "Update Profile"}
