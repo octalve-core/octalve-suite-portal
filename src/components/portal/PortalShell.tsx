@@ -7,7 +7,6 @@ import { useMemo, useState } from "react";
 import type { Role } from "@/lib/types";
 import { AIAssistant } from "./AIAssistant";
 import { useApp } from "./AppContext";
-import { PageLoading } from "./UI";
 import { WorkspaceMobileNav } from "./workspace-shell/WorkspaceMobileNav";
 import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
 import { WorkspaceTopbar } from "./workspace-shell/WorkspaceTopbar";
@@ -50,22 +49,23 @@ export function PortalShell({
       } catch {
         // Continue redirect even if logout request fails.
       }
+
+      try {
+        localStorage.removeItem("octalve-suite-selected-project-v2");
+        localStorage.removeItem("octalve-session");
+        localStorage.removeItem("octalve-user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+      } catch {
+        // Storage may be unavailable in restricted browsers.
+      }
+
+      router.replace("/login");
+
+      window.setTimeout(() => {
+        window.location.href = "/login";
+      }, 80);
     }
-
-    try {
-      localStorage.removeItem("octalve-session");
-      localStorage.removeItem("octalve-user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("accessToken");
-    } catch {
-      // Storage may be unavailable in restricted browsers.
-    }
-
-    router.replace("/login");
-
-    window.setTimeout(() => {
-      window.location.href = "/login";
-    }, 80);
   }
 
   const counts = useMemo<WorkspaceCountState>(() => {
@@ -99,12 +99,7 @@ export function PortalShell({
   function isActiveHref(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
-
-  if (sessionLoading || (dataLoading && state.projects.length === 0)) {
-    return <PageLoading />;
-  }
-
-  return (
+return (
     <div className="min-h-screen bg-[#f6f8fc] text-slate-950 lg:grid lg:grid-cols-[292px_minmax(0,1fr)]">
       <WorkspaceSidebar
         role={role}

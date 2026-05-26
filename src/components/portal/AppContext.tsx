@@ -233,24 +233,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ------- Authentication -------
   async function logout() {
-    const pathname = window.location.pathname;
-    const isProtected =
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/staff") ||
-      pathname.startsWith("/client");
-
     await authClient.signOut();
+
     setState(emptyState);
     setSelectedProjectIdState(undefined);
+
     try {
       localStorage.removeItem(SELECTED_PROJECT_KEY);
-    } catch {}
-
-    if (isProtected) {
-      router.replace(`/login?callbackURL=${encodeURIComponent(pathname)}`);
-    } else {
-      router.replace("/login");
+      localStorage.removeItem("octalve-session");
+      localStorage.removeItem("octalve-user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
+    } catch {
+      // Storage may be unavailable in restricted browsers.
     }
+
+    router.replace("/login");
   }
 
   function setSelectedProjectId(id: string) {
