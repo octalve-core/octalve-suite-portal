@@ -705,31 +705,7 @@ export function Skeleton({
 }
 
 export function PageLoading() {
-  return (
-    <div className="page-loading-wrapper">
-      <div className="page-loading-logo">
-        <img
-          src="/octalve-logo.svg"
-          alt="Octalve"
-          className="brand-logo"
-          style={{ width: 64, height: 64 }}
-        />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Spinner size={22} />
-        <span
-          style={{
-            fontWeight: 700,
-            color: "var(--muted)",
-            letterSpacing: "0.05em",
-          }}
-        >
-          LOADING WORKSPACE...
-        </span>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 export function LoadingCard() {

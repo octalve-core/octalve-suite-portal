@@ -33,9 +33,7 @@ import {
   Field,
   Input,
   Modal,
-  PageHeader,
-  PageLoading,
-  ProgressBar,
+  PageHeader,  ProgressBar,
   Select,
   Textarea,
   packageClass,
@@ -424,7 +422,7 @@ export function AdminCreateProject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (dataLoading && templates.length === 0) return <PageLoading />;
+  if (dataLoading && templates.length === 0) return null;
 
   async function submitProject() {
     if (!selectedTemplate) {
