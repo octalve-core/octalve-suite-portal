@@ -31,6 +31,8 @@ export function PortalShell({
     logout,
     state,
     clientProjects,
+    sessionLoading,
+    dataLoading,
   } = useApp();
 
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
