@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   CalendarDays,
@@ -23,29 +24,42 @@ import {
   statusLabel,
 } from "./client-dashboard-utils";
 
-function Greeting({ userName }: { userName: string }) {
+function getGreeting() {
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  return (
-    <p className="text-sm font-semibold text-slate-600">
-      {greeting}, {userName} 👋
-    </p>
-  );
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-function softToneClass(tone: "blue" | "orange" | "green" | "purple" | "red") {
-  return {
+function IconBubble({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "blue" | "orange" | "green" | "purple" | "red";
+}) {
+  const tones = {
     blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
     orange: "bg-orange-50 text-orange-700 ring-orange-100",
     green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
     purple: "bg-violet-50 text-violet-700 ring-violet-100",
     red: "bg-red-50 text-red-700 ring-red-100",
-  }[tone];
+  };
+
+  return (
+    <span
+      className={[
+        "grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1",
+        tones[tone],
+      ].join(" ")}
+    >
+      {children}
+    </span>
+  );
 }
 
-function SummaryMetric({
+function SummaryItem({
   icon,
   label,
   value,
@@ -63,18 +77,11 @@ function SummaryMetric({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-4 border-slate-200 px-4 py-4 lg:border-r last:lg:border-r-0">
-      <span
-        className={[
-          "grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1",
-          softToneClass(tone),
-        ].join(" ")}
-      >
-        {icon}
-      </span>
+    <div className="flex min-w-0 items-center gap-4 px-4 py-4 lg:border-r lg:border-slate-200 last:lg:border-r-0">
+      <IconBubble tone={tone}>{icon}</IconBubble>
 
       <div className="min-w-0 flex-1">
-        <span className="block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        <span className="block text-[11px] font-black uppercase tracking-[0.13em] text-slate-500">
           {label}
         </span>
 
@@ -109,6 +116,7 @@ export function ClientDashboardHero({
   walletAvailable: number | null;
 }) {
   const { clientProjects, setSelectedProjectId } = useApp();
+
   const [now, setNow] = useState(() => Date.now());
   const [showBalance, setShowBalance] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -118,18 +126,21 @@ export function ClientDashboardHero({
     return () => window.clearInterval(timer);
   }, []);
 
-  const countdownText = formatCountdown(project.targetDate, now);
-  const dateText = formatProjectDate(project.targetDate);
-  const projectStatusLabel = statusLabel(project.status);
-  const isOverdue = countdownText.toLowerCase().includes("overdue");
   const walletValue = walletAvailable === null ? "—" : formatNaira(walletAvailable);
   const maskedWalletValue = walletAvailable === null ? "—" : "••••••";
+  const countdownText = formatCountdown(project.targetDate, now);
+  const isOverdue = countdownText.toLowerCase().includes("overdue");
+  const cleanCountdown = countdownText.replace(/overdue/gi, "").trim();
+  const projectStatus = statusLabel(project.status);
+  const shouldShowDepositHelper =
+    projectStatus.toLowerCase().includes("deposit") ||
+    project.status === "APPROVED_AWAITING_DEPOSIT";
 
-  async function copyReference() {
+  async function copyProjectReference() {
     try {
       await navigator.clipboard.writeText(project.projectCode);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
+      window.setTimeout(() => setCopied(false), 1300);
     } catch {
       setCopied(false);
     }
@@ -137,16 +148,19 @@ export function ClientDashboardHero({
 
   return (
     <section className="grid gap-5">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.92fr)] xl:items-stretch">
-        <div className="px-0 py-2">
-          <Greeting userName={userName} />
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(430px,0.92fr)] xl:items-stretch">
+        <div className="py-3">
+          <p className="text-sm font-semibold text-slate-600">
+            {getGreeting()}, {userName} 👋
+          </p>
 
           <h1 className="mt-5 max-w-[560px] text-[34px] font-semibold leading-[1.08] tracking-[-0.065em] text-slate-950 sm:text-[42px] lg:text-[48px]">
             Welcome back to your workspace
           </h1>
 
           <p className="mt-4 max-w-[560px] text-sm font-medium leading-7 text-slate-600 sm:text-[15px]">
-            Here's what's happening with your projects today. Track progress, review updates and take action where needed.
+            Here&apos;s what&apos;s happening with your projects today. Track progress,
+            review updates and take action where needed.
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -173,7 +187,7 @@ export function ClientDashboardHero({
                 <button
                   type="button"
                   onClick={() => setShowBalance((value) => !value)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0]"
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0]"
                   aria-label={showBalance ? "Hide wallet balance" : "Show wallet balance"}
                   title={showBalance ? "Hide balance" : "Show balance"}
                 >
@@ -189,13 +203,13 @@ export function ClientDashboardHero({
                 Available for project payments when wallet payment is enabled.
               </p>
 
-              <a
+              <Link
                 href="/client/wallet"
                 className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-bold text-white transition hover:bg-[#0052B8]"
               >
                 <WalletCards size={17} />
                 Open Wallet
-              </a>
+              </Link>
             </div>
 
             <div className="hidden bg-slate-200 md:block" />
@@ -210,7 +224,7 @@ export function ClientDashboardHero({
                   value={project.id}
                   onChange={(event) => setSelectedProjectId(event.target.value)}
                   aria-label="Select active project"
-                  className="h-13 w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 pr-11 text-sm font-semibold text-slate-950 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+                  className="h-[52px] w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 pr-11 text-sm font-semibold text-slate-950 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
                 >
                   {clientProjects.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -225,57 +239,52 @@ export function ClientDashboardHero({
                 />
               </div>
 
-              <a
+              <Link
                 href={`/client/projects/${project.id}`}
                 className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0]"
               >
                 <Eye size={16} />
                 View Project Workspace
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
       <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
-        <div className="grid divide-y divide-slate-200 lg:grid-cols-[1fr_1fr_1.2fr_1.05fr_1.25fr] lg:divide-x lg:divide-y-0">
-          <SummaryMetric
+        <div className="grid divide-y divide-slate-200 lg:grid-cols-[1fr_1fr_1.18fr_1.08fr_1.24fr] lg:divide-x lg:divide-y-0">
+          <SummaryItem
             icon={<CalendarDays size={18} />}
             label="Target Date"
-            value={dateText}
+            value={formatProjectDate(project.targetDate)}
             tone="blue"
           />
 
-          <SummaryMetric
+          <SummaryItem
             icon={<TimerReset size={18} />}
             label="Countdown"
-            value={countdownText.replace("Overdue", "").trim()}
+            value={cleanCountdown || countdownText}
             helper={isOverdue ? "Overdue" : undefined}
             tone="blue"
-            valueClassName={isOverdue ? "text-slate-950" : "text-slate-950"}
           />
 
-          <SummaryMetric
+          <SummaryItem
             icon={<FolderKanban size={18} />}
             label="Active Project"
             value={project.title}
             tone="blue"
           />
 
-          <SummaryMetric
+          <SummaryItem
             icon={<ShieldCheck size={18} />}
             label="Project Status"
-            value={projectStatusLabel}
-            helper={
-              projectStatusLabel.toLowerCase().includes("deposit")
-                ? "Awaiting Deposit"
-                : undefined
-            }
+            value={projectStatus}
+            helper={shouldShowDepositHelper ? "Awaiting Deposit" : undefined}
             tone="orange"
             valueClassName="text-orange-700"
           />
 
-          <SummaryMetric
+          <SummaryItem
             icon={<FileText size={18} />}
             label="Project Reference"
             value={project.projectCode}
@@ -283,7 +292,7 @@ export function ClientDashboardHero({
             action={
               <button
                 type="button"
-                onClick={() => void copyReference()}
+                onClick={() => void copyProjectReference()}
                 className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-blue-50 hover:text-[#0064E0]"
                 aria-label="Copy project reference"
                 title={copied ? "Copied" : "Copy project reference"}

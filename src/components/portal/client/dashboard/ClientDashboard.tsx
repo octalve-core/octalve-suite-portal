@@ -7,7 +7,6 @@ import type { Project } from "@/lib/types";
 import { useApp } from "../../AppContext";
 import { ClientManualPaymentModal } from "../shared/ClientManualPaymentModal";
 import { ClientReviewModal } from "../shared/ClientReviewModal";
-import { ClientActivePhaseCard } from "./ClientActivePhaseCard";
 import { ClientDashboardHero } from "./ClientDashboardHero";
 import { ClientDashboardStats } from "./ClientDashboardStats";
 import { ClientDeliverablesPanel } from "./ClientDeliverablesPanel";
@@ -16,7 +15,6 @@ import { ClientPaymentNotice } from "./ClientPaymentNotice";
 import { ClientPhaseTimeline } from "./ClientPhaseTimeline";
 import { ClientRecentActivity } from "./ClientRecentActivity";
 import {
-  getActivePhase,
   getPaymentBlock,
   projectProgress,
 } from "./client-dashboard-utils";
@@ -55,14 +53,17 @@ export function ClientDashboard() {
   if (!clientProjects.length) {
     return (
       <ClientEmptyDashboard
-        title={currentUser?.company ?? currentUser?.name ?? "Your Octalve project workspace is ready."}
+        title={
+          currentUser?.company ??
+          currentUser?.name ??
+          "Your Octalve project workspace is ready."
+        }
       />
     );
   }
 
   const project = selectedProject ?? clientProjects[0];
-  const block = getPaymentBlock(project);
-  const activePhase = getActivePhase(project);
+  const paymentBlock = getPaymentBlock(project);
   const progress = projectProgress(project);
 
   const approvedPhases = project.phases.filter(
@@ -73,7 +74,7 @@ export function ClientDashboard() {
     (phase) => phase.status === "AWAITING_APPROVAL",
   ).length;
 
-  const links = project.phases.flatMap((phase) =>
+  const deliverableLinks = project.phases.flatMap((phase) =>
     phase.deliverables.filter(
       (deliverable) => deliverable.visibleToClient && deliverable.link,
     ),
@@ -95,38 +96,50 @@ export function ClientDashboard() {
     (payment) => payment.status === "UNPAID",
   ).length;
 
+  const clientName =
+    currentUser?.company ||
+    currentUser?.name ||
+    currentUser?.email?.split("@")[0] ||
+    "Client";
+
   return (
     <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
       <div className="grid gap-5">
         <ClientDashboardHero
           project={project}
-          userName={
-            currentUser?.company ||
-            currentUser?.name ||
-            currentUser?.email?.split("@")[0] ||
-            "Client"
-          }
+          userName={clientName}
           walletAvailable={walletAvailable}
         />
-{block ? (
-          <ClientPaymentNotice
-            block={block}
-            onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
-          />
-        ) : null}
 
         <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <ClientActivePhaseCard phase={activePhase} />
+          <div className="grid gap-5">
+            <ClientDashboardStats
+              progress={progress}
+              approvedPhases={approvedPhases}
+              totalPhases={project.phases.length}
+              pendingApprovals={pendingApprovals}
+              linksCount={deliverableLinks.length}
+              outstandingPayments={outstandingPayments}
+            />
+
+            {paymentBlock ? (
+              <ClientPaymentNotice
+                block={paymentBlock}
+                onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
+              />
+            ) : null}
+          </div>
+
           <ClientPhaseTimeline phases={project.phases} />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <ClientDeliverablesPanel links={links} />
+        <section className="grid gap-5 xl:grid-cols-2">
+          <ClientDeliverablesPanel links={deliverableLinks} />
           <ClientRecentActivity messages={recentMessages} />
         </section>
 
         {project.status === "COMPLETED" ? (
-          <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_38px_rgba(41,190,62,0.08)]">
+          <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold tracking-[-0.04em] text-emerald-950">

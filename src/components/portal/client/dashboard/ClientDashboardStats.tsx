@@ -6,6 +6,16 @@ import {
   Link2,
 } from "lucide-react";
 
+function toneClass(tone: "blue" | "green" | "orange" | "purple" | "red") {
+  return {
+    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    orange: "bg-orange-50 text-orange-700 ring-orange-100",
+    purple: "bg-violet-50 text-violet-700 ring-violet-100",
+    red: "bg-red-50 text-red-700 ring-red-100",
+  }[tone];
+}
+
 function StatCard({
   label,
   value,
@@ -19,28 +29,12 @@ function StatCard({
   icon: React.ReactNode;
   tone: "blue" | "green" | "orange" | "purple" | "red";
 }) {
-  const toneClass = {
-    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
-    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    orange: "bg-orange-50 text-orange-700 ring-orange-100",
-    purple: "bg-violet-50 text-violet-700 ring-violet-100",
-    red: "bg-red-50 text-red-700 ring-red-100",
-  }[tone];
-
-  const valueClass = {
-    blue: "text-slate-950",
-    green: "text-slate-950",
-    orange: "text-slate-950",
-    purple: "text-slate-950",
-    red: "text-slate-950",
-  }[tone];
-
   return (
     <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <span
         className={[
           "grid h-11 w-11 place-items-center rounded-2xl ring-1",
-          toneClass,
+          toneClass(tone),
         ].join(" ")}
       >
         {icon}
@@ -50,12 +44,7 @@ function StatCard({
         {label}
       </span>
 
-      <strong
-        className={[
-          "mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em]",
-          valueClass,
-        ].join(" ")}
-      >
+      <strong className="mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
         {value}
       </strong>
 
