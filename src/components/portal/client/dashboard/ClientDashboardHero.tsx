@@ -131,10 +131,11 @@ export function ClientDashboardHero({
   const countdownText = formatCountdown(project.targetDate, now);
   const isOverdue = countdownText.toLowerCase().includes("overdue");
   const cleanCountdown = countdownText.replace(/overdue/gi, "").trim();
-  const projectStatus = statusLabel(project.status);
+  const isApprovedAwaitingDeposit = project.status === "APPROVED_AWAITING_DEPOSIT";
+  const projectStatus = isApprovedAwaitingDeposit ? "Approved" : statusLabel(project.status);
   const shouldShowDepositHelper =
-    projectStatus.toLowerCase().includes("deposit") ||
-    project.status === "APPROVED_AWAITING_DEPOSIT";
+    isApprovedAwaitingDeposit ||
+    statusLabel(project.status).toLowerCase().includes("deposit");
 
   async function copyProjectReference() {
     try {

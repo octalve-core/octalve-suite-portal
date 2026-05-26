@@ -6,6 +6,9 @@ import {
   Link2,
 } from "lucide-react";
 
+import type { PaymentBlock } from "./client-dashboard-utils";
+import { ClientPaymentNotice } from "./ClientPaymentNotice";
+
 function toneClass(tone: "blue" | "green" | "orange" | "purple" | "red") {
   return {
     blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
@@ -30,27 +33,31 @@ function StatCard({
   tone: "blue" | "green" | "orange" | "purple" | "red";
 }) {
   return (
-    <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
-      <span
-        className={[
-          "grid h-11 w-11 place-items-center rounded-2xl ring-1",
-          toneClass(tone),
-        ].join(" ")}
-      >
-        {icon}
-      </span>
+    <article className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_4px_12px_rgba(15,23,42,0.018)]">
+      <div className="flex items-start gap-3">
+        <span
+          className={[
+            "grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1",
+            toneClass(tone),
+          ].join(" ")}
+        >
+          {icon}
+        </span>
 
-      <span className="mt-4 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
+        <div className="min-w-0">
+          <span className="block truncate text-[11px] font-black tracking-[-0.01em] text-slate-500">
+            {label}
+          </span>
 
-      <strong className="mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
-        {value}
-      </strong>
+          <strong className="mt-4 block text-[24px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
+            {value}
+          </strong>
 
-      <p className="mt-2 text-sm font-semibold leading-5 text-slate-500">
-        {helper}
-      </p>
+          <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-500">
+            {helper}
+          </p>
+        </div>
+      </div>
     </article>
   );
 }
@@ -62,6 +69,8 @@ export function ClientDashboardStats({
   pendingApprovals,
   linksCount,
   outstandingPayments,
+  paymentBlock,
+  onPay,
 }: {
   progress: number;
   approvedPhases: number;
@@ -69,10 +78,12 @@ export function ClientDashboardStats({
   pendingApprovals: number;
   linksCount: number;
   outstandingPayments: number;
+  paymentBlock?: PaymentBlock | null;
+  onPay?: (paymentId: string) => void;
 }) {
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
-      <h2 className="mb-4 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+      <h2 className="mb-4 text-[20px] font-semibold tracking-[-0.045em] text-slate-950">
         Project Overview
       </h2>
 
@@ -81,7 +92,7 @@ export function ClientDashboardStats({
           label="Progress"
           value={`${progress}%`}
           helper="Overall delivery movement"
-          icon={<FolderKanban size={18} />}
+          icon={<FolderKanban size={16} />}
           tone="blue"
         />
 
@@ -89,7 +100,7 @@ export function ClientDashboardStats({
           label="Approved Phases"
           value={`${approvedPhases} / ${totalPhases}`}
           helper="Completed approvals"
-          icon={<CheckCircle2 size={18} />}
+          icon={<CheckCircle2 size={16} />}
           tone="green"
         />
 
@@ -97,7 +108,7 @@ export function ClientDashboardStats({
           label="Pending Reviews"
           value={pendingApprovals}
           helper="Needs your review"
-          icon={<Clock3 size={18} />}
+          icon={<Clock3 size={16} />}
           tone="orange"
         />
 
@@ -105,7 +116,7 @@ export function ClientDashboardStats({
           label="Deliverable Links"
           value={linksCount}
           helper="Visible resources"
-          icon={<Link2 size={18} />}
+          icon={<Link2 size={16} />}
           tone="purple"
         />
 
@@ -113,10 +124,16 @@ export function ClientDashboardStats({
           label="Unpaid Payments"
           value={outstandingPayments}
           helper={outstandingPayments > 0 ? "Payment required" : "No payment due"}
-          icon={<CreditCard size={18} />}
+          icon={<CreditCard size={16} />}
           tone={outstandingPayments > 0 ? "red" : "green"}
         />
       </div>
+
+      {paymentBlock && onPay ? (
+        <div className="mt-4">
+          <ClientPaymentNotice block={paymentBlock} onPay={onPay} />
+        </div>
+      ) : null}
     </section>
   );
 }

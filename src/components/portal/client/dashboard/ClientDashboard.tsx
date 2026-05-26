@@ -11,7 +11,6 @@ import { ClientDashboardHero } from "./ClientDashboardHero";
 import { ClientDashboardStats } from "./ClientDashboardStats";
 import { ClientDeliverablesPanel } from "./ClientDeliverablesPanel";
 import { ClientEmptyDashboard } from "./ClientEmptyDashboard";
-import { ClientPaymentNotice } from "./ClientPaymentNotice";
 import { ClientPhaseTimeline } from "./ClientPhaseTimeline";
 import { ClientRecentActivity } from "./ClientRecentActivity";
 import {
@@ -112,23 +111,16 @@ export function ClientDashboard() {
         />
 
         <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="grid gap-5">
-            <ClientDashboardStats
-              progress={progress}
-              approvedPhases={approvedPhases}
-              totalPhases={project.phases.length}
-              pendingApprovals={pendingApprovals}
-              linksCount={deliverableLinks.length}
-              outstandingPayments={outstandingPayments}
-            />
-
-            {paymentBlock ? (
-              <ClientPaymentNotice
-                block={paymentBlock}
-                onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
-              />
-            ) : null}
-          </div>
+          <ClientDashboardStats
+            progress={progress}
+            approvedPhases={approvedPhases}
+            totalPhases={project.phases.length}
+            pendingApprovals={pendingApprovals}
+            linksCount={deliverableLinks.length}
+            outstandingPayments={outstandingPayments}
+            paymentBlock={paymentBlock}
+            onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
+          />
 
           <ClientPhaseTimeline phases={project.phases} />
         </section>
