@@ -108,17 +108,7 @@ export function ClientDashboard() {
           }
           walletAvailable={walletAvailable}
         />
-
-        <ClientDashboardStats
-          progress={progress}
-          approvedPhases={approvedPhases}
-          totalPhases={project.phases.length}
-          pendingApprovals={pendingApprovals}
-          linksCount={links.length}
-          outstandingPayments={outstandingPayments}
-        />
-
-        {block ? (
+{block ? (
           <ClientPaymentNotice
             block={block}
             onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}

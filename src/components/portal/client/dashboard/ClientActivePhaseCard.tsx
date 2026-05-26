@@ -18,7 +18,7 @@ export function ClientActivePhaseCard({
   const progress = phase ? getPhaseProgress(phase) : 0;
 
   return (
-    <article className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_16px_38px_rgba(15,23,42,0.055)]">
+    <article className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
       <div className="border-b border-slate-100 p-5">
         <div className="flex items-start justify-between gap-5">
           <div className="min-w-0">

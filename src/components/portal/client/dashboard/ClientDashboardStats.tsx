@@ -2,7 +2,6 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
-  FileCheck2,
   FolderKanban,
   Link2,
 } from "lucide-react";
@@ -29,26 +28,22 @@ function StatCard({
   }[tone];
 
   return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.07)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <span className="block text-[11px] font-black uppercase tracking-[0.13em] text-slate-400">
-            {label}
-          </span>
+    <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.025)]">
+      <span className={["grid h-11 w-11 place-items-center rounded-2xl ring-1", toneClass].join(" ")}>
+        {icon}
+      </span>
 
-          <strong className="mt-3 block text-[30px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
-            {value}
-          </strong>
+      <span className="mt-4 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
 
-          <p className="mt-2 truncate text-sm font-semibold text-slate-500">
-            {helper}
-          </p>
-        </div>
+      <strong className="mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
+        {value}
+      </strong>
 
-        <span className={["grid h-12 w-12 shrink-0 place-items-center rounded-2xl ring-1", toneClass].join(" ")}>
-          {icon}
-        </span>
-      </div>
+      <p className="mt-2 text-sm font-semibold leading-5 text-slate-500">
+        {helper}
+      </p>
     </article>
   );
 }
@@ -69,46 +64,52 @@ export function ClientDashboardStats({
   outstandingPayments: number;
 }) {
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-      <StatCard
-        label="Progress"
-        value={`${progress}%`}
-        helper="Overall delivery movement"
-        icon={<FolderKanban size={20} />}
-        tone="blue"
-      />
+    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
+      <h2 className="mb-4 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        Project Overview
+      </h2>
 
-      <StatCard
-        label="Approved Phases"
-        value={`${approvedPhases}/${totalPhases}`}
-        helper="Completed approvals"
-        icon={<CheckCircle2 size={20} />}
-        tone="green"
-      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard
+          label="Progress"
+          value={`${progress}%`}
+          helper="Overall delivery movement"
+          icon={<FolderKanban size={18} />}
+          tone="blue"
+        />
 
-      <StatCard
-        label="Pending Reviews"
-        value={pendingApprovals}
-        helper="Needs your review"
-        icon={<Clock3 size={20} />}
-        tone="orange"
-      />
+        <StatCard
+          label="Approved Phases"
+          value={`${approvedPhases} / ${totalPhases}`}
+          helper="Completed approvals"
+          icon={<CheckCircle2 size={18} />}
+          tone="green"
+        />
 
-      <StatCard
-        label="Deliverable Links"
-        value={linksCount}
-        helper="Visible resources"
-        icon={<Link2 size={20} />}
-        tone="purple"
-      />
+        <StatCard
+          label="Pending Reviews"
+          value={pendingApprovals}
+          helper="Needs your review"
+          icon={<Clock3 size={18} />}
+          tone="orange"
+        />
 
-      <StatCard
-        label="Unpaid Payments"
-        value={outstandingPayments}
-        helper={outstandingPayments > 0 ? "Payment required" : "No payment due"}
-        icon={<CreditCard size={20} />}
-        tone={outstandingPayments > 0 ? "red" : "green"}
-      />
+        <StatCard
+          label="Deliverable Links"
+          value={linksCount}
+          helper="Visible resources"
+          icon={<Link2 size={18} />}
+          tone="purple"
+        />
+
+        <StatCard
+          label="Unpaid Payments"
+          value={outstandingPayments}
+          helper={outstandingPayments > 0 ? "Payment required" : "No payment due"}
+          icon={<CreditCard size={18} />}
+          tone={outstandingPayments > 0 ? "red" : "green"}
+        />
+      </div>
     </section>
   );
 }
