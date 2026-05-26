@@ -81,11 +81,11 @@ export function ClientProjectDetailView({ projectId }: { projectId: string }) {
           </Link>
 
           <h1 className="mt-6 text-[34px] font-semibold leading-tight tracking-[-0.065em] text-slate-950 sm:text-[42px]">
-            Project Phases
+            {project.title}
           </h1>
 
           <p className="mt-2 max-w-3xl text-sm font-medium leading-7 text-slate-500 sm:text-[15px]">
-            Track and manage project progress through structured phases and deliverables.
+            Track phases, deliverables, approvals, team information and project notes for {project.projectCode}.
           </p>
         </div>
 

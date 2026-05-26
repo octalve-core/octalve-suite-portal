@@ -5,7 +5,7 @@ import {
   ChevronUp,
   ExternalLink,
   FileText,
-  MoreVertical,
+  ArrowRight,
 } from "lucide-react";
 
 import type { Project, ProjectPhase } from "@/lib/types";
@@ -153,7 +153,7 @@ function DeliverablesTable({
                     className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Deliverable options"
                   >
-                    <MoreVertical size={17} />
+                    <ArrowRight size={17} />
                   </button>
                 </td>
               </tr>
