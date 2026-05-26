@@ -79,6 +79,8 @@ export function ClientDashboard() {
     ),
   );
 
+  const dashboardDeliverableLinks = deliverableLinks.slice(0, 2);
+
   const recentMessages = useMemo(
     () =>
       project.phases
@@ -87,7 +89,7 @@ export function ClientDashboard() {
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )
-        .slice(0, 4),
+        .slice(0, 2),
     [project.phases],
   );
 
@@ -110,24 +112,33 @@ export function ClientDashboard() {
           walletAvailable={walletAvailable}
         />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <ClientDashboardStats
-            progress={progress}
-            approvedPhases={approvedPhases}
-            totalPhases={project.phases.length}
-            pendingApprovals={pendingApprovals}
-            linksCount={deliverableLinks.length}
-            outstandingPayments={outstandingPayments}
-            paymentBlock={paymentBlock}
-            onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
-          />
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start">
+          <div className="grid gap-5">
+            <ClientDashboardStats
+              progress={progress}
+              approvedPhases={approvedPhases}
+              totalPhases={project.phases.length}
+              pendingApprovals={pendingApprovals}
+              linksCount={deliverableLinks.length}
+              outstandingPayments={outstandingPayments}
+              paymentBlock={paymentBlock}
+              onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
+            />
+
+            <section className="grid gap-5 lg:grid-cols-2">
+              <ClientDeliverablesPanel
+                links={dashboardDeliverableLinks}
+                totalCount={deliverableLinks.length}
+              />
+
+              <ClientRecentActivity
+                messages={recentMessages}
+                totalCount={project.phases.flatMap((phase) => phase.messages).length}
+              />
+            </section>
+          </div>
 
           <ClientPhaseTimeline phases={project.phases} />
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-2">
-          <ClientDeliverablesPanel links={deliverableLinks} />
-          <ClientRecentActivity messages={recentMessages} />
         </section>
 
         {project.status === "COMPLETED" ? (
