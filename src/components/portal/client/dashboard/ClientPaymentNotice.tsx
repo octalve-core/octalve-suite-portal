@@ -18,7 +18,7 @@ export function ClientPaymentNotice({
   const isUnpaid = block.payment.status === "UNPAID";
 
   return (
-    <section className="rounded-[26px] border border-orange-200 bg-orange-50/70 p-5 shadow-[0_16px_38px_rgba(252,126,36,0.08)]">
+    <section className="rounded-[24px] border border-orange-200 bg-orange-50/70 p-5 shadow-[0_16px_38px_rgba(252,126,36,0.08)]">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 gap-4">
           <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-white text-orange-700 ring-1 ring-orange-100">

@@ -27,9 +27,22 @@ function StatCard({
     red: "bg-red-50 text-red-700 ring-red-100",
   }[tone];
 
+  const valueClass = {
+    blue: "text-slate-950",
+    green: "text-slate-950",
+    orange: "text-slate-950",
+    purple: "text-slate-950",
+    red: "text-slate-950",
+  }[tone];
+
   return (
-    <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.025)]">
-      <span className={["grid h-11 w-11 place-items-center rounded-2xl ring-1", toneClass].join(" ")}>
+    <article className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
+      <span
+        className={[
+          "grid h-11 w-11 place-items-center rounded-2xl ring-1",
+          toneClass,
+        ].join(" ")}
+      >
         {icon}
       </span>
 
@@ -37,7 +50,12 @@ function StatCard({
         {label}
       </span>
 
-      <strong className="mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
+      <strong
+        className={[
+          "mt-4 block text-[28px] font-semibold leading-none tracking-[-0.055em]",
+          valueClass,
+        ].join(" ")}
+      >
         {value}
       </strong>
 
@@ -64,7 +82,7 @@ export function ClientDashboardStats({
   outstandingPayments: number;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <h2 className="mb-4 text-xl font-semibold tracking-[-0.04em] text-slate-950">
         Project Overview
       </h2>

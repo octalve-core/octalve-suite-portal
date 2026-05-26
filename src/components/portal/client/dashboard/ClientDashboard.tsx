@@ -126,7 +126,7 @@ export function ClientDashboard() {
         </section>
 
         {project.status === "COMPLETED" ? (
-          <section className="rounded-[26px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_38px_rgba(41,190,62,0.08)]">
+          <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_38px_rgba(41,190,62,0.08)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold tracking-[-0.04em] text-emerald-950">

@@ -7,7 +7,9 @@ import {
   Copy,
   Eye,
   EyeOff,
+  FileText,
   FolderKanban,
+  ShieldCheck,
   TimerReset,
   WalletCards,
 } from "lucide-react";
@@ -18,8 +20,6 @@ import {
   formatCountdown,
   formatNaira,
   formatProjectDate,
-  getBadgeClasses,
-  getToneForStatus,
   statusLabel,
 } from "./client-dashboard-utils";
 
@@ -35,32 +35,41 @@ function Greeting({ userName }: { userName: string }) {
   );
 }
 
+function softToneClass(tone: "blue" | "orange" | "green" | "purple" | "red") {
+  return {
+    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
+    orange: "bg-orange-50 text-orange-700 ring-orange-100",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    purple: "bg-violet-50 text-violet-700 ring-violet-100",
+    red: "bg-red-50 text-red-700 ring-red-100",
+  }[tone];
+}
+
 function SummaryMetric({
   icon,
   label,
   value,
   helper,
-  tone = "blue",
+  tone,
+  valueClassName = "text-slate-950",
   action,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   helper?: string;
-  tone?: "blue" | "orange" | "green" | "purple" | "slate";
+  tone: "blue" | "orange" | "green" | "purple" | "red";
+  valueClassName?: string;
   action?: React.ReactNode;
 }) {
-  const toneClass = {
-    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
-    orange: "bg-orange-50 text-orange-700 ring-orange-100",
-    green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-    purple: "bg-violet-50 text-violet-700 ring-violet-100",
-    slate: "bg-slate-50 text-slate-600 ring-slate-200",
-  }[tone];
-
   return (
     <div className="flex min-w-0 items-center gap-4 border-slate-200 px-4 py-4 lg:border-r last:lg:border-r-0">
-      <span className={["grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1", toneClass].join(" ")}>
+      <span
+        className={[
+          "grid h-12 w-12 shrink-0 place-items-center rounded-full ring-1",
+          softToneClass(tone),
+        ].join(" ")}
+      >
         {icon}
       </span>
 
@@ -68,11 +77,18 @@ function SummaryMetric({
         <span className="block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
           {label}
         </span>
-        <strong className="mt-1 block truncate text-base font-semibold text-slate-950">
+
+        <strong
+          className={[
+            "mt-1 block truncate text-base font-semibold",
+            valueClassName,
+          ].join(" ")}
+        >
           {value}
         </strong>
+
         {helper ? (
-          <span className="mt-0.5 block truncate text-sm font-bold text-orange-600">
+          <span className="mt-0.5 block truncate text-sm font-bold text-red-600">
             {helper}
           </span>
         ) : null}
@@ -102,9 +118,10 @@ export function ClientDashboardHero({
     return () => window.clearInterval(timer);
   }, []);
 
-  const statusTone = getToneForStatus(project.status);
   const countdownText = formatCountdown(project.targetDate, now);
   const dateText = formatProjectDate(project.targetDate);
+  const projectStatusLabel = statusLabel(project.status);
+  const isOverdue = countdownText.toLowerCase().includes("overdue");
   const walletValue = walletAvailable === null ? "—" : formatNaira(walletAvailable);
   const maskedWalletValue = walletAvailable === null ? "—" : "••••••";
 
@@ -121,7 +138,7 @@ export function ClientDashboardHero({
   return (
     <section className="grid gap-5">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.92fr)] xl:items-stretch">
-        <div className="rounded-[24px] border border-transparent bg-white/0 px-0 py-2">
+        <div className="px-0 py-2">
           <Greeting userName={userName} />
 
           <h1 className="mt-5 max-w-[560px] text-[34px] font-semibold leading-[1.08] tracking-[-0.065em] text-slate-950 sm:text-[42px] lg:text-[48px]">
@@ -145,7 +162,7 @@ export function ClientDashboardHero({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
           <div className="grid gap-5 md:grid-cols-[minmax(0,0.9fr)_1px_minmax(0,1fr)] md:items-stretch">
             <div className="min-w-0">
               <div className="flex items-center justify-between gap-3">
@@ -156,11 +173,11 @@ export function ClientDashboardHero({
                 <button
                   type="button"
                   onClick={() => setShowBalance((value) => !value)}
-                  className="grid h-8 w-8 place-items-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0064E0]"
                   aria-label={showBalance ? "Hide wallet balance" : "Show wallet balance"}
                   title={showBalance ? "Hide balance" : "Show balance"}
                 >
-                  {showBalance ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
 
@@ -220,7 +237,7 @@ export function ClientDashboardHero({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.035)]">
+      <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
         <div className="grid divide-y divide-slate-200 lg:grid-cols-[1fr_1fr_1.2fr_1.05fr_1.25fr] lg:divide-x lg:divide-y-0">
           <SummaryMetric
             icon={<CalendarDays size={18} />}
@@ -232,9 +249,10 @@ export function ClientDashboardHero({
           <SummaryMetric
             icon={<TimerReset size={18} />}
             label="Countdown"
-            value={countdownText}
-            helper={countdownText.toLowerCase().includes("overdue") ? "Overdue" : undefined}
+            value={countdownText.replace("Overdue", "").trim()}
+            helper={isOverdue ? "Overdue" : undefined}
             tone="blue"
+            valueClassName={isOverdue ? "text-slate-950" : "text-slate-950"}
           />
 
           <SummaryMetric
@@ -245,15 +263,20 @@ export function ClientDashboardHero({
           />
 
           <SummaryMetric
-            icon={<FolderKanban size={18} />}
+            icon={<ShieldCheck size={18} />}
             label="Project Status"
-            value={statusLabel(project.status)}
-            helper={statusLabel(project.status).includes("Deposit") ? "Awaiting Deposit" : undefined}
-            tone={statusTone === "orange" ? "orange" : "blue"}
+            value={projectStatusLabel}
+            helper={
+              projectStatusLabel.toLowerCase().includes("deposit")
+                ? "Awaiting Deposit"
+                : undefined
+            }
+            tone="orange"
+            valueClassName="text-orange-700"
           />
 
           <SummaryMetric
-            icon={<FolderKanban size={18} />}
+            icon={<FileText size={18} />}
             label="Project Reference"
             value={project.projectCode}
             tone="blue"
