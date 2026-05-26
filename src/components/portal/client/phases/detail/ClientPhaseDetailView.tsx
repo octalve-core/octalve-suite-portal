@@ -129,7 +129,7 @@ export function ClientPhaseDetailView({ phaseId }: { phaseId: string }) {
           assignee={assignee}
         />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_460px]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_560px] 2xl:grid-cols-[minmax(0,1fr)_620px]">
           <div className="grid gap-5">
             <ClientPhaseDeliverablesPanel phase={activePhase} />
             <ClientPhaseApprovalHistory phase={activePhase} />
