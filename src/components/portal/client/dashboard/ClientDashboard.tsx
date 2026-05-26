@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Project } from "@/lib/types";
+
 import { api } from "@/lib/api";
+import type { Project } from "@/lib/types";
 import { useApp } from "../../AppContext";
 import { ClientManualPaymentModal } from "../shared/ClientManualPaymentModal";
 import { ClientReviewModal } from "../shared/ClientReviewModal";
@@ -78,10 +79,17 @@ export function ClientDashboard() {
     ),
   );
 
-  const recentMessages = project.phases
-    .flatMap((phase) => phase.messages)
-    .slice(-4)
-    .reverse();
+  const recentMessages = useMemo(
+    () =>
+      project.phases
+        .flatMap((phase) => phase.messages)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
+        .slice(0, 4),
+    [project.phases],
+  );
 
   const outstandingPayments = project.payments.filter(
     (payment) => payment.status === "UNPAID",
@@ -92,12 +100,13 @@ export function ClientDashboard() {
       <div className="grid gap-5">
         <ClientDashboardHero
           project={project}
-          walletAvailable={walletAvailable}
           userName={
+            currentUser?.company ||
             currentUser?.name ||
             currentUser?.email?.split("@")[0] ||
-            "there"
+            "Client"
           }
+          walletAvailable={walletAvailable}
         />
 
         <ClientDashboardStats
@@ -109,55 +118,45 @@ export function ClientDashboard() {
           outstandingPayments={outstandingPayments}
         />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          {block ? (
-            <ClientPaymentNotice
-              block={block}
-              onPay={(selectedPaymentId) => setPaymentId(selectedPaymentId)}
-            />
-          ) : (
-            <section className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-5">
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-emerald-900">
-                No payment required
-              </h2>
-              <p className="mt-1 text-sm font-medium leading-6 text-emerald-700">
-                There is no immediate payment action required for this project.
-              </p>
-            </section>
-          )}
+        {block ? (
+          <ClientPaymentNotice
+            block={block}
+            onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
+          />
+        ) : null}
 
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <ClientActivePhaseCard phase={activePhase} />
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <ClientPhaseTimeline phases={project.phases} />
-          <ClientDeliverablesPanel links={links} />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <ClientDeliverablesPanel links={links} />
           <ClientRecentActivity messages={recentMessages} />
+        </section>
 
-          {project.status === "COMPLETED" ? (
-            <section className="rounded-[18px] border border-emerald-200 bg-emerald-50 p-5">
-              <strong className="block text-sm font-semibold text-emerald-800">
-                Leave a project review
-              </strong>
-              <p className="mt-1 text-sm font-medium leading-6 text-emerald-700">
-                This project is completed. Share your feedback and help us improve future delivery.
-              </p>
+        {project.status === "COMPLETED" ? (
+          <section className="rounded-[26px] border border-emerald-200 bg-emerald-50 p-5 shadow-[0_16px_38px_rgba(41,190,62,0.08)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold tracking-[-0.04em] text-emerald-950">
+                  Project completed
+                </h2>
+                <p className="mt-1 text-sm font-medium leading-6 text-emerald-800">
+                  Share your feedback so we can improve future Octalve delivery experiences.
+                </p>
+              </div>
 
               <button
                 type="button"
                 onClick={() => setReviewProjectId(project.id)}
-                className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-emerald-700 px-5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700"
               >
                 Leave Review
               </button>
-            </section>
-          ) : (
-            <div className="hidden xl:block" />
-          )}
-        </section>
+            </div>
+          </section>
+        ) : null}
       </div>
 
       {reviewProjectId ? (
