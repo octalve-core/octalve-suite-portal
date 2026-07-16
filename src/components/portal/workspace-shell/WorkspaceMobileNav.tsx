@@ -124,7 +124,10 @@ export function WorkspaceMobileNav({
 
               <button
                 type="button"
-                onClick={onLogout}
+                onClick={() => {
+                  onClose();
+                  onLogout();
+                }}
                 className="col-span-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700"
               >
                 <LogOut size={17} />

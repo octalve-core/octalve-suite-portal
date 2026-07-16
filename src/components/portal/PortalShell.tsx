@@ -13,6 +13,7 @@ import { WorkspaceTopbar } from "./workspace-shell/WorkspaceTopbar";
 import {
   getCreateAction,
   navForRole,
+  roleHome,
 } from "./workspace-shell/workspace-shell-utils";
 import type { WorkspaceCountState } from "./workspace-shell/workspace-shell-types";
 
@@ -106,6 +107,12 @@ export function PortalShell({
   const pendingTotal = counts.approvals + counts.requests;
 
   function isActiveHref(href: string) {
+    const homeHref = roleHome(role);
+
+    if (href === homeHref) {
+      return pathname === href;
+    }
+
     return pathname === href || pathname.startsWith(`${href}/`);
   }
   const shouldHoldProtectedShell =
