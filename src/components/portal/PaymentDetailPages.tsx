@@ -119,7 +119,7 @@ function StatusChip({ status }: { status: PaymentStatus }) {
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold",
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
         STATUS_CHIP_CLASSES[status],
       ].join(" ")}
     >
@@ -146,10 +146,10 @@ function DetailBlock({
           </span>
         ) : null}
         <div className="min-w-0">
-          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
             {label}
           </span>
-          <div className="mt-1 text-sm font-semibold leading-6 text-slate-900">
+          <div className="mt-1 text-sm font-medium leading-6 text-slate-700">
             {value}
           </div>
         </div>
@@ -175,7 +175,7 @@ function CopyInlineValue({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-left text-sm font-bold text-slate-900 transition hover:border-blue-200 hover:text-[#0064E0]"
+      className="inline-flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
       title="Copy"
     >
       <span className="truncate">{value}</span>
@@ -198,24 +198,24 @@ function PaymentHero({
     <>
       <Link
         href={backHref}
-        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#0064E0]"
+        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0064E0]"
       >
         <ArrowLeft size={17} />
         Back to Payments
       </Link>
 
-      <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="bg-slate-950 p-6 text-white sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusChip status={payment.status} />
-                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-white">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
                   {getPackageTitle(project.packageType)}
                 </span>
               </div>
 
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.06em] sm:text-5xl">
+              <h1 className="mt-4 text-[32px] font-medium tracking-[-0.055em] sm:text-[46px]">
                 {paymentTypeLabel(payment.type)}
               </h1>
 
@@ -225,10 +225,10 @@ function PaymentHero({
             </div>
 
             <div className="grid h-20 min-w-20 place-items-center rounded-3xl bg-white/10 px-5 text-right ring-1 ring-white/15">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/55">
                 Amount
               </span>
-              <strong className="text-xl font-semibold tracking-[-0.04em]">
+              <strong className="text-xl font-medium tracking-[-0.035em]">
                 {formatMoney(payment.amount)}
               </strong>
             </div>
@@ -244,17 +244,17 @@ function NotFound({ backHref }: { backHref: string }) {
     <div className="mx-auto w-full max-w-295 px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href={backHref}
-        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#0064E0]"
+        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0064E0]"
       >
         <ArrowLeft size={17} />
         Back to Payments
       </Link>
 
-      <Card className="mt-6 border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <Card className="mt-6 border-slate-200 bg-white p-8 text-center shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-500">
           <XCircle size={24} />
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tighter text-slate-950">
+        <h1 className="mt-4 text-2xl font-medium tracking-[-0.04em] text-slate-900">
           Payment not found
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -333,13 +333,13 @@ function BankDetails({ payment }: { payment: ProjectPayment }) {
   const bank = resolvePaymentBankDetails(payment);
 
   return (
-    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
       <div className="flex items-center gap-3">
         <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
           <Landmark size={20} />
         </span>
         <div>
-          <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
             Bank transfer details
           </h2>
           <p className="text-sm font-medium text-slate-500">
@@ -436,13 +436,13 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
   if (payment.status !== "UNPAID") return null;
 
   return (
-    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex items-center gap-3">
         <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
           <CreditCard size={20} />
         </span>
         <div>
-          <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
             Complete your payment
           </h2>
           <p className="text-sm font-medium text-slate-500">
@@ -452,20 +452,20 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
       </div>
 
       {notice ? (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
           {notice}
         </div>
       ) : null}
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold text-orange-700">
+        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-medium text-orange-700">
           {error}
         </div>
       ) : null}
 
       <div className="mt-5 grid gap-3">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
             Loading payment options...
           </div>
         ) : methods.length ? (
@@ -487,7 +487,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <strong className="block text-sm text-slate-950">
+                    <strong className="block text-sm font-medium text-slate-700">
                       {method.displayName}
                     </strong>
                     <span className="mt-1 block text-sm leading-6 text-slate-500">
@@ -504,7 +504,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={[
-                        "inline-flex rounded-full border px-3 py-1 text-xs font-bold",
+                        "inline-flex rounded-full border px-3 py-1 text-xs font-medium",
                         available
                           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                           : "border-slate-200 bg-white text-slate-500",
@@ -528,7 +528,7 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
             );
           })
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
             No payment options are available right now.
           </div>
         )}
@@ -571,10 +571,10 @@ function FinanceAuditMetric({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+      <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
-      <strong className="mt-1 block break-words text-sm font-semibold leading-6 text-slate-900">
+      <strong className="mt-1 block break-words text-sm font-medium leading-6 text-slate-700">
         {value || "Not set"}
       </strong>
     </div>
@@ -591,9 +591,9 @@ function AuditRecordCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <strong className="text-sm font-bold text-slate-950">{title}</strong>
+        <strong className="text-sm font-medium text-slate-700">{title}</strong>
         {status ? (
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
             {providerLabel(status)}
@@ -607,7 +607,7 @@ function AuditRecordCard({
 
 function EmptyAuditState({ label }: { label: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
       {label}
     </div>
   );
@@ -657,10 +657,10 @@ function AdminFinanceAuditPanel({
   const webhookEvents = audit?.webhookEvents ?? [];
 
   return (
-    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
             Finance Audit Trail
           </h2>
           <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
@@ -676,7 +676,7 @@ function AdminFinanceAuditPanel({
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           {error}
         </div>
       ) : null}
@@ -874,8 +874,8 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
         <main className="space-y-5">
           <PaymentDetailsGrid payment={payment} project={project} client={client} />
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
-            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
+            <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
               Payment Summary
             </h2>
 
@@ -886,7 +886,7 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
             </div>
 
             {payment.note ? (
-              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold leading-6 text-orange-800">
+              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-medium leading-6 text-orange-700">
                 Admin note: {payment.note}
               </div>
             ) : null}
@@ -896,13 +896,13 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
         <aside className="space-y-5">
           <BankDetails payment={payment} />
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
                 <CheckCircle2 size={20} />
               </span>
               <div>
-                <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+                <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
                   Admin action
                 </h2>
                 <p className="text-sm font-medium text-slate-500">
@@ -912,7 +912,7 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
             </div>
 
             <label className="mt-5 block">
-              <span className="text-sm font-bold text-slate-800">Rejection note</span>
+              <span className="text-sm font-medium text-slate-700">Rejection note</span>
               <Textarea
                 value={rejectNote}
                 disabled={!canReview}
@@ -923,7 +923,7 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
             </label>
 
             {error ? (
-              <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
                 <AlertCircle size={18} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -951,14 +951,14 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
                 </Button>
               </div>
             ) : (
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
                 No admin action is required for this payment status.
               </div>
             )}
 
             <Link
               href={`/admin/projects/${project.id}`}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0]"
             >
               Open Project
             </Link>
@@ -1019,12 +1019,12 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
         <main className="space-y-5">
           <PaymentDetailsGrid payment={payment} project={project} />
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
-            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
+            <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
               Payment Instructions
             </h2>
 
-            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold leading-7 text-slate-700">
+            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-medium leading-7 text-slate-600">
               Make your transfer with the bank details provided. Use the payment reference shown on this page, then click “I have paid” so Octalve can verify the transfer.
             </div>
 
@@ -1035,7 +1035,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
             </div>
 
             {payment.note ? (
-              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-semibold leading-6 text-orange-800">
+              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-medium leading-6 text-orange-700">
                 Note: {payment.note}
               </div>
             ) : null}
@@ -1046,13 +1046,13 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
           <ClientPaymentMethodsCard payment={payment} />
           <BankDetails payment={payment} />
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
                 <WalletCards size={20} />
               </span>
               <div>
-                <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+                <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
                   Payment action
                 </h2>
                 <p className="text-sm font-medium text-slate-500">
@@ -1062,7 +1062,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
             </div>
 
             {error ? (
-              <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
                 <AlertCircle size={18} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -1079,7 +1079,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
                 I have paid
               </Button>
             ) : (
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-500">
                 {payment.status === "PENDING_CONFIRMATION"
                   ? "Your payment has been submitted and is awaiting admin confirmation."
                   : payment.status === "CONFIRMED"
@@ -1090,7 +1090,7 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
 
             <Link
               href={`/client/projects/${project.id}`}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0]"
             >
               Open Project
             </Link>

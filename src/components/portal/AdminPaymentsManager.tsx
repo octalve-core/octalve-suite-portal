@@ -85,7 +85,7 @@ function StatusChip({ status }: { status: PaymentStatus }) {
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold",
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
         STATUS_CHIP_CLASSES[status],
       ].join(" ")}
     >
@@ -136,13 +136,13 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex items-center gap-4">
         <span className={["grid h-12 w-12 place-items-center rounded-2xl ring-1", tone].join(" ")}>
           {icon}
         </span>
         <div className="min-w-0">
-          <strong className="block text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+          <strong className="block text-[22px] font-medium tracking-[-0.04em] text-slate-700">
             {value}
           </strong>
           <span className="block text-sm font-medium text-slate-500">{label}</span>
@@ -205,16 +205,16 @@ export function AdminPaymentsManager() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
-      <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-slate-50 p-6 sm:p-8">
           <div className="absolute right-[-80px] top-[-110px] h-64 w-64 rounded-full bg-[#0064E0]/10 blur-2xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="text-xs font-bold uppercase tracking-[0.34em] text-[#0064E0]">
+              <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#0064E0]">
                 Finance Control
               </span>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-5xl">
+              <h1 className="mt-4 text-[34px] font-medium tracking-[-0.055em] text-slate-900 sm:text-[46px]">
                 Payments
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-slate-600 sm:text-[15px]">
@@ -261,11 +261,11 @@ export function AdminPaymentsManager() {
         />
       </section>
 
-      <section className="mt-6 rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="mt-6 rounded-[28px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="border-b border-slate-200 p-5 sm:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+              <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
                 Payment Queue
               </h2>
               <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -331,7 +331,7 @@ export function AdminPaymentsManager() {
                 <Link
                   key={payment.id}
                   href={`/admin/payments/${payment.id}`}
-                  className="group rounded-[24px] border border-slate-200 bg-white p-5 text-left shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_18px_45px_rgba(0,100,224,0.10)]"
+                  className="group rounded-[24px] border border-slate-200 bg-white p-5 text-left shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_12px_30px_rgba(0,100,224,0.08)]"
                 >
                   <div className="flex items-start gap-4">
                     <span
@@ -346,7 +346,7 @@ export function AdminPaymentsManager() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h3 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+                          <h3 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
                             {paymentTypeLabel(payment.type)}
                           </h3>
                           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -359,41 +359,41 @@ export function AdminPaymentsManager() {
 
                       <div className="mt-4 grid gap-3 sm:grid-cols-4">
                         <div>
-                          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                             Amount
                           </span>
-                          <strong className="mt-1 block truncate text-sm text-slate-800">
+                          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
                             {formatMoney(payment.amount)}
                           </strong>
                         </div>
                         <div>
-                          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                             Package
                           </span>
-                          <strong className="mt-1 block truncate text-sm text-slate-800">
+                          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
                             {getPackageTitle(project.packageType)}
                           </strong>
                         </div>
                         <div>
-                          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                             Reference
                           </span>
-                          <strong className="mt-1 block truncate text-sm text-slate-800">
+                          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
                             {payment.reference}
                           </strong>
                         </div>
                         <div>
-                          <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                             Confirmed
                           </span>
-                          <strong className="mt-1 block truncate text-sm text-slate-800">
+                          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
                             {formatDate(payment.confirmedAt)}
                           </strong>
                         </div>
                       </div>
 
                       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-                        <span className="text-sm font-bold text-[#0064E0]">
+                        <span className="text-sm font-medium text-[#0064E0]">
                           {payment.status === "PENDING_CONFIRMATION" ? "Review payment" : "View payment"}
                         </span>
                         <ArrowRight
@@ -411,7 +411,7 @@ export function AdminPaymentsManager() {
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
                 <WalletCards size={24} />
               </div>
-              <h3 className="mt-4 text-lg font-semibold tracking-[-0.04em] text-slate-950">
+              <h3 className="mt-4 text-lg font-medium tracking-[-0.035em] text-slate-800">
                 No matching payments
               </h3>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">

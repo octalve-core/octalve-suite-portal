@@ -70,7 +70,7 @@ function CopyInlineValue({ value }: { value: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-left text-sm font-bold text-slate-900 transition hover:border-blue-200 hover:text-[#0064E0]"
+      className="inline-flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-left text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
       title="Copy"
     >
       <span className="truncate">{value}</span>
@@ -101,10 +101,10 @@ function DetailMetric({
         ) : null}
 
         <div className="min-w-0">
-          <span className="block text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
             {label}
           </span>
-          <strong className="mt-1 block break-words text-sm font-semibold leading-6 text-slate-900">
+          <strong className="mt-1 block break-words text-sm font-medium leading-6 text-slate-700">
             {value || "Not set"}
           </strong>
         </div>
@@ -123,9 +123,9 @@ function AuditRecordCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <strong className="text-sm font-bold text-slate-950">{title}</strong>
+        <strong className="text-sm font-medium text-slate-700">{title}</strong>
         {status ? <Badge className={statusTone(status)}>{providerLabel(status)}</Badge> : null}
       </div>
 
@@ -136,7 +136,7 @@ function AuditRecordCard({
 
 function EmptyAuditState({ label }: { label: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-500">
       {label}
     </div>
   );
@@ -177,7 +177,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
     return (
       <div className="mx-auto w-full max-w-330 px-4 py-6 sm:px-6 lg:px-8">
         <Card className="grid min-h-90 place-items-center border-slate-200 bg-white p-8">
-          <div className="inline-flex items-center gap-3 text-sm font-bold text-slate-500">
+          <div className="inline-flex items-center gap-3 text-sm font-medium text-slate-500">
             <Spinner size={20} />
             Loading top-up audit...
           </div>
@@ -189,15 +189,15 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
   if (!audit) {
     return (
       <div className="mx-auto w-full max-w-330 px-4 py-6 sm:px-6 lg:px-8">
-        <Link href="/admin/wallet" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#0064E0]">
+        <Link href="/admin/wallet" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0064E0]">
           <ArrowLeft size={17} />
           Back to Wallet
         </Link>
 
         <Card className="mt-6 border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto text-red-500" size={28} />
-          <h1 className="mt-3 text-xl font-semibold text-red-800">Top-up audit unavailable</h1>
-          <p className="mt-2 text-sm font-semibold text-red-700">{error || "The requested wallet top-up could not be loaded."}</p>
+          <h1 className="mt-3 text-xl font-medium text-red-800">Top-up audit unavailable</h1>
+          <p className="mt-2 text-sm font-medium text-red-700">{error || "The requested wallet top-up could not be loaded."}</p>
         </Card>
       </div>
     );
@@ -207,23 +207,23 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
 
   return (
     <div className="mx-auto w-full max-w-330 px-4 py-6 sm:px-6 lg:px-8">
-      <Link href="/admin/wallet" className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-[#0064E0]">
+      <Link href="/admin/wallet" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0064E0]">
         <ArrowLeft size={17} />
         Back to Wallet
       </Link>
 
-      <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="mt-5 overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="bg-slate-950 p-6 text-white sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={statusTone(topUp.status)}>{providerLabel(topUp.status)}</Badge>
-                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-white">
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
                   {providerLabel(topUp.provider)}
                 </span>
               </div>
 
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.06em] sm:text-5xl">
+              <h1 className="mt-4 text-[32px] font-medium tracking-[-0.055em] sm:text-[46px]">
                 Wallet Top-up Audit
               </h1>
 
@@ -233,10 +233,10 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
             </div>
 
             <div className="grid h-20 min-w-20 place-items-center rounded-3xl bg-white/10 px-5 text-right ring-1 ring-white/15">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/55">
                 Amount
               </span>
-              <strong className="text-xl font-semibold tracking-[-0.04em]">
+              <strong className="text-xl font-medium tracking-[-0.035em]">
                 {formatNaira(topUp.amount)}
               </strong>
             </div>
@@ -245,7 +245,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
       </section>
 
       {error ? (
-        <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+        <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -253,10 +253,10 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <main className="space-y-5">
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+                <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
                   Top-up Details
                 </h2>
                 <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -287,15 +287,15 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
             </div>
 
             {topUp.failureReason ? (
-              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium leading-6 text-red-700">
                 A gateway issue was recorded for this top-up. Review the provider dashboard or secure server logs for detailed diagnostics.
               </div>
             ) : null}
 
           </Card>
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
-            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
+            <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
               Wallet Ledger Entries
             </h2>
 
@@ -321,8 +321,8 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
             </div>
           </Card>
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
-            <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
+            <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
               Webhook Events
             </h2>
 
@@ -346,8 +346,8 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
         </main>
 
         <aside className="space-y-5">
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
-            <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
+            <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
               Audit Summary
             </h2>
 
@@ -359,8 +359,8 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
             </div>
           </Card>
 
-          <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
-            <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
+            <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
               Timeline
             </h2>
 
@@ -368,10 +368,10 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
               {timeline.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <strong className="text-sm font-bold text-slate-950">{item.label}</strong>
+                    <strong className="text-sm font-medium text-slate-700">{item.label}</strong>
                     <Badge className={statusTone(item.status)}>{providerLabel(item.status)}</Badge>
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                  <p className="mt-1 text-sm font-medium text-slate-500">
                     {formatDateTime(item.value)}
                   </p>
                 </div>
@@ -379,7 +379,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
             </div>
           </Card>
 
-          <Card className="border-blue-100 bg-blue-50 p-5 text-sm font-semibold leading-7 text-slate-700">
+          <Card className="border-blue-100 bg-blue-50 p-5 text-sm font-medium leading-7 text-slate-600">
             This page is read-only. Manual confirmation or retry controls are intentionally not enabled until a stronger support control policy is designed.
           </Card>
         </aside>

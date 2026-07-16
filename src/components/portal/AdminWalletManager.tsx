@@ -84,11 +84,11 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+    <Card className="border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <span className="text-sm font-bold text-slate-500">{label}</span>
-          <strong className="mt-3 block text-3xl font-semibold tracking-[-0.055em] text-slate-950">
+          <span className="text-sm font-medium text-slate-500">{label}</span>
+          <strong className="mt-3 block text-[28px] font-medium tracking-[-0.045em] text-slate-700">
             {value}
           </strong>
           <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{helper}</p>
@@ -110,7 +110,7 @@ function ClientWalletCard({
     <Card className="border-slate-200 bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <h3 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <h3 className="text-lg font-medium tracking-[-0.035em] text-slate-800">
             {client.user.name}
           </h3>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -120,7 +120,7 @@ function ClientWalletCard({
         </div>
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-right">
-          <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-emerald-700">
+          <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-emerald-700">
             Balance
           </span>
           <strong className="block text-lg font-semibold tracking-[-0.04em] text-emerald-800">
@@ -136,7 +136,7 @@ function ClientWalletCard({
         <MiniMetric label="Ledger Entries" value={client.ledgerEntryCount} />
       </div>
 
-      <div className="mt-4 border-t border-slate-100 pt-4 text-sm font-semibold text-slate-500">
+      <div className="mt-4 border-t border-slate-100 pt-4 text-sm font-medium text-slate-500">
         Last activity: {formatDateTime(client.lastActivityAt)}
       </div>
     </Card>
@@ -152,10 +152,10 @@ function MiniMetric({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-      <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+      <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
-      <strong className="mt-1 block truncate text-sm font-bold text-slate-900">
+      <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
         {value}
       </strong>
     </div>
@@ -164,11 +164,11 @@ function MiniMetric({
 
 function TopUpRow({ topUp }: { topUp: WalletTopUp & { user?: { name: string; email: string } | null } }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <strong className="text-sm font-bold text-slate-950">{topUp.reference}</strong>
+            <strong className="text-sm font-medium text-slate-700">{topUp.reference}</strong>
             <Badge className={statusTone(topUp.status)}>
               {STATUS_LABELS[topUp.status] ?? topUp.status}
             </Badge>
@@ -179,12 +179,12 @@ function TopUpRow({ topUp }: { topUp: WalletTopUp & { user?: { name: string; ema
         </div>
 
         <div className="flex flex-col items-start gap-2 lg:items-end">
-          <strong className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+          <strong className="text-lg font-medium tracking-[-0.035em] text-slate-800">
             {formatNaira(topUp.amount)}
           </strong>
           <Link
             href={`/admin/wallet/${topUp.id}`}
-            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0]"
           >
             Open Audit
             <ArrowRight size={14} />
@@ -207,7 +207,7 @@ function LedgerRow({
   entry: AdminWalletOverview["ledgerEntries"][number];
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_18px_rgba(15,23,42,0.03)]">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-50 text-slate-600 ring-1 ring-slate-200">
@@ -216,7 +216,7 @@ function LedgerRow({
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <strong className="text-sm font-bold text-slate-950">
+              <strong className="text-sm font-medium text-slate-700">
                 {entry.description || entry.reference}
               </strong>
               <Badge className={entry.direction === "IN" ? "badge-green" : "badge-slate"}>
@@ -231,8 +231,8 @@ function LedgerRow({
 
         <strong
           className={[
-            "text-lg font-semibold tracking-[-0.04em]",
-            entry.direction === "IN" ? "text-emerald-700" : "text-slate-950",
+            "text-lg font-medium tracking-[-0.035em]",
+            entry.direction === "IN" ? "text-emerald-700" : "text-slate-700",
           ].join(" ")}
         >
           {entry.direction === "IN" ? "+" : "-"}
@@ -357,7 +357,7 @@ export function AdminWalletManager() {
     return (
       <div className="mx-auto w-full max-w-375 px-4 py-6 sm:px-6 lg:px-8">
         <Card className="grid min-h-90 place-items-center border-slate-200 bg-white p-8">
-          <div className="inline-flex items-center gap-3 text-sm font-bold text-slate-500">
+          <div className="inline-flex items-center gap-3 text-sm font-medium text-slate-500">
             <Spinner size={20} />
             Loading admin wallet...
           </div>
@@ -368,16 +368,16 @@ export function AdminWalletManager() {
 
   return (
     <div className="mx-auto w-full max-w-375 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="overflow-hidden rounded-[30px] border border-blue-100 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#001f4f] to-[#0064E0] p-6 text-white sm:p-8">
           <div className="absolute right-[-90px] top-[-110px] h-72 w-72 rounded-full bg-white/10 blur-2xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-white/80">
+              <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white/75">
                 Finance Control
               </span>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.06em] sm:text-5xl">
+              <h1 className="mt-4 text-[34px] font-medium tracking-[-0.055em] sm:text-[46px]">
                 Admin Wallet
               </h1>
               <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-white/75 sm:text-[15px]">
@@ -386,10 +386,10 @@ export function AdminWalletManager() {
             </div>
 
             <div className="rounded-[26px] border border-white/15 bg-white/10 p-5 text-left backdrop-blur sm:min-w-80">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/55">
                 Total Wallet Balance
               </span>
-              <strong className="mt-2 block text-4xl font-semibold tracking-[-0.065em]">
+              <strong className="mt-2 block text-[34px] font-medium tracking-[-0.055em]">
                 {formatNaira(overview?.summary.totalBalance ?? 0)}
               </strong>
               <p className="mt-2 text-sm font-medium text-white/65">
@@ -401,7 +401,7 @@ export function AdminWalletManager() {
       </section>
 
       {error ? (
-        <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+        <div className="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -434,11 +434,11 @@ export function AdminWalletManager() {
         />
       </section>
 
-      <section className="mt-6 rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="mt-6 rounded-[28px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.035)]">
         <div className="border-b border-slate-200 p-5 sm:p-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+              <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
                 Wallet Visibility
               </h2>
               <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -507,7 +507,7 @@ export function AdminWalletManager() {
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={[
-                  "rounded-full border px-4 py-2 text-sm font-bold transition",
+                  "rounded-full border px-4 py-2 text-sm font-medium transition",
                   activeTab === tab
                     ? "border-[#0064E0] bg-[#0064E0] text-white"
                     : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-[#0064E0]",
@@ -573,7 +573,7 @@ export function AdminWalletManager() {
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+          className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0]"
         >
           Open Payments
           <ArrowRight size={16} />
