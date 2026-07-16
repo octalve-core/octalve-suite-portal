@@ -1,23 +1,35 @@
+"use client";
+
+import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Download,
   Eye,
+  EyeOff,
   LockKeyhole,
   Plus,
+  ShieldCheck,
 } from "lucide-react";
 
 import type { WalletSummary } from "@/lib/types";
 import { formatWalletMoney } from "./client-wallet-utils";
 
+function safeMoney(value: number, visible: boolean) {
+  return visible ? formatWalletMoney(value) : "••••••";
+}
+
 function HeroMetric({
   label,
   value,
   icon,
+  visible,
 }: {
   label: string;
   value: number;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  visible: boolean;
 }) {
   return (
     <div className="flex items-center gap-4 border-t border-white/20 pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
@@ -25,12 +37,10 @@ function HeroMetric({
         {icon}
       </span>
 
-      <div>
-        <span className="block text-xs font-bold text-white/70">
-          {label}
-        </span>
-        <strong className="mt-1 block text-sm font-semibold text-white">
-          {formatWalletMoney(value)}
+      <div className="min-w-0">
+        <span className="block text-xs font-bold text-white/70">{label}</span>
+        <strong className="mt-1 block truncate text-sm font-semibold text-white">
+          {safeMoney(value, visible)}
         </strong>
       </div>
     </div>
@@ -46,6 +56,8 @@ export function ClientWalletHero({
   userName: string;
   onFundWallet: () => void;
 }) {
+  const [showBalance, setShowBalance] = useState(false);
+
   return (
     <section className="overflow-hidden rounded-[24px] bg-[#0064E0] text-white shadow-[0_20px_50px_rgba(0,100,224,0.22)]">
       <div className="relative p-6 sm:p-8">
@@ -55,18 +67,30 @@ export function ClientWalletHero({
 
         <div className="relative">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div>
+            <div className="min-w-0">
               <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/85">
+                <ShieldCheck size={16} />
                 <span>Available Balance</span>
-                <Eye size={16} />
               </div>
 
-              <strong className="mt-4 block text-[40px] font-semibold leading-none tracking-[-0.07em] sm:text-[52px]">
-                {formatWalletMoney(wallet?.availableBalance ?? 0)}
-              </strong>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <strong className="block text-[40px] font-semibold leading-none tracking-[-0.07em] sm:text-[52px]">
+                  {safeMoney(wallet?.availableBalance ?? 0, showBalance)}
+                </strong>
 
-              <p className="mt-4 text-sm font-medium text-white/85">
-                Ready to use on projects and payments.
+                <button
+                  type="button"
+                  onClick={() => setShowBalance((value) => !value)}
+                  aria-pressed={showBalance}
+                  aria-label={showBalance ? "Hide wallet balance" : "Show wallet balance"}
+                  className="grid h-11 w-11 place-items-center rounded-2xl border border-white/20 bg-white/10 text-white transition hover:bg-white/15"
+                >
+                  {showBalance ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+
+              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-white/85">
+                Ready to use on projects and payments. Balance remains hidden by default on shared screens.
               </p>
             </div>
 
@@ -95,16 +119,19 @@ export function ClientWalletHero({
             <HeroMetric
               label="Held / Reserved"
               value={wallet?.heldBalance ?? 0}
+              visible={showBalance}
               icon={<LockKeyhole size={19} />}
             />
             <HeroMetric
               label="Total Credited"
               value={wallet?.totalCredited ?? 0}
+              visible={showBalance}
               icon={<ArrowDownLeft size={20} />}
             />
             <HeroMetric
               label="Project Spend"
               value={wallet?.totalSpent ?? 0}
+              visible={showBalance}
               icon={<ArrowUpRight size={20} />}
             />
           </div>

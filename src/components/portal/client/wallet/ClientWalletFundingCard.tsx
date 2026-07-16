@@ -9,6 +9,7 @@ import {
   getWalletFundingProviders,
   isSafeCheckoutUrl,
   parseFundingAmount,
+  safePublicWalletError,
   sanitizeFundingAmountInput,
   validateFundingAmount,
   type WalletFundingProvider,
@@ -44,15 +45,11 @@ export function ClientWalletFundingCard({
 
         setProviders(enabledProviders);
         setProvider((current) => current || enabledProviders[0]?.provider || "");
-      } catch (err) {
+      } catch {
         if (!mounted) return;
 
         setProviders([]);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load wallet funding providers.",
-        );
+        setError("Unable to load wallet funding options safely. Please try again later.");
       } finally {
         if (mounted) setProviderLoading(false);
       }
@@ -92,7 +89,7 @@ export function ClientWalletFundingCard({
       const response = await api.wallet.initializeTopUp(numericAmount, provider);
 
       if (response.authorizationUrl) {
-        if (!isSafeCheckoutUrl(response.authorizationUrl)) {
+        if (!isSafeCheckoutUrl(response.authorizationUrl, provider)) {
           setError("Checkout link could not be opened securely. Please try another provider.");
           return;
         }
@@ -103,12 +100,8 @@ export function ClientWalletFundingCard({
 
       setNotice(response.message || "Wallet funding request created.");
       await onSuccess();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to start wallet funding. Please try again.",
-      );
+    } catch {
+      setError("Unable to start wallet funding safely. Please try again or use another provider.");
     } finally {
       setLoading(false);
     }
@@ -208,7 +201,7 @@ export function ClientWalletFundingCard({
 
         {selectedProvider ? (
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-medium leading-6 text-blue-900">
-            Checkout will continue through {selectedProvider.displayName}. Wallet balance is credited only after server-side verification.
+            Checkout will continue through {selectedProvider.displayName}. Wallet balance is credited only after server-side verification. No card, OTP, or provider secret is stored in the browser.
           </div>
         ) : null}
 

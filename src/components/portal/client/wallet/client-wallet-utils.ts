@@ -95,12 +95,25 @@ export function signedWalletAmount(entry: WalletLedgerEntry) {
   return entry.direction === "IN" ? `+ ${amount}` : `- ${amount}`;
 }
 
-export function isSafeCheckoutUrl(value?: string) {
+export function isSafeCheckoutUrl(value?: string, provider?: string) {
   if (!value) return false;
 
   try {
     const url = new URL(value);
-    return url.protocol === "https:";
+    const hostname = url.hostname.toLowerCase();
+    const normalizedProvider = String(provider ?? "").trim().toUpperCase();
+
+    if (url.protocol !== "https:") return false;
+
+    if (normalizedProvider === "PAYSTACK") {
+      return hostname === "checkout.paystack.com" || hostname.endsWith(".paystack.com");
+    }
+
+    if (normalizedProvider === "FLUTTERWAVE") {
+      return hostname === "checkout.flutterwave.com" || hostname.endsWith(".flutterwave.com");
+    }
+
+    return false;
   } catch {
     return false;
   }
@@ -153,4 +166,54 @@ export function walletEntryActionHref(entry: WalletLedgerEntry) {
   if (entry.projectId) return `/client/projects/${entry.projectId}`;
 
   return "";
+}
+
+export function maskWalletReference(value?: string, visibleStart = 8, visibleEnd = 4) {
+  const cleaned = String(value ?? "").trim();
+
+  if (!cleaned) return "Not available";
+  if (cleaned.length <= visibleStart + visibleEnd + 3) return cleaned;
+
+  return `${cleaned.slice(0, visibleStart)}...${cleaned.slice(-visibleEnd)}`;
+}
+
+export function safePublicWalletError(
+  value: unknown,
+  fallback = "Wallet service is temporarily unavailable. Please try again or contact support.",
+) {
+  const message =
+    value instanceof Error
+      ? value.message
+      : typeof value === "string"
+        ? value
+        : "";
+
+  const cleaned = message.trim();
+
+  if (!cleaned) return fallback;
+  if (cleaned.length > 180) return fallback;
+
+  const unsafeFragments = [
+    "authorization",
+    "bearer",
+    "database",
+    "env",
+    "failed with status",
+    "idempotency",
+    "payload",
+    "prisma",
+    "provider request failed",
+    "secret",
+    "stack",
+    "token",
+    "webhook",
+  ];
+
+  const lower = cleaned.toLowerCase();
+
+  if (unsafeFragments.some((fragment) => lower.includes(fragment))) {
+    return fallback;
+  }
+
+  return cleaned;
 }

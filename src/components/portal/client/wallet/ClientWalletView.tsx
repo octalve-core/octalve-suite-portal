@@ -10,6 +10,7 @@ import { ClientWalletFundingCard } from "./ClientWalletFundingCard";
 import { ClientWalletHero } from "./ClientWalletHero";
 import { ClientWalletLedger } from "./ClientWalletLedger";
 import { ClientWalletTools } from "./ClientWalletTools";
+import { safePublicWalletError } from "./client-wallet-utils";
 
 export function ClientWalletView() {
   const { currentUser } = useApp();
@@ -31,8 +32,8 @@ export function ClientWalletView() {
     try {
       const data = await api.wallet.get();
       setWallet(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load wallet.");
+    } catch {
+      setError("Unable to load wallet safely. Please refresh or try again later.");
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -17,6 +17,7 @@ import {
 
 import { api } from "@/lib/api";
 import type { WalletTopUpVerifyResponse } from "@/lib/types";
+import { safePublicWalletError } from "./client/wallet/client-wallet-utils";
 
 type CallbackStatus = "VERIFYING" | "CONFIRMED" | "FAILED";
 
@@ -299,9 +300,10 @@ export function PaystackWalletTopUpCallbackPage({
 
         setStatus("FAILED");
         setMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to confirm wallet funding at this time. Please contact support if your account was debited.",
+          safePublicWalletError(
+            error,
+            "Unable to confirm wallet funding at this time. Please contact support if your account was debited.",
+          ),
         );
       }
     }
@@ -384,9 +386,10 @@ export function FlutterwaveWalletTopUpCallbackPage({
 
         setStatus("FAILED");
         setMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to confirm wallet funding at this time. Please contact support if your account was debited.",
+          safePublicWalletError(
+            error,
+            "Unable to confirm wallet funding at this time. Please contact support if your account was debited.",
+          ),
         );
       }
     }

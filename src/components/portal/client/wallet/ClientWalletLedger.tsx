@@ -19,6 +19,7 @@ import {
   entryTone,
   formatWalletDate,
   formatWalletTime,
+  maskWalletReference,
   normalizeEntryLabel,
   signedWalletAmount,
   walletEntryActionHref,
@@ -65,7 +66,7 @@ function WalletEntryCard({ entry }: { entry: WalletLedgerEntry }) {
                 {normalizeEntryLabel(String(entry.entryType))}
               </h3>
               <p className="mt-1 truncate text-xs font-semibold text-slate-500">
-                {entry.reference}
+                {maskWalletReference(entry.reference)}
               </p>
             </div>
 
@@ -232,7 +233,7 @@ export function ClientWalletLedger({
 
                       <td className="px-5 py-4">
                         <strong className="block max-w-[220px] truncate text-sm font-semibold text-slate-950">
-                          {entry.reference}
+                          {maskWalletReference(entry.reference)}
                         </strong>
                         <span className="mt-1 block max-w-[240px] truncate text-xs font-semibold text-slate-500">
                           {entry.description || "Wallet activity"}
