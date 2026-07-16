@@ -22,29 +22,16 @@ import {
   projectProgress,
 } from "./client-projects-utils";
 
-type MetricTone = "blue" | "orange" | "purple" | "cyan";
-
-function metricToneClass(tone: MetricTone) {
-  const tones: Record<MetricTone, string> = {
-    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
-    orange: "bg-orange-50 text-orange-700 ring-orange-100",
-    purple: "bg-violet-50 text-violet-700 ring-violet-100",
-    cyan: "bg-cyan-50 text-cyan-700 ring-cyan-100",
-  };
-
-  return tones[tone];
-}
-
 function MiniMetric({
   icon,
   label,
   value,
-  tone,
+  iconClassName,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  tone: MetricTone;
+  iconClassName: string;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
@@ -52,7 +39,7 @@ function MiniMetric({
         <span
           className={[
             "grid h-8 w-8 shrink-0 place-items-center rounded-xl ring-1",
-            metricToneClass(tone),
+            iconClassName,
           ].join(" ")}
         >
           {icon}
@@ -133,14 +120,14 @@ export function ClientProjectCard({
               icon={<CircleDot size={16} />}
               label="Current Phase"
               value={currentPhase?.title ?? "No phase available"}
-              tone="blue"
+              iconClassName="bg-blue-50 text-[#0064E0] ring-blue-100"
             />
 
             <MiniMetric
               icon={<CalendarDays size={16} />}
               label="Target Date"
               value={formatProjectDate(project.targetDate)}
-              tone="orange"
+              iconClassName="bg-orange-50 text-orange-700 ring-orange-100"
             />
 
             <MiniMetric
@@ -150,14 +137,14 @@ export function ClientProjectCard({
                 (total, phase) => total + phase.deliverables.length,
                 0,
               )}
-              tone="purple"
+              iconClassName="bg-violet-50 text-violet-700 ring-violet-100"
             />
 
             <MiniMetric
               icon={<Clock3 size={16} />}
               label="Last Updated"
               value={formatProjectDate(lastUpdated)}
-              tone="cyan"
+              iconClassName="bg-cyan-50 text-cyan-700 ring-cyan-100"
             />
           </div>
         </div>
