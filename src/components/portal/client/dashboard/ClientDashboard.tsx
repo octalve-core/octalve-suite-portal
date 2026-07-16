@@ -112,7 +112,7 @@ export function ClientDashboard() {
           walletAvailable={walletAvailable}
         />
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start">
+        <section className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_420px] 2xl:items-start">
           <div className="grid gap-5">
             <ClientDashboardStats
               progress={progress}
@@ -125,7 +125,7 @@ export function ClientDashboard() {
               onPay={(nextPaymentId) => setPaymentId(nextPaymentId)}
             />
 
-            <section className="grid gap-5 lg:grid-cols-2">
+            <section className="grid gap-5 xl:grid-cols-2">
               <ClientDeliverablesPanel
                 links={dashboardDeliverableLinks}
                 totalCount={deliverableLinks.length}

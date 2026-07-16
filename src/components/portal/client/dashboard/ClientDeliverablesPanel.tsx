@@ -43,7 +43,7 @@ export function ClientDeliverablesPanel({
                 key={item.id}
                 href={item.link ?? "#"}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="group rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-blue-200 hover:bg-blue-50"
               >
                 <div className="flex min-w-0 items-start gap-3">
@@ -52,12 +52,12 @@ export function ClientDeliverablesPanel({
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm font-semibold text-slate-950">
+                    <strong className="block break-words text-sm font-semibold leading-5 text-slate-950">
                       {item.name}
                     </strong>
 
                     {item.description ? (
-                      <p className="mt-1 line-clamp-2 text-xs font-medium leading-5 text-slate-500">
+                      <p className="mt-1 break-words text-xs font-medium leading-5 text-slate-500">
                         {item.description}
                       </p>
                     ) : (

@@ -44,8 +44,8 @@ function StatCard({
           {icon}
         </span>
 
-        <div className="min-w-0">
-          <span className="block truncate text-[11px] font-black tracking-[-0.01em] text-slate-500">
+        <div className="min-w-0 flex-1">
+          <span className="block break-words text-[11px] font-black leading-4 tracking-[-0.01em] text-slate-500">
             {label}
           </span>
 
@@ -53,7 +53,7 @@ function StatCard({
             {value}
           </strong>
 
-          <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-500">
+          <p className="mt-2 break-words text-[12px] font-semibold leading-4 text-slate-500">
             {helper}
           </p>
         </div>
@@ -87,7 +87,7 @@ export function ClientDashboardStats({
         Project Overview
       </h2>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <StatCard
           label="Progress"
           value={`${progress}%`}

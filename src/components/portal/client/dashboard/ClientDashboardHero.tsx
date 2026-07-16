@@ -77,7 +77,7 @@ function SummaryItem({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-4 px-4 py-4 lg:border-r lg:border-slate-200 last:lg:border-r-0">
+    <div className="flex min-w-0 items-start gap-3 px-4 py-4 lg:border-r lg:border-slate-200 last:lg:border-r-0">
       <IconBubble tone={tone}>{icon}</IconBubble>
 
       <div className="min-w-0 flex-1">
@@ -87,7 +87,7 @@ function SummaryItem({
 
         <strong
           className={[
-            "mt-1 block truncate text-base font-semibold",
+            "mt-1 block break-words text-base font-semibold leading-5",
             valueClassName,
           ].join(" ")}
         >
@@ -95,7 +95,7 @@ function SummaryItem({
         </strong>
 
         {helper ? (
-          <span className="mt-0.5 block truncate text-sm font-bold text-red-600">
+          <span className="mt-1 block break-words text-sm font-bold leading-5 text-red-600">
             {helper}
           </span>
         ) : null}
@@ -253,7 +253,7 @@ export function ClientDashboardHero({
       </div>
 
       <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
-        <div className="grid divide-y divide-slate-200 lg:grid-cols-[1fr_1fr_1.18fr_1.08fr_1.24fr] lg:divide-x lg:divide-y-0">
+        <div className="grid divide-y divide-slate-200 lg:grid-cols-2 lg:divide-x lg:divide-y-0 xl:grid-cols-[1fr_1fr_1.18fr_1.08fr_1.24fr]">
           <SummaryItem
             icon={<CalendarDays size={18} />}
             label="Target Date"
