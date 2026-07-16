@@ -10,7 +10,7 @@ export function ClientProjectNotesPanel({ project }: { project: Project }) {
         </span>
 
         <div>
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
             Project Notes
           </h2>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">

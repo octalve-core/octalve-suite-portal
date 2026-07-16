@@ -32,10 +32,10 @@ function PhaseStatCard({
         </span>
 
         <div className="min-w-0">
-          <span className="block text-sm font-semibold text-slate-500">
+          <span className="block text-sm font-medium text-slate-500">
             {label}
           </span>
-          <strong className="mt-1 block text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+          <strong className="mt-1 block text-[22px] font-medium tracking-[-0.04em] text-slate-700">
             {value}
           </strong>
         </div>

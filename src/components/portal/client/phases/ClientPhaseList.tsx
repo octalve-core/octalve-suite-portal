@@ -37,7 +37,7 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
           <Layers3 size={24} />
         </div>
-        <h3 className="mt-4 text-lg font-semibold tracking-[-0.04em] text-slate-950">
+        <h3 className="mt-4 text-lg font-medium tracking-[-0.035em] text-slate-900">
           No phases available
         </h3>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -52,7 +52,7 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1100px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-medium uppercase tracking-[0.09em] text-slate-400">
               <th className="w-[70px] px-5 py-4">#</th>
               <th className="px-5 py-4">Phase</th>
               <th className="px-5 py-4">Description</th>
@@ -101,7 +101,7 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
                         {iconForStatus(phase.status)}
                       </span>
 
-                      <strong className="block max-w-[220px] truncate text-sm font-semibold text-slate-950">
+                      <strong className="block max-w-[220px] truncate text-sm font-medium text-slate-700">
                         {phase.title}
                       </strong>
                     </div>
@@ -131,11 +131,11 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
                     </div>
                   </td>
 
-                  <td className="px-5 py-5 font-semibold text-slate-950">
+                  <td className="px-5 py-5 font-medium text-slate-700">
                     {phase.deliverables.length}
                   </td>
 
-                  <td className="px-5 py-5 font-semibold text-slate-950">
+                  <td className="px-5 py-5 font-medium text-slate-700">
                     {approved}
                   </td>
 

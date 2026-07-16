@@ -24,7 +24,7 @@ export function ClientModalShell({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-5 flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
             {title}
           </h2>
 

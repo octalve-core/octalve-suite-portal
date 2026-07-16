@@ -98,7 +98,7 @@ export function ClientPaymentList({
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
           <WalletCards size={24} />
         </div>
-        <h3 className="mt-4 text-lg font-semibold tracking-[-0.04em] text-slate-950">
+        <h3 className="mt-4 text-lg font-medium tracking-[-0.035em] text-slate-900">
           No matching payments
         </h3>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -121,7 +121,7 @@ export function ClientPaymentList({
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1040px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-slate-200 bg-slate-50/60 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+            <tr className="border-y border-slate-200 bg-slate-50/60 text-[11px] font-medium uppercase tracking-[0.09em] text-slate-400">
               <th className="px-4 py-4">Payment Type</th>
               <th className="px-4 py-4">Project</th>
               <th className="px-4 py-4">Amount</th>
@@ -153,29 +153,29 @@ export function ClientPaymentList({
                   </td>
 
                   <td className="px-4 py-4">
-                    <strong className="block max-w-[220px] truncate text-sm font-semibold text-slate-950">
+                    <strong className="block max-w-[220px] truncate text-sm font-medium text-slate-700">
                       {project.title}
                     </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                    <span className="mt-1 block text-xs font-medium text-slate-500">
                       {project.projectCode}
                     </span>
                   </td>
 
-                  <td className="px-4 py-4 font-semibold text-slate-950">
+                  <td className="px-4 py-4 font-medium text-slate-700">
                     {formatPaymentMoney(payment.amount)}
                   </td>
 
                   <td className="px-4 py-4">
-                    <span className="block max-w-[180px] truncate font-semibold text-slate-700">
+                    <span className="block max-w-[180px] truncate font-medium text-slate-600">
                       {payment.reference}
                     </span>
                   </td>
 
                   <td className="px-4 py-4">
-                    <strong className="block text-sm font-semibold text-slate-800">
+                    <strong className="block text-sm font-medium text-slate-700">
                       {formatPaymentDate(dateValue)}
                     </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                    <span className="mt-1 block text-xs font-medium text-slate-500">
                       {formatPaymentTime(dateValue)}
                     </span>
                   </td>
@@ -246,7 +246,7 @@ export function ClientPaymentList({
             <select
               value={pageSize}
               onChange={(event) => setPageSize(Number(event.target.value))}
-              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+              className="ml-3 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-500 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
               aria-label="Payments per page"
             >
               {PAGE_SIZE_OPTIONS.map((value) => (

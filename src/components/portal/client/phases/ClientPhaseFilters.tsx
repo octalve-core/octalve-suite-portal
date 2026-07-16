@@ -32,7 +32,7 @@ export function ClientPhaseFilters({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search phase, project, description..."
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
           />
         </div>
       </label>
@@ -40,7 +40,7 @@ export function ClientPhaseFilters({
       <select
         value={statusFilter}
         onChange={(event) => setStatusFilter(event.target.value as PhaseStatusFilter)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="ALL">All Status</option>
         <option value="AWAITING_APPROVAL">Awaiting Approval</option>
@@ -54,7 +54,7 @@ export function ClientPhaseFilters({
       <select
         value={projectFilter}
         onChange={(event) => setProjectFilter(event.target.value)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="ACTIVE">Current active project</option>
         <option value="ALL">All Projects</option>

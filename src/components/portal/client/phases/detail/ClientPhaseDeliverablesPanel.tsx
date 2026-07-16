@@ -35,7 +35,7 @@ export function ClientPhaseDeliverablesPanel({
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
       <div>
-        <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
           Deliverables
         </h2>
         <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -91,7 +91,7 @@ export function ClientPhaseDeliverablesPanel({
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
             <FileText size={22} />
           </div>
-          <h3 className="mt-4 text-base font-semibold tracking-[-0.03em] text-slate-950">
+          <h3 className="mt-4 text-base font-medium tracking-[-0.025em] text-slate-800">
             No visible deliverables yet
           </h3>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">

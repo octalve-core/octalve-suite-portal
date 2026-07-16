@@ -41,7 +41,7 @@ export function ClientProjectFilters({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search projects..."
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
           />
         </div>
       </label>
@@ -49,7 +49,7 @@ export function ClientProjectFilters({
       <select
         value={statusFilter}
         onChange={(event) => setStatusFilter(event.target.value as ProjectStatusFilter)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="ALL">All Status</option>
         <option value="APPROVED_AWAITING_DEPOSIT">Awaiting Deposit</option>
@@ -64,7 +64,7 @@ export function ClientProjectFilters({
       <select
         value={packageFilter}
         onChange={(event) => setPackageFilter(event.target.value as ProjectPackageFilter)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="ALL">All Packages</option>
         {packageOptions.map((item) => (
@@ -77,7 +77,7 @@ export function ClientProjectFilters({
       <select
         value={sortBy}
         onChange={(event) => setSortBy(event.target.value as ProjectSortOption)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="NEWEST">Sort: Newest</option>
         <option value="OLDEST">Sort: Oldest</option>
@@ -88,7 +88,7 @@ export function ClientProjectFilters({
 
       <button
         type="button"
-        className="hidden min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0] lg:hidden"
+        className="hidden min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0] lg:hidden"
         title="Filters apply automatically"
       >
         <SlidersHorizontal size={16} />

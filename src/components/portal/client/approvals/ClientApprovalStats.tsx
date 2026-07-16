@@ -32,10 +32,10 @@ function ApprovalStatCard({
         </span>
 
         <div>
-          <strong className="block text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+          <strong className="block text-[28px] font-medium tracking-[-0.045em] text-slate-700">
             {value}
           </strong>
-          <span className="mt-1 block text-sm font-semibold text-slate-500">
+          <span className="mt-1 block text-sm font-medium text-slate-500">
             {label}
           </span>
         </div>

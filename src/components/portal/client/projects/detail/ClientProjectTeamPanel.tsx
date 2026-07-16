@@ -26,7 +26,7 @@ function TeamMemberRow({
         <strong className="block truncate text-sm text-slate-950">
           {name}
         </strong>
-        <span className="mt-1 block truncate text-xs font-semibold text-slate-500">
+        <span className="mt-1 block truncate text-xs font-medium text-slate-500">
           {label}{email ? ` - ${email}` : ""}
         </span>
       </div>
@@ -54,7 +54,7 @@ export function ClientProjectTeamPanel({
         </span>
 
         <div>
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
             Project Team
           </h2>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">

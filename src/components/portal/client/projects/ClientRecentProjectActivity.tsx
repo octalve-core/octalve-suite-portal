@@ -43,7 +43,7 @@ export function ClientRecentProjectActivity({
   return (
     <section className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="text-lg font-medium tracking-[-0.035em] text-slate-900">
           Recent Project Activity
         </h2>
 
@@ -77,7 +77,7 @@ export function ClientRecentProjectActivity({
               <strong className="block truncate text-sm text-slate-950">
                 {item.projectTitle}
               </strong>
-              <span className="mt-1 block truncate text-xs font-semibold text-slate-500">
+              <span className="mt-1 block truncate text-xs font-medium text-slate-500">
                 {item.label}
               </span>
               <span className="mt-1 block truncate text-xs font-semibold text-slate-400">

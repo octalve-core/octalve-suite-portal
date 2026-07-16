@@ -54,7 +54,7 @@ export function ClientReviewModal({
         </div>
 
         <label className="grid gap-2">
-          <span className="text-sm font-semibold text-slate-700">Rating</span>
+          <span className="text-sm font-medium text-slate-600">Rating</span>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3, 4, 5].map((item) => (
               <button
@@ -76,7 +76,7 @@ export function ClientReviewModal({
         </label>
 
         <label className="grid gap-2">
-          <span className="text-sm font-semibold text-slate-700">
+          <span className="text-sm font-medium text-slate-600">
             Review Comment
           </span>
           <textarea
@@ -115,7 +115,7 @@ export function ClientReviewModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancel
           </button>

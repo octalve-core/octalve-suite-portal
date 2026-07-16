@@ -26,7 +26,7 @@ function ContactMetric({
         </span>
 
         <div className="min-w-0">
-          <strong className="block text-base font-semibold tracking-[-0.035em] text-slate-950">
+          <strong className="block text-base font-medium tracking-[-0.03em] text-slate-800">
             {title}
           </strong>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">

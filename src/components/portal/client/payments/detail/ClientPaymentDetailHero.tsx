@@ -99,7 +99,7 @@ export function ClientPaymentDetailHero({
                   <span className="block text-xs font-black uppercase tracking-[0.18em] text-white/60">
                     Amount Due
                   </span>
-                  <strong className="mt-2 block text-3xl font-semibold tracking-[-0.055em]">
+                  <strong className="mt-2 block text-[28px] font-medium tracking-[-0.045em]">
                     {formatPaymentMoney(payment.amount)}
                   </strong>
                   <span className="mt-2 block text-xs font-semibold text-white/65">

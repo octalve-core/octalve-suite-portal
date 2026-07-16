@@ -42,10 +42,10 @@ function SupportMetric({
       </span>
 
       <div className="min-w-0">
-        <span className="block text-sm font-semibold text-slate-500">
+        <span className="block text-sm font-medium text-slate-500">
           {label}
         </span>
-        <strong className="mt-1 block truncate text-sm font-semibold text-slate-950">
+        <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
           {value}
         </strong>
       </div>

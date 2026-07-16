@@ -33,10 +33,10 @@ function MetricCard({
         </span>
 
         <div className="min-w-0">
-          <span className="block text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+          <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
             {label}
           </span>
-          <strong className="mt-1 block truncate text-sm font-semibold text-slate-950">
+          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
             {value}
           </strong>
         </div>

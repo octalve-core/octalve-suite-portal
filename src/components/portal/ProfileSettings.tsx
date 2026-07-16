@@ -118,7 +118,7 @@ function SettingsCard({
         </span>
 
         <div>
-          <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+          <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
             {title}
           </h2>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -161,10 +161,10 @@ function IdentityMetric({
       </span>
 
       <div className="min-w-0">
-        <span className="block text-sm font-semibold text-slate-500">
+        <span className="block text-sm font-medium text-slate-500">
           {label}
         </span>
-        <strong className="mt-1 block truncate text-sm font-semibold text-slate-950">
+        <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
           {value}
         </strong>
       </div>
@@ -189,7 +189,7 @@ function FieldInput({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
       <input
@@ -223,13 +223,13 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
+      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
       <select
         value={value}
         disabled={disabled}
-        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 outline-none transition disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
         onChange={() => undefined}
       >
         {children}

@@ -68,7 +68,7 @@ function DeliverablesTable({
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
           <FileText size={22} />
         </div>
-        <h3 className="mt-4 text-base font-semibold tracking-[-0.03em] text-slate-950">
+        <h3 className="mt-4 text-base font-medium tracking-[-0.025em] text-slate-800">
           No client-visible deliverables yet
         </h3>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -89,7 +89,7 @@ function DeliverablesTable({
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-medium uppercase tracking-[0.09em] text-slate-400">
               <th className="px-4 py-3">Deliverable</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Assigned To</th>
@@ -253,7 +253,7 @@ export function ClientProjectPhaseAccordion({
                 </span>
 
                 <div className="min-w-0">
-                  <h3 className="truncate text-lg font-semibold tracking-[-0.04em] text-slate-950">
+                  <h3 className="truncate text-lg font-medium tracking-[-0.035em] text-slate-900">
                     {phase.title}
                   </h3>
                   <p className="mt-1 line-clamp-2 text-sm font-medium leading-6 text-slate-500">

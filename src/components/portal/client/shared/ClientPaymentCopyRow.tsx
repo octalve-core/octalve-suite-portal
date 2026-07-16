@@ -23,14 +23,14 @@ export function ClientPaymentCopyRow({
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+      <span className="text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
 
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-900 transition hover:border-blue-200 hover:text-[#0064E0] sm:w-auto"
+        className="inline-flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0] sm:w-auto"
         title={`Copy ${label}`}
       >
         <strong className="break-all">{value}</strong>

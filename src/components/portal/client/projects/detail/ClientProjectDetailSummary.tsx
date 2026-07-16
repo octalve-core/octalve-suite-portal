@@ -37,14 +37,14 @@ function SummaryMetric({
         ) : null}
 
         <div className="min-w-0">
-          <span className="block text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+          <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
             {label}
           </span>
-          <strong className="mt-1 block truncate text-sm font-semibold text-slate-950">
+          <strong className="mt-1 block truncate text-sm font-medium text-slate-700">
             {value}
           </strong>
           {helper ? (
-            <span className="mt-1 block truncate text-xs font-semibold text-slate-500">
+            <span className="mt-1 block truncate text-xs font-medium text-slate-500">
               {helper}
             </span>
           ) : null}
@@ -83,7 +83,7 @@ export function ClientProjectDetailSummary({
               <ClientProjectStatusChip status={project.status} />
             </div>
 
-            <h2 className="mt-3 truncate text-xl font-semibold tracking-[-0.04em] text-slate-950">
+            <h2 className="mt-3 truncate text-xl font-medium tracking-[-0.035em] text-slate-900">
               {project.title}
             </h2>
             <p className="mt-1 truncate text-sm font-medium text-slate-500">

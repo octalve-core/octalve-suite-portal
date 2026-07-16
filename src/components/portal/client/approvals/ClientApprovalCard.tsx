@@ -46,7 +46,7 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold tracking-[-0.035em] text-slate-950">
+              <h3 className="truncate text-base font-medium tracking-[-0.03em] text-slate-800">
                 {phase.title}
               </h3>
               <p className="mt-1 truncate text-sm font-medium text-slate-500">
@@ -65,7 +65,7 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Project
               </span>
               <strong className="mt-1 block truncate text-sm text-slate-950">
@@ -74,10 +74,10 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
             </div>
 
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Updated
               </span>
-              <strong className="mt-1 block text-sm text-slate-950">
+              <strong className="mt-1 block text-sm font-medium text-slate-700">
                 {formatApprovalDate(dateValue)}
               </strong>
               <span className="block text-xs font-semibold text-slate-400">
@@ -86,16 +86,16 @@ export function ClientApprovalCard({ row }: { row: ApprovalRow }) {
             </div>
 
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Deliverables
               </span>
-              <strong className="mt-1 block text-sm text-slate-950">
+              <strong className="mt-1 block text-sm font-medium text-slate-700">
                 {phase.deliverables.length}
               </strong>
             </div>
 
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Messages
               </span>
               <strong className="mt-1 inline-flex items-center gap-1 text-sm text-slate-950">

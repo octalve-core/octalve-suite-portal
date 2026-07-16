@@ -64,7 +64,7 @@ function MethodHeader({
       </span>
 
       <span className="min-w-0 flex-1">
-        <strong className="block text-base font-semibold tracking-[-0.035em] text-slate-950">
+        <strong className="block text-base font-medium tracking-[-0.03em] text-slate-800">
           {title}
         </strong>
         <small className="mt-1 block text-sm font-medium leading-5 text-slate-500">
@@ -245,7 +245,7 @@ export function ClientPaymentMethodsPanel({
   if (payment.status !== "UNPAID") {
     return (
       <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
-        <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
           Payment Record
         </h2>
         <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -266,7 +266,7 @@ export function ClientPaymentMethodsPanel({
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
       <div>
-        <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
           Complete Payment
         </h2>
         <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -398,7 +398,7 @@ export function ClientPaymentMethodsPanel({
                 <div className="grid gap-4 rounded-2xl border border-blue-100 bg-white p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <span className="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                         Wallet Balance
                       </span>
                       <strong className="mt-1 block text-lg font-semibold text-slate-950">
@@ -407,7 +407,7 @@ export function ClientPaymentMethodsPanel({
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <span className="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                      <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                         Required Amount
                       </span>
                       <strong className="mt-1 block text-lg font-semibold text-slate-950">

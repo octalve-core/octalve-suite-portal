@@ -30,7 +30,7 @@ function metricBox({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-      <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+      <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
         {label}
       </span>
       <strong className="mt-1 block text-base font-semibold leading-none text-slate-950">

@@ -52,7 +52,7 @@ export function ClientProjectSwitcher() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <strong className="block truncate text-sm font-semibold text-slate-950">
+                    <strong className="block truncate text-sm font-medium text-slate-700">
                       {project.title}
                     </strong>
                     <span className="mt-1 block text-xs font-medium text-slate-500">

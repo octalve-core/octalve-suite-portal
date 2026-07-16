@@ -46,12 +46,12 @@ function OverviewItem({
       </span>
 
       <div className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-slate-500">
+        <span className="block text-sm font-medium text-slate-500">
           {label}
         </span>
       </div>
 
-      <strong className="shrink-0 text-right text-sm font-semibold text-slate-950">
+      <strong className="shrink-0 text-right text-sm font-medium text-slate-700">
         {value}
       </strong>
     </div>
@@ -98,7 +98,7 @@ export function ClientPaymentSummaryPanel({
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-6">
       <div>
-        <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
           Payment Overview
         </h2>
         <p className="mt-1 text-sm font-medium leading-6 text-slate-500">

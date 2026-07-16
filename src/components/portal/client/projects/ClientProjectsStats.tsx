@@ -44,13 +44,13 @@ function ProjectStatCard({
         </span>
 
         <div className="min-w-0">
-          <strong className="block text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+          <strong className="block text-[22px] font-medium tracking-[-0.04em] text-slate-700">
             {value}
           </strong>
-          <span className="block text-sm font-semibold text-slate-600">
+          <span className="block text-sm font-medium text-slate-500">
             {label}
           </span>
-          <span className="mt-1 block text-xs font-bold text-slate-500">
+          <span className="mt-1 block text-xs font-medium text-slate-400">
             {helper}
           </span>
         </div>

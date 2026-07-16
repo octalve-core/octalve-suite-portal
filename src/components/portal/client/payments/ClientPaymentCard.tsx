@@ -35,7 +35,7 @@ export function ClientPaymentCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold tracking-[-0.035em] text-slate-950">
+              <h3 className="truncate text-base font-medium tracking-[-0.03em] text-slate-800">
                 {paymentTypeLabel(payment.type)}
               </h3>
               <p className="mt-1 truncate text-sm font-medium text-slate-500">
@@ -55,28 +55,28 @@ export function ClientPaymentCard({
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Amount
               </span>
-              <strong className="mt-1 block text-sm text-slate-950">
+              <strong className="mt-1 block text-sm font-medium text-slate-700">
                 {formatPaymentMoney(payment.amount)}
               </strong>
             </div>
 
             <div>
-              <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Date
               </span>
-              <strong className="mt-1 block text-sm text-slate-950">
+              <strong className="mt-1 block text-sm font-medium text-slate-700">
                 {formatPaymentDate(getPaymentDateValue(row))}
               </strong>
             </div>
 
             <div className="col-span-2">
-              <span className="block text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Reference
               </span>
-              <strong className="mt-1 block break-all text-sm text-slate-950">
+              <strong className="mt-1 block break-all text-sm font-medium text-slate-700">
                 {payment.reference}
               </strong>
             </div>

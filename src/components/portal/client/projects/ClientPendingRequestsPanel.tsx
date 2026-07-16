@@ -16,7 +16,7 @@ export function ClientPendingRequestsPanel({
         <span className="inline-flex rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-bold text-[#0064E0]">
           Under Admin Review
         </span>
-        <h2 className="mt-3 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+        <h2 className="mt-3 text-xl font-medium tracking-[-0.035em] text-slate-900">
           Submitted Project Request{requests.length === 1 ? "" : "s"}
         </h2>
         <p className="mt-1 text-sm leading-6 text-slate-600">

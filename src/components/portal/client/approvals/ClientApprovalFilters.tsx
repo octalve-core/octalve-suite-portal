@@ -39,7 +39,7 @@ export function ClientApprovalFilters({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search approvals by phase, project or reference..."
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
           />
         </div>
       </label>
@@ -47,7 +47,7 @@ export function ClientApprovalFilters({
       <select
         value={projectFilter}
         onChange={(event) => setProjectFilter(event.target.value)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="all">All Projects</option>
         <option value="active">Current active project</option>
@@ -61,7 +61,7 @@ export function ClientApprovalFilters({
       <select
         value={statusFilter}
         onChange={(event) => setStatusFilter(event.target.value as ApprovalStatusFilter)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="all">All Statuses</option>
         <option value="awaiting">Awaiting Review</option>
@@ -71,7 +71,7 @@ export function ClientApprovalFilters({
 
       <button
         type="button"
-        className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:text-[#0064E0]"
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:text-[#0064E0]"
         title="Filters apply automatically"
       >
         <SlidersHorizontal size={16} />
@@ -81,7 +81,7 @@ export function ClientApprovalFilters({
       <select
         value={sortBy}
         onChange={(event) => setSortBy(event.target.value as ApprovalSortOption)}
-        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
       >
         <option value="NEWEST">Sort: Newest</option>
         <option value="OLDEST">Sort: Oldest</option>

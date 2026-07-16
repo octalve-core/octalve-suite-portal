@@ -303,10 +303,10 @@ export function ClientPhaseThreadPanel({
             </span>
 
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold tracking-[-0.04em] text-slate-950">
+              <h2 className="truncate text-lg font-medium tracking-[-0.035em] text-slate-900">
                 Phase Thread
               </h2>
-              <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+              <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
                 Project-linked conversation and delivery feedback
               </p>
             </div>
@@ -382,7 +382,7 @@ export function ClientPhaseThreadPanel({
 
         {canRequestChanges ? (
           <div className="mt-4 rounded-[24px] border border-orange-200 bg-white p-4 shadow-[0_6px_16px_rgba(15,23,42,0.02)]">
-            <label className="block text-base font-semibold tracking-[-0.03em] text-slate-950">
+            <label className="block text-base font-medium tracking-[-0.025em] text-slate-800">
               Request Changes
             </label>
 
@@ -403,7 +403,7 @@ export function ClientPhaseThreadPanel({
                 type="button"
                 onClick={() => void submitChanges()}
                 disabled={!changeMessage.trim() || requestingChanges}
-                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {requestingChanges ? "Submitting..." : "Request Changes"}
               </button>

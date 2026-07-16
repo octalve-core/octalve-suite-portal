@@ -79,7 +79,7 @@ function PaymentAccordionHeader({
       </span>
 
       <span className="min-w-0 flex-1">
-        <strong className="block text-base font-semibold tracking-[-0.035em] text-slate-950">
+        <strong className="block text-base font-medium tracking-[-0.03em] text-slate-800">
           {title}
         </strong>
         <small className="mt-1 block text-sm font-medium leading-5 text-slate-500">
@@ -282,7 +282,7 @@ export function ClientManualPaymentModal({
           </span>
 
           <div className="min-w-0">
-            <strong className="block text-lg font-semibold tracking-[-0.04em] text-slate-950">
+            <strong className="block text-lg font-medium tracking-[-0.035em] text-slate-900">
               {payment.type === "DEPOSIT" ? "Deposit Payment" : "Balance Payment"}
             </strong>
             <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
@@ -293,10 +293,10 @@ export function ClientManualPaymentModal({
 
         <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+            <span className="text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
               Amount Due
             </span>
-            <strong className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+            <strong className="text-[22px] font-medium tracking-[-0.04em] text-slate-700">
               {formatNaira(payment.amount)}
             </strong>
           </div>
@@ -317,7 +317,7 @@ export function ClientManualPaymentModal({
         {!isPayable ? (
           <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4">
-              <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <span className="text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Status
               </span>
               <strong className="text-sm font-semibold text-slate-950">
@@ -326,7 +326,7 @@ export function ClientManualPaymentModal({
             </div>
 
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4">
-              <span className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <span className="text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                 Project
               </span>
               <strong className="max-w-[260px] truncate text-right text-sm font-semibold text-slate-950">
@@ -458,7 +458,7 @@ export function ClientManualPaymentModal({
                   <div className="grid gap-4 rounded-2xl border border-blue-100 bg-white p-4">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <span className="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                        <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                           Wallet Balance
                         </span>
                         <strong className="mt-1 block text-lg font-semibold text-slate-950">
@@ -467,7 +467,7 @@ export function ClientManualPaymentModal({
                       </div>
 
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <span className="block text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+                        <span className="block text-[10px] font-medium uppercase tracking-[0.09em] text-slate-400">
                           Required Amount
                         </span>
                         <strong className="mt-1 block text-lg font-semibold text-slate-950">

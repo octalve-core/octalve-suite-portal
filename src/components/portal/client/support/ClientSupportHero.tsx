@@ -42,7 +42,7 @@ export function ClientSupportHero({
             Help & Support
           </h1>
 
-          <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-slate-600">
+          <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-500">
             We're here to help you succeed.
           </p>
           <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
@@ -74,7 +74,7 @@ export function ClientSupportHero({
             </span>
 
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
+              <h2 className="text-xl font-medium tracking-[-0.035em] text-slate-900">
                 Need support now?
               </h2>
               <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">

@@ -78,7 +78,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
           <CheckCircle2 size={24} />
         </div>
-        <h3 className="mt-4 text-lg font-semibold tracking-[-0.04em] text-slate-950">
+        <h3 className="mt-4 text-lg font-medium tracking-[-0.035em] text-slate-900">
           No approvals match this filter
         </h3>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -93,7 +93,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1080px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/70 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-medium uppercase tracking-[0.09em] text-slate-400">
               <th className="px-5 py-4">Phase / Approval Item</th>
               <th className="px-5 py-4">Project</th>
               <th className="px-5 py-4">Submitted / Updated Date</th>
@@ -126,10 +126,10 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                       </span>
 
                       <div className="min-w-0">
-                        <strong className="block truncate text-sm font-semibold text-slate-950">
+                        <strong className="block truncate text-sm font-medium text-slate-700">
                           {phase.title}
                         </strong>
-                        <span className="mt-1 block truncate text-xs font-semibold text-slate-500">
+                        <span className="mt-1 block truncate text-xs font-medium text-slate-500">
                           Phase {phase.phaseNumber}
                         </span>
                       </div>
@@ -137,10 +137,10 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                   </td>
 
                   <td className="px-5 py-5">
-                    <strong className="block max-w-[230px] truncate text-sm font-semibold text-slate-950">
+                    <strong className="block max-w-[230px] truncate text-sm font-medium text-slate-700">
                       {project.title}
                     </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                    <span className="mt-1 block text-xs font-medium text-slate-500">
                       {project.projectCode}
                     </span>
                   </td>
@@ -149,7 +149,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
                     <strong className="block text-sm font-semibold text-slate-950">
                       {formatApprovalDate(dateValue)}
                     </strong>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">
+                    <span className="mt-1 block text-xs font-medium text-slate-500">
                       {formatApprovalTime(dateValue)}
                     </span>
                   </td>
@@ -227,7 +227,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
             <select
               value={pageSize}
               onChange={(event) => setPageSize(Number(event.target.value))}
-              className="ml-2 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
+              className="ml-2 h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-500 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100"
               aria-label="Approvals per page"
             >
               {PAGE_SIZE_OPTIONS.map((value) => (
@@ -282,7 +282,7 @@ export function ClientApprovalList({ rows }: { rows: ApprovalRow[] }) {
             <select
               value={pageSize}
               onChange={(event) => setPageSize(Number(event.target.value))}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-600 outline-none"
+              className="h-10 rounded-xl border border-slate-200 bg-white px-2 text-sm font-medium text-slate-500 outline-none"
               aria-label="Approvals per page"
             >
               {PAGE_SIZE_OPTIONS.map((value) => (
