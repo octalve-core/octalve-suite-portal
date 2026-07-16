@@ -65,7 +65,7 @@ function SummaryItem({
   value,
   helper,
   tone,
-  valueClassName = "text-slate-950",
+  valueClassName = "text-slate-700",
   action,
 }: {
   icon: React.ReactNode;
@@ -81,13 +81,13 @@ function SummaryItem({
       <IconBubble tone={tone}>{icon}</IconBubble>
 
       <div className="min-w-0 flex-1">
-        <span className="block text-[11px] font-black uppercase tracking-[0.13em] text-slate-500">
+        <span className="block text-[9px] font-medium uppercase tracking-[0.09em] text-slate-400">
           {label}
         </span>
 
         <strong
           className={[
-            "mt-1 block break-words text-base font-semibold leading-5",
+            "mt-1 block break-words text-[15px] font-medium leading-5",
             valueClassName,
           ].join(" ")}
         >
@@ -95,7 +95,7 @@ function SummaryItem({
         </strong>
 
         {helper ? (
-          <span className="mt-1 block break-words text-sm font-bold leading-5 text-red-600">
+          <span className="mt-1 block break-words text-xs font-medium leading-5 text-red-500">
             {helper}
           </span>
         ) : null}
@@ -282,7 +282,7 @@ export function ClientDashboardHero({
             value={projectStatus}
             helper={shouldShowDepositHelper ? "Awaiting Deposit" : undefined}
             tone="orange"
-            valueClassName="text-orange-700"
+            valueClassName="text-orange-600"
           />
 
           <SummaryItem

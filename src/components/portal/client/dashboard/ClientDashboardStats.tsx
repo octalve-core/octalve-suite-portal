@@ -45,15 +45,15 @@ function StatCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <span className="block break-words text-[11px] font-black leading-4 tracking-[-0.01em] text-slate-500">
+          <span className="block break-words text-[9px] font-medium leading-4 tracking-[0.035em] text-slate-400">
             {label}
           </span>
 
-          <strong className="mt-4 block text-[24px] font-semibold leading-none tracking-[-0.055em] text-slate-950">
+          <strong className="mt-4 block text-[22px] font-medium leading-none tracking-[-0.045em] text-slate-700">
             {value}
           </strong>
 
-          <p className="mt-2 break-words text-[12px] font-semibold leading-4 text-slate-500">
+          <p className="mt-2 break-words text-[11px] font-medium leading-4 text-slate-500">
             {helper}
           </p>
         </div>
@@ -83,7 +83,7 @@ export function ClientDashboardStats({
 }) {
   return (
     <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
-      <h2 className="mb-4 text-[20px] font-semibold tracking-[-0.045em] text-slate-950">
+      <h2 className="mb-4 text-[20px] font-medium tracking-[-0.04em] text-slate-900">
         Project Overview
       </h2>
 
