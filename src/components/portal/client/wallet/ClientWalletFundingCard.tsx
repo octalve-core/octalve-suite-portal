@@ -9,7 +9,6 @@ import {
   getWalletFundingProviders,
   isSafeCheckoutUrl,
   parseFundingAmount,
-  safePublicWalletError,
   sanitizeFundingAmountInput,
   validateFundingAmount,
   type WalletFundingProvider,
@@ -77,7 +76,7 @@ export function ClientWalletFundingCard({
     }
 
     if (!provider) {
-      setError("Select an enabled wallet funding provider.");
+      setError("Select an available wallet funding option.");
       return;
     }
 
@@ -90,7 +89,7 @@ export function ClientWalletFundingCard({
 
       if (response.authorizationUrl) {
         if (!isSafeCheckoutUrl(response.authorizationUrl, provider)) {
-          setError("Checkout link could not be opened securely. Please try another provider.");
+          setError("Checkout could not be opened safely. Please try another provider.");
           return;
         }
 
@@ -110,15 +109,21 @@ export function ClientWalletFundingCard({
   return (
     <section
       id="wallet-funding-panel"
-      className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.025)]"
+      className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.025)] sm:p-5"
     >
-      <div>
-        <h2 className="text-xl font-semibold tracking-[-0.04em] text-slate-950">
-          Fund Wallet
-        </h2>
-        <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-          Add funds to your wallet securely.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-[-0.04em] text-slate-950">
+            Add Money
+          </h2>
+          <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
+            Fund your wallet through an approved checkout option.
+          </p>
+        </div>
+
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-blue-50 text-[#0064E0] ring-1 ring-blue-100">
+          <ShieldCheck size={18} />
+        </span>
       </div>
 
       <div className="mt-5 grid gap-4">
@@ -146,7 +151,7 @@ export function ClientWalletFundingCard({
 
         <div>
           <span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-            Quick amount
+            Quick Save
           </span>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -170,7 +175,7 @@ export function ClientWalletFundingCard({
 
         <label className="block">
           <span className="mb-2 block text-sm font-bold text-slate-800">
-            Provider
+            Checkout Option
           </span>
 
           <div className="relative">
@@ -185,7 +190,7 @@ export function ClientWalletFundingCard({
               className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-[#0064E0] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
             >
               {providerLoading ? (
-                <option>Loading providers...</option>
+                <option>Loading options...</option>
               ) : providers.length ? (
                 providers.map((item) => (
                   <option key={item.provider} value={item.provider}>
@@ -193,7 +198,7 @@ export function ClientWalletFundingCard({
                   </option>
                 ))
               ) : (
-                <option>No enabled provider</option>
+                <option>No option available</option>
               )}
             </select>
           </div>
@@ -201,7 +206,7 @@ export function ClientWalletFundingCard({
 
         {selectedProvider ? (
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-medium leading-6 text-blue-900">
-            Checkout will continue through {selectedProvider.displayName}. Wallet balance is credited only after server-side verification. No card, OTP, or provider secret is stored in the browser.
+            Checkout will continue through {selectedProvider.displayName}. Your wallet is updated after Octalve confirms the funding status.
           </div>
         ) : null}
 
@@ -221,7 +226,7 @@ export function ClientWalletFundingCard({
           type="button"
           onClick={() => void handleSubmit()}
           disabled={loading || providerLoading || !providers.length || Boolean(validationError)}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-5 text-sm font-black text-white shadow-[0_8px_18px_rgba(0,100,224,0.08)] transition hover:bg-[#0052B8] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? (
             <>
@@ -230,7 +235,7 @@ export function ClientWalletFundingCard({
             </>
           ) : (
             <>
-              Continue to Checkout
+              Continue
               <ArrowRight size={17} />
             </>
           )}
@@ -238,13 +243,13 @@ export function ClientWalletFundingCard({
 
         <div className="flex items-start gap-2 text-xs font-semibold leading-5 text-slate-500">
           <LockKeyhole size={14} className="mt-0.5 shrink-0" />
-          <span>Payments are secure and encrypted.</span>
+          <span>Payments are protected through approved checkout providers.</span>
         </div>
 
         <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#0064E0]" />
           <p className="m-0 text-xs font-semibold leading-5 text-slate-600">
-            Browser values are not trusted. The backend validates amount, provider availability, gateway credentials, callback, and final verification before wallet credit.
+            Every wallet transaction is protected and verified before any balance is updated.
           </p>
         </div>
       </div>

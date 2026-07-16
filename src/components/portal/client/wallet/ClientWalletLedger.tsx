@@ -76,7 +76,7 @@ function WalletEntryCard({ entry }: { entry: WalletLedgerEntry }) {
           </div>
 
           <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
-            {entry.description || "Wallet ledger activity"}
+            {entry.description || "Wallet activity"}
           </p>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
@@ -150,7 +150,7 @@ export function ClientWalletLedger({
             Transaction History
           </h2>
           <p className="mt-1 text-sm font-medium leading-6 text-slate-500">
-            A log of wallet funding, spending, refunds, and adjustments.
+            Your recent wallet activity.
           </p>
         </div>
 
@@ -271,7 +271,7 @@ export function ClientWalletLedger({
                           </Link>
                         ) : (
                           <span className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-400">
-                            Ledger only
+                            Record only
                           </span>
                         )}
                       </td>

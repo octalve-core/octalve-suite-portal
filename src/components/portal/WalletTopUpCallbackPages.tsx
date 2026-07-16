@@ -200,7 +200,7 @@ function ResultShell({
 
                 <p className="mt-1 text-sm font-semibold leading-6">
                   {confirmed
-                    ? "Your wallet balance is updated only through the server-side ledger after provider verification."
+                    ? "Your wallet balance is updated only after Octalve confirms the funding status."
                     : failed
                       ? "If your bank account was debited, do not retry repeatedly. Keep your reference and contact support."
                       : `Octalve is confirming this wallet funding with ${provider} through the secure server endpoint.`}
@@ -219,7 +219,7 @@ function ResultShell({
                   Secure wallet verification
                 </strong>
                 <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                  This page does not credit wallet funds directly, does not trust URL amounts, and does not save payment references in browser storage. Confirmation is handled by the backend verification route.
+                  Octalve confirms wallet funding through a protected verification process before any balance is updated.
                 </p>
               </div>
             </div>
@@ -320,7 +320,7 @@ export function PaystackWalletTopUpCallbackPage({
       <div className="grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
         <ReferenceRow label="Paystack Reference" value={safeReference} />
         <ReferenceRow label="Wallet Funding Record" value={safeTopUpId} />
-        <ReferenceRow label="Ledger Reference" value={result?.topUpReference} />
+        <ReferenceRow label="Wallet Reference" value={result?.topUpReference} />
       </div>
     </ResultShell>
   );
@@ -408,7 +408,7 @@ export function FlutterwaveWalletTopUpCallbackPage({
         <ReferenceRow label="Funding Reference" value={safeTxRef} />
         <ReferenceRow label="Flutterwave Transaction ID" value={safeTransactionId} />
         <ReferenceRow label="Wallet Funding Record" value={safeTopUpId} />
-        <ReferenceRow label="Ledger Reference" value={result?.topUpReference} />
+        <ReferenceRow label="Wallet Reference" value={result?.topUpReference} />
       </div>
     </ResultShell>
   );
