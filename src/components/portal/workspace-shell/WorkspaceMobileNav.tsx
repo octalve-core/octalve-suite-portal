@@ -32,16 +32,16 @@ export function WorkspaceMobileNav({
 
   return (
     <>
-      <nav className="fixed bottom-3 left-3 right-3 z-50 flex items-center gap-2 rounded-[26px] border border-blue-100 bg-white/96 p-2 shadow-[0_20px_50px_rgba(0,100,224,0.18)] backdrop-blur-xl lg:hidden">
+      <nav className="octalve-mobile-nav-shell fixed bottom-3 left-3 right-3 z-50 flex items-center gap-2 rounded-[26px] border border-blue-100 bg-white/96 p-2 shadow-[0_20px_50px_rgba(0,100,224,0.18)] backdrop-blur-xl lg:hidden">
         <div className="grid flex-1 grid-cols-3 gap-1">
           {primaryNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={[
-                "relative flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition",
+                "octalve-mobile-nav-link relative flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition [&_svg]:stroke-current [&_svg]:text-current [&_span]:text-current",
                 isActiveHref(item.href)
-                  ? "bg-[#0064E0] text-white shadow-[0_10px_22px_rgba(0,100,224,0.24)]"
+                  ? "bg-[#0064E0] !text-white shadow-[0_10px_22px_rgba(0,100,224,0.24)]"
                   : "text-slate-600 hover:bg-blue-50 hover:text-[#0064E0]",
               ].join(" ")}
             >
@@ -60,9 +60,9 @@ export function WorkspaceMobileNav({
           type="button"
           onClick={onToggle}
           className={[
-            "flex h-14 w-16 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition",
+            "octalve-mobile-nav-trigger flex h-14 w-16 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition [&_svg]:stroke-current [&_svg]:text-current [&_span]:text-current",
             moreActive
-              ? "bg-[#0064E0] text-white shadow-[0_10px_22px_rgba(0,100,224,0.24)]"
+              ? "bg-[#0064E0] !text-white shadow-[0_10px_22px_rgba(0,100,224,0.24)]"
               : "text-slate-600 hover:bg-blue-50 hover:text-[#0064E0]",
           ].join(" ")}
           aria-expanded={open}
@@ -107,7 +107,7 @@ export function WorkspaceMobileNav({
               <Link
                 href={createAction.href}
                 onClick={onClose}
-                className="col-span-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-4 text-sm font-semibold text-white"
+                className="octalve-mobile-primary-action col-span-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0064E0] px-4 text-sm font-semibold text-white"
               >
                 {createAction.icon}
                 {createAction.label}
@@ -118,6 +118,7 @@ export function WorkspaceMobileNav({
                   key={item.href}
                   item={item}
                   active={isActiveHref(item.href)}
+                  tone="light"
                   onClick={onClose}
                 />
               ))}

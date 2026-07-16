@@ -4930,3 +4930,93 @@ strong,
     justify-content: center;
   }
 }
+
+/* OCTALVE BATCH 1B PORTAL CONTRAST AND AI MOTION */
+.octalve-mobile-nav-link,
+.octalve-mobile-nav-trigger,
+.octalve-mobile-more-item,
+.octalve-mobile-primary-action {
+  color: inherit;
+}
+
+.octalve-mobile-nav-link svg,
+.octalve-mobile-nav-trigger svg,
+.octalve-mobile-more-item svg,
+.octalve-mobile-primary-action svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.octalve-mobile-nav-link[aria-current="page"],
+.octalve-mobile-nav-link[aria-current="page"] span,
+.octalve-mobile-nav-link[aria-current="page"] svg,
+.octalve-mobile-more-item[aria-current="page"],
+.octalve-mobile-more-item[aria-current="page"] span,
+.octalve-mobile-more-item[aria-current="page"] svg,
+.octalve-mobile-primary-action,
+.octalve-mobile-primary-action span,
+.octalve-mobile-primary-action svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Interactive blue action contrast only. This avoids changing blue hero sections/cards. */
+:where(a, button)[class*="bg-[#0064E0]"],
+:where(a, button)[class*="bg-[#0052B8]"],
+:where(a, button)[class*="bg-emerald-600"],
+:where(a, button)[class*="bg-red-600"] {
+  color: #ffffff !important;
+}
+
+:where(a, button)[class*="bg-[#0064E0]"] svg,
+:where(a, button)[class*="bg-[#0064E0]"] span,
+:where(a, button)[class*="bg-[#0052B8]"] svg,
+:where(a, button)[class*="bg-[#0052B8]"] span,
+:where(a, button)[class*="bg-emerald-600"] svg,
+:where(a, button)[class*="bg-emerald-600"] span,
+:where(a, button)[class*="bg-red-600"] svg,
+:where(a, button)[class*="bg-red-600"] span {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.ai-fab {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.ai-fab .ai-fab-button {
+  color: #ffffff !important;
+}
+
+.ai-fab .ai-fab-button svg,
+.ai-fab .ai-fab-label {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+@media (max-width: 767px) {
+  .ai-fab {
+    right: 18px;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .ai-fab .ai-fab-button {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    padding: 0 !important;
+    border-radius: 999px !important;
+  }
+
+  .ai-fab .ai-fab-label {
+    display: none !important;
+  }
+
+  .ai-fab.ai-fab-motion {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(18px) scale(0.82);
+  }
+}
