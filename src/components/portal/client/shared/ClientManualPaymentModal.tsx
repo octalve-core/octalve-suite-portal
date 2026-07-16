@@ -222,11 +222,8 @@ export function ClientManualPaymentModal({
         router.refresh();
       }, 650);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to submit payment confirmation.",
-      );
+      void err;
+      setError("Unable to submit payment confirmation. Please try again or contact support.");
     } finally {
       setManualLoading(false);
     }
@@ -253,7 +250,7 @@ export function ClientManualPaymentModal({
       }
 
       if (provider === "WALLET") {
-        setNotice(response.message || "Payment completed from Octalve Wallet.");
+        setNotice("Payment completed from Octalve Wallet.");
 
         window.setTimeout(() => {
           onClose();
@@ -264,16 +261,10 @@ export function ClientManualPaymentModal({
         return;
       }
 
-      setError(
-        response.message ||
-          "We could not open the checkout page. Please try another payment method.",
-      );
+      setError("We could not open the checkout page. Please try another payment method.");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to start payment. Please try another method.",
-      );
+      void err;
+      setError("Unable to start payment. Please try another method.");
     } finally {
       setInitializingProvider("");
     }
@@ -347,10 +338,6 @@ export function ClientManualPaymentModal({
 
             {payment.provider ? (
               <ClientPaymentCopyRow label="Provider" value={String(payment.provider)} />
-            ) : null}
-
-            {payment.providerReference ? (
-              <ClientPaymentCopyRow label="Provider Reference" value={payment.providerReference} />
             ) : null}
 
             {payment.note ? (

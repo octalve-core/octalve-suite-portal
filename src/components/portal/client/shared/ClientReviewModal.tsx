@@ -33,7 +33,8 @@ export function ClientReviewModal({
       await addReview(project.id, rating, comment.trim(), permissionToPublish);
       onClose();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to submit review.");
+      void error;
+      setError("Unable to submit review. Please try again or contact support.");
     } finally {
       setLoading(false);
     }

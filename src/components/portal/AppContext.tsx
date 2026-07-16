@@ -199,7 +199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         notifications,
       });
     } catch (error) {
-      console.error("Failed to fetch app state:", error);
+      void error;
     } finally {
       setWorkspaceReady(true);
       setDataLoading(false);

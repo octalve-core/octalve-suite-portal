@@ -393,7 +393,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
       });
 
       if (result?.error) {
-        setError(result.error.message || "Could not change password.");
+        setError("Could not change password. Please check your current password and try again.");
         setSaving(false);
         return;
       }

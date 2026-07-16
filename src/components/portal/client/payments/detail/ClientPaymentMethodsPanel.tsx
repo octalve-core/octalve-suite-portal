@@ -133,7 +133,8 @@ export function ClientPaymentMethodsPanel({
         if (mounted) setMethods(data);
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Unable to load payment methods.");
+          void err;
+          setError("Payment methods are temporarily unavailable. Please refresh or contact support.");
         }
       } finally {
         if (mounted) setLoadingMethods(false);
@@ -195,9 +196,8 @@ export function ClientPaymentMethodsPanel({
       setNotice("Your bank transfer has been submitted for confirmation.");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to submit payment confirmation.",
-      );
+      void err;
+      setError("Unable to submit payment confirmation. Please try again or contact support.");
     } finally {
       setManualLoading(false);
     }
@@ -224,7 +224,7 @@ export function ClientPaymentMethodsPanel({
       }
 
       if (provider === "WALLET") {
-        setNotice(response.message || "Payment completed from Octalve Wallet.");
+        setNotice("Payment completed from Octalve Wallet.");
         await refreshWorkspaceData();
         window.setTimeout(() => {
           router.push("/client/payments");
@@ -233,16 +233,10 @@ export function ClientPaymentMethodsPanel({
         return;
       }
 
-      setError(
-        response.message ||
-          "We could not open the checkout page. Please try another payment method.",
-      );
+      setError("We could not open the checkout page. Please try another payment method.");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to start payment. Please try another method.",
-      );
+      void err;
+      setError("Unable to start payment. Please try another method.");
     } finally {
       setInitializingProvider("");
     }
