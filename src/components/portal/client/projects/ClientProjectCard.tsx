@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -21,27 +22,48 @@ import {
   projectProgress,
 } from "./client-projects-utils";
 
+type MetricTone = "blue" | "orange" | "purple" | "cyan";
+
+function metricToneClass(tone: MetricTone) {
+  const tones: Record<MetricTone, string> = {
+    blue: "bg-blue-50 text-[#0064E0] ring-blue-100",
+    orange: "bg-orange-50 text-orange-700 ring-orange-100",
+    purple: "bg-violet-50 text-violet-700 ring-violet-100",
+    cyan: "bg-cyan-50 text-cyan-700 ring-cyan-100",
+  };
+
+  return tones[tone];
+}
+
 function MiniMetric({
   icon,
   label,
   value,
+  tone,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number;
+  tone: MetricTone;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
       <div className="flex items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-[#0064E0] ring-1 ring-blue-100">
+        <span
+          className={[
+            "grid h-8 w-8 shrink-0 place-items-center rounded-xl ring-1",
+            metricToneClass(tone),
+          ].join(" ")}
+        >
           {icon}
         </span>
 
         <div className="min-w-0">
-          <span className="block truncate text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">
+          <span className="block truncate text-[8.5px] font-bold uppercase tracking-[0.085em] text-slate-400">
             {label}
           </span>
-          <strong className="mt-0.5 block truncate text-sm font-semibold text-slate-950">
+
+          <strong className="mt-1 block truncate text-[13px] font-medium leading-5 text-slate-600">
             {value}
           </strong>
         </div>
@@ -111,12 +133,14 @@ export function ClientProjectCard({
               icon={<CircleDot size={16} />}
               label="Current Phase"
               value={currentPhase?.title ?? "No phase available"}
+              tone="blue"
             />
 
             <MiniMetric
               icon={<CalendarDays size={16} />}
               label="Target Date"
               value={formatProjectDate(project.targetDate)}
+              tone="orange"
             />
 
             <MiniMetric
@@ -126,12 +150,14 @@ export function ClientProjectCard({
                 (total, phase) => total + phase.deliverables.length,
                 0,
               )}
+              tone="purple"
             />
 
             <MiniMetric
               icon={<Clock3 size={16} />}
               label="Last Updated"
               value={formatProjectDate(lastUpdated)}
+              tone="cyan"
             />
           </div>
         </div>
