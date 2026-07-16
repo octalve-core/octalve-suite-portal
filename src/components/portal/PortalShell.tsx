@@ -123,7 +123,7 @@ export function PortalShell({
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f8fc] text-slate-950 lg:grid lg:grid-cols-[292px_minmax(0,1fr)]">
+    <div className="octalve-portal-shell min-h-screen bg-[#f6f8fc] text-slate-950 lg:grid lg:grid-cols-[276px_minmax(0,1fr)]">
       <WorkspaceSidebar
         role={role}
         nav={nav}

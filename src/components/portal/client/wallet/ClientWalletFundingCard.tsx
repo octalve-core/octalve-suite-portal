@@ -154,14 +154,14 @@ export function ClientWalletFundingCard({
             Quick Save
           </span>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2">
             {QUICK_AMOUNTS.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setAmount(String(item))}
                 className={[
-                  "min-h-10 rounded-xl border px-3 text-xs font-bold transition",
+                  "min-h-10 min-w-0 whitespace-nowrap rounded-xl border px-2 text-[11px] font-bold tracking-[-0.01em] transition sm:text-xs",
                   parseFundingAmount(amount) === item
                     ? "border-[#0064E0] bg-blue-50 text-[#0064E0]"
                     : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50",

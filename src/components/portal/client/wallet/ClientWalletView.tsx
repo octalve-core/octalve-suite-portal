@@ -64,7 +64,7 @@ export function ClientWalletView() {
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 lg:px-8 xl:max-w-[1500px]">
         <section className="grid min-h-[280px] place-items-center rounded-[26px] border border-slate-200 bg-white p-8 shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
           <div className="inline-flex items-center gap-3 text-sm font-bold text-slate-500">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#0064E0]" />
@@ -76,7 +76,7 @@ export function ClientWalletView() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 lg:px-8 xl:max-w-[1500px]">
       <div className="grid gap-4 sm:gap-5">
         <header className="flex items-start justify-between gap-4">
           <div className="min-w-0">

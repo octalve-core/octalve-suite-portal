@@ -88,10 +88,10 @@ export function ClientWalletHero({
 
             <a
               href="#wallet-transactions"
-              className="hidden min-h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-xs font-black text-[#0064E0] transition hover:bg-blue-50 sm:inline-flex"
+              className="hidden min-h-10 shrink-0 items-center gap-2 rounded-full bg-white px-4 text-xs font-black !text-[#0064E0] transition hover:bg-blue-50 hover:text-[#0064E0] sm:inline-flex"
             >
               History
-              <ArrowRight size={14} />
+              <ArrowRight size={14} className="text-[#0064E0]" />
             </a>
           </div>
 
@@ -116,9 +116,9 @@ export function ClientWalletHero({
 
             <a
               href="#wallet-transactions"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/22 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15 sm:hidden"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white px-4 text-sm font-black !text-[#0064E0] shadow-[0_10px_24px_rgba(0,0,0,0.14)] transition hover:bg-blue-50 hover:text-[#0064E0] sm:hidden"
             >
-              <History size={16} />
+              <History size={16} className="text-[#0064E0]" />
               History
             </a>
 

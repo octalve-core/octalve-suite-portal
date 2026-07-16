@@ -5020,3 +5020,16 @@ strong,
     transform: translateY(18px) scale(0.82);
   }
 }
+/* OCTALVE BATCH 3D PORTAL DESKTOP DENSITY
+   Desktop-only portal density pass. No transform scaling, no browser zoom hack. */
+@media (min-width: 1024px) {
+  .octalve-portal-shell {
+    --spacing: 0.238rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .octalve-portal-shell {
+    --spacing: 0.232rem;
+  }
+}
