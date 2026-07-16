@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Role } from "@/lib/types";
 import { AIAssistant } from "./AIAssistant";
@@ -33,9 +33,18 @@ export function PortalShell({
     clientProjects,
     sessionLoading,
     dataLoading,
+    workspaceReady,
   } = useApp();
 
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+
+  // Permanent protected shell guard:
+  // wait silently during auth/data resolution; redirect only after auth is resolved.
+  useEffect(() => {
+    if (!sessionLoading && !currentUser) {
+      router.replace("/login");
+    }
+  }, [currentUser, router, sessionLoading]);
 
   async function handlePortalLogout() {
     try {
@@ -99,7 +108,14 @@ export function PortalShell({
   function isActiveHref(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
-return (
+  const shouldHoldProtectedShell =
+    sessionLoading || !currentUser || !workspaceReady || (dataLoading && !workspaceReady);
+
+  if (shouldHoldProtectedShell) {
+    return null;
+  }
+
+  return (
     <div className="min-h-screen bg-[#f6f8fc] text-slate-950 lg:grid lg:grid-cols-[292px_minmax(0,1fr)]">
       <WorkspaceSidebar
         role={role}

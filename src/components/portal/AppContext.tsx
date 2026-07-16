@@ -31,6 +31,7 @@ type AppContextValue = {
   currentUser?: User;
   sessionLoading: boolean;
   dataLoading: boolean;
+  workspaceReady: boolean;
   selectedProjectId?: string;
   selectedProject?: Project;
   clientProjects: Project[];
@@ -129,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<AppState>(emptyState);
   const [dataLoading, setDataLoading] = useState(false);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const [isRefreshingState, setIsRefreshingState] = useState(false);
   const syncInProgressRef = useRef(false);
   const [selectedProjectId, setSelectedProjectIdState] = useState<
@@ -152,6 +154,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       specialty: u.specialty,
     };
   }, [authSession]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setWorkspaceReady(false);
+      setState(emptyState);
+      syncInProgressRef.current = false;
+    }
+  }, [currentUser?.id]);
 
   // ------- Data Fetching -------
   const syncPortalData = useCallback(async () => {
@@ -191,6 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Failed to fetch app state:", error);
     } finally {
+      setWorkspaceReady(true);
       setDataLoading(false);
       setIsRefreshingState(false);
       syncInProgressRef.current = false;
@@ -235,6 +246,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   async function logout() {
     await authClient.signOut();
 
+    setWorkspaceReady(false);
     setState(emptyState);
     setSelectedProjectIdState(undefined);
 
@@ -445,6 +457,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     currentUser,
     sessionLoading,
     dataLoading: dataLoading || isRefreshingState,
+    workspaceReady,
     selectedProjectId: selectedProject?.id,
     selectedProject,
     clientProjects,
