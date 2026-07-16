@@ -41,7 +41,7 @@ export function ClientPhasesView() {
 
   if (!clientProjects.length) {
     return (
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1500px] px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:py-6">
         <section className="grid min-h-80 place-items-center rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_8px_20px_rgba(15,23,42,0.025)]">
           <div>
             <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
@@ -57,7 +57,7 @@ export function ClientPhasesView() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1500px] px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:py-6">
       <div className="grid gap-5">
         <ClientPhasesHeader
           projects={clientProjects}

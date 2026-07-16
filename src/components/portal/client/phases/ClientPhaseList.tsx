@@ -158,7 +158,7 @@ export function ClientPhaseList({ rows }: { rows: ClientPhaseRow[] }) {
         </table>
       </div>
 
-      <div className="grid gap-3 p-4 lg:hidden">
+      <div className="grid gap-3 p-4 pb-28 lg:hidden">
         {rows.map((row) => (
           <ClientPhaseCard
             key={`${row.project.id}-${row.phase.id}`}
