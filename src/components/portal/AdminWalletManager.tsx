@@ -193,9 +193,9 @@ function TopUpRow({ topUp }: { topUp: WalletTopUp & { user?: { name: string; ema
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <MiniMetric label="Provider Status" value={topUp.providerStatus ?? "Not set"} />
-        <MiniMetric label="Provider Reference" value={topUp.providerReference ?? "Not set"} />
-        <MiniMetric label="Failure Reason" value={topUp.failureReason ?? "None"} />
+        <MiniMetric label="Provider Status" value={topUp.providerStatus ? providerLabel(topUp.providerStatus) : "Not set"} />
+        <MiniMetric label="Provider Record" value={topUp.providerReference ? "Recorded" : "Not set"} />
+        <MiniMetric label="Gateway Issue" value={topUp.failureReason ? "Recorded" : "None"} />
       </div>
     </div>
   );
@@ -273,7 +273,8 @@ export function AdminWalletManager() {
       const data = await api.adminWallet.overview();
       setOverview(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load admin wallet records.");
+      void err;
+      setError("Unable to load admin wallet records. Please refresh or contact support.");
     } finally {
       setLoading(false);
       setRefreshing(false);

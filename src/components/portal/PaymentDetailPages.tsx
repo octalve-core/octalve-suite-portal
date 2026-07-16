@@ -95,6 +95,26 @@ function paymentTypeLabel(type: ProjectPayment["type"]) {
   return type === "DEPOSIT" ? "Deposit Payment" : "Balance Payment";
 }
 
+function isSafePaymentRedirect(value: string, provider: string) {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+
+    if (url.protocol !== "https:") return false;
+
+    if (provider === "PAYSTACK") {
+      return hostname === "checkout.paystack.com" || hostname.endsWith(".paystack.com");
+    }
+
+    if (provider === "FLUTTERWAVE") {
+      return hostname === "checkout.flutterwave.com" || hostname.endsWith(".flutterwave.com");
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
 function StatusChip({ status }: { status: PaymentStatus }) {
   return (
     <span
@@ -360,7 +380,8 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         if (mounted) setMethods(data);
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Unable to load payment methods.");
+          void err;
+          setError("Payment options are temporarily unavailable. Please refresh or contact support.");
         }
       } finally {
         if (mounted) setLoading(false);
@@ -385,12 +406,17 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
       const response = await api.payments.initialize(payment.id, provider);
 
       if (response.authorizationUrl) {
+        if (!isSafePaymentRedirect(response.authorizationUrl, provider)) {
+          setError("We could not verify the checkout page. Please use bank transfer or try again later.");
+          return;
+        }
+
         window.location.assign(response.authorizationUrl);
         return;
       }
 
       if (provider === "WALLET") {
-        setNotice(response.message || "Payment completed from Octalve Wallet.");
+        setNotice("Payment completed from Octalve Wallet.");
         window.setTimeout(() => {
           router.push("/client/payments");
           router.refresh();
@@ -398,9 +424,10 @@ function ClientPaymentMethodsCard({ payment }: { payment: ProjectPayment }) {
         return;
       }
 
-      setError(response.message || "We could not open the checkout page. Please try again or use bank transfer.");
+      setError("We could not open the checkout page. Please try again or use bank transfer.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start payment. Please try again or use bank transfer.");
+      void err;
+      setError("Unable to start payment. Please try again or use bank transfer.");
     } finally {
       setInitializingProvider("");
     }
@@ -609,7 +636,8 @@ function AdminFinanceAuditPanel({
         if (mounted) setAudit(data);
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Unable to load finance audit.");
+          void err;
+          setError("Unable to load finance audit. Please refresh or contact support.");
         }
       } finally {
         if (mounted) setLoading(false);
@@ -662,12 +690,12 @@ function AdminFinanceAuditPanel({
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <FinanceAuditMetric
-          label="Gateway Reference"
-          value={auditPayment.gatewayReference ? <CopyInlineValue value={auditPayment.gatewayReference} /> : "Not set"}
+          label="Gateway Record"
+          value={auditPayment.gatewayReference ? "Recorded" : "Not set"}
         />
         <FinanceAuditMetric
-          label="Provider Reference"
-          value={auditPayment.providerReference ? <CopyInlineValue value={auditPayment.providerReference} /> : "Not set"}
+          label="Provider Record"
+          value={auditPayment.providerReference ? "Recorded" : "Not set"}
         />
       </div>
 
@@ -701,12 +729,12 @@ function AdminFinanceAuditPanel({
                   <FinanceAuditMetric label="Provider Status" value={transaction.providerStatus ?? "Not set"} />
                   <FinanceAuditMetric label="Created" value={formatDateTime(transaction.createdAt)} />
                   <FinanceAuditMetric
-                    label="Provider Reference"
-                    value={transaction.providerReference ? <CopyInlineValue value={transaction.providerReference} /> : "Not set"}
+                    label="Provider Record"
+                    value={transaction.providerReference ? "Recorded" : "Not set"}
                   />
                   <FinanceAuditMetric
-                    label="Webhook Event"
-                    value={transaction.webhookEventId ? <CopyInlineValue value={transaction.webhookEventId} /> : "Not linked"}
+                    label="Webhook Record"
+                    value={transaction.webhookEventId ? "Recorded" : "Not linked"}
                   />
                 </AuditRecordCard>
               ))}
@@ -758,12 +786,12 @@ function AdminFinanceAuditPanel({
                   <FinanceAuditMetric label="Reference" value={event.reference ?? "Not set"} />
                   <FinanceAuditMetric label="Processed At" value={formatDateTime(event.processedAt)} />
                   <FinanceAuditMetric
-                    label="Event ID"
-                    value={event.eventId ? <CopyInlineValue value={event.eventId} /> : "Not set"}
+                    label="Event Record"
+                    value={event.eventId ? "Recorded" : "Not set"}
                   />
                   <FinanceAuditMetric
-                    label="Processing Error"
-                    value={event.processingError ?? "None"}
+                    label="Processing Status"
+                    value={event.processingError ? "Issue recorded" : "No issue recorded"}
                   />
                 </AuditRecordCard>
               ))}
@@ -810,7 +838,8 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
       await confirmPayment(payment.id);
       router.push("/admin/payments");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to confirm payment.");
+      void error;
+      setError("Failed to confirm payment. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -830,7 +859,8 @@ export function AdminPaymentDetailPage({ paymentId }: { paymentId: string }) {
       await rejectPayment(payment.id, rejectNote || undefined);
       router.push("/admin/payments");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to reject payment.");
+      void error;
+      setError("Failed to reject payment. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -974,7 +1004,8 @@ export function ClientPaymentDetailPage({ paymentId }: { paymentId: string }) {
       await markPaymentPaid(payment.id);
       router.push("/client/payments");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to mark payment as paid.");
+      void error;
+      setError("Failed to submit payment confirmation. Please refresh and try again.");
     } finally {
       setLoading(false);
     }

@@ -161,7 +161,8 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
       const data = await api.adminWallet.topUpAudit(topUpId);
       setAudit(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load wallet top-up audit.");
+      void err;
+      setError("Unable to load wallet top-up audit. Please refresh or contact support.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -279,15 +280,15 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
               <DetailMetric label="Wallet Balance" value={formatNaira(audit.walletBalance)} icon={<WalletCards size={17} />} />
               <DetailMetric label="Reference" value={<CopyInlineValue value={topUp.reference} />} icon={<FileText size={17} />} />
               <DetailMetric label="Audit Reference" value={<CopyInlineValue value={topUp.id} />} icon={<ShieldCheck size={17} />} />
-              <DetailMetric label="Provider Reference" value={topUp.providerReference ? <CopyInlineValue value={topUp.providerReference} /> : "Not set"} icon={<CreditCard size={17} />} />
-              <DetailMetric label="Provider Status" value={topUp.providerStatus ?? "Not set"} icon={<Clock3 size={17} />} />
+              <DetailMetric label="Provider Record" value={topUp.providerReference ? "Recorded" : "Not set"} icon={<CreditCard size={17} />} />
+              <DetailMetric label="Provider Status" value={topUp.providerStatus ? providerLabel(topUp.providerStatus) : "Not set"} icon={<Clock3 size={17} />} />
               <DetailMetric label="Created" value={formatDateTime(topUp.createdAt)} icon={<Clock3 size={17} />} />
               <DetailMetric label="Confirmed" value={formatDateTime(topUp.confirmedAt)} icon={<CheckCircle2 size={17} />} />
             </div>
 
             {topUp.failureReason ? (
               <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
-                Failure reason: {topUp.failureReason}
+                A gateway issue was recorded for this top-up. Review the provider dashboard or secure server logs for detailed diagnostics.
               </div>
             ) : null}
 
@@ -333,8 +334,8 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
                     <DetailMetric label="Reference" value={event.reference ?? "Not set"} />
                     <DetailMetric label="Signature Valid" value={event.signatureValid ? "Yes" : "No"} />
                     <DetailMetric label="Processed At" value={formatDateTime(event.processedAt)} />
-                    <DetailMetric label="Event ID" value={event.eventId ? <CopyInlineValue value={event.eventId} /> : "Not set"} />
-                    <DetailMetric label="Processing Error" value={event.processingError ?? "None"} />
+                    <DetailMetric label="Event Record" value={event.eventId ? "Recorded" : "Not set"} />
+                    <DetailMetric label="Processing Status" value={event.processingError ? "Issue recorded" : "No issue recorded"} />
                   </AuditRecordCard>
                 ))
               ) : (
