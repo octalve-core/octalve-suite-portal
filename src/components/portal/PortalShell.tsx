@@ -10,6 +10,7 @@ import { useApp } from "./AppContext";
 import { WorkspaceMobileNav } from "./workspace-shell/WorkspaceMobileNav";
 import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
 import { WorkspaceTopbar } from "./workspace-shell/WorkspaceTopbar";
+import type { WorkspaceTopbarPaymentAlert } from "./workspace-shell/WorkspaceTopbar";
 import {
   getCreateAction,
   navForRole,
@@ -78,18 +79,43 @@ export function PortalShell({
     }
   }
 
-  const counts = useMemo<WorkspaceCountState>(() => {
-    const projects = role === "CLIENT" ? clientProjects : state.projects;
+  const workspaceProjects = useMemo(
+    () => (role === "CLIENT" ? clientProjects : state.projects),
+    [clientProjects, role, state.projects],
+  );
 
-    const approvals = projects
+  const paymentAlertItems = useMemo<WorkspaceTopbarPaymentAlert[]>(() => {
+    return workspaceProjects
+      .flatMap((project) =>
+        project.payments
+          .filter((payment) =>
+            ["UNPAID", "PENDING_CONFIRMATION"].includes(payment.status),
+          )
+          .map((payment) => ({
+            id: payment.id,
+            projectTitle: project.title || project.businessName || "Project",
+            businessName: project.businessName || project.title || "Workspace",
+            type: payment.type,
+            status: payment.status,
+            amount: payment.amount,
+            href:
+              role === "SUPER_ADMIN"
+                ? `/admin/payments/${payment.id}`
+                : role === "CLIENT"
+                  ? `/client/payments/${payment.id}`
+                  : "/staff/phases",
+          })),
+      )
+      .sort((a, b) => {
+        if (a.status === b.status) return b.amount - a.amount;
+        return a.status === "PENDING_CONFIRMATION" ? -1 : 1;
+      });
+  }, [role, workspaceProjects]);
+
+  const counts = useMemo<WorkspaceCountState>(() => {
+    const approvals = workspaceProjects
       .flatMap((project) => project.phases)
       .filter((phase) => phase.status === "AWAITING_APPROVAL").length;
-
-    const payments = projects
-      .flatMap((project) => project.payments)
-      .filter((payment) =>
-        ["UNPAID", "PENDING_CONFIRMATION"].includes(payment.status),
-      ).length;
 
     const requests =
       role === "SUPER_ADMIN"
@@ -98,8 +124,8 @@ export function PortalShell({
           ).length
         : 0;
 
-    return { approvals, payments, requests };
-  }, [clientProjects, role, state.projects, state.requests]);
+    return { approvals, payments: paymentAlertItems.length, requests };
+  }, [paymentAlertItems.length, role, state.requests, workspaceProjects]);
 
   const nav = navForRole(role, counts);
   const createAction = getCreateAction(role);
@@ -139,6 +165,7 @@ export function PortalShell({
           userName={userName}
           pendingTotal={pendingTotal}
           paymentsCount={counts.payments}
+          paymentAlerts={paymentAlertItems}
         />
 
         <div className="min-w-0">

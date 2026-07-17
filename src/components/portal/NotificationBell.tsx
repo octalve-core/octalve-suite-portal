@@ -21,6 +21,15 @@ function roleFallbackHref(role?: Role) {
   return "/client";
 }
 
+function safeNotificationHref(value: string | undefined, role?: Role) {
+  const fallback = roleFallbackHref(role);
+
+  if (!value) return fallback;
+  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
+  if (value.includes("\\") || /[\u0000-\u001F\u007F]/.test(value)) return fallback;
+
+  return value;
+}
 function formatNotificationDate(value?: string) {
   if (!value) return "Now";
 
@@ -164,7 +173,7 @@ export function NotificationBell() {
 
               <div className="max-h-[min(460px,calc(100vh-230px))] overflow-auto">
                 {visibleNotifications.map((notification) => {
-                  const href = notification.href || roleFallbackHref(currentUser?.role);
+                  const href = safeNotificationHref(notification.href, currentUser?.role);
                   const isLoading = loadingId === notification.id;
 
                   return (
