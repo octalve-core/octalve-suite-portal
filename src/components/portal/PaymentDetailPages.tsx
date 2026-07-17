@@ -721,12 +721,12 @@ function AdminFinanceAuditPanel({
               {transactions.map((transaction) => (
                 <AuditRecordCard
                   key={transaction.id}
-                  title={transaction.reference}
+                  title="Gateway transaction"
                   status={transaction.status}
                 >
                   <FinanceAuditMetric label="Provider" value={providerLabel(transaction.provider)} />
                   <FinanceAuditMetric label="Amount" value={formatMoney(transaction.amount)} />
-                  <FinanceAuditMetric label="Provider Status" value={transaction.providerStatus ?? "Not set"} />
+                  <FinanceAuditMetric label="Provider Status" value={transaction.providerStatus ? "Recorded" : "Not set"} />
                   <FinanceAuditMetric label="Created" value={formatDateTime(transaction.createdAt)} />
                   <FinanceAuditMetric
                     label="Provider Record"
@@ -754,7 +754,7 @@ function AdminFinanceAuditPanel({
               {ledgerEntries.map((entry) => (
                 <AuditRecordCard
                   key={entry.id}
-                  title={entry.reference}
+                  title="Wallet ledger entry"
                   status={`${entry.entryType} / ${entry.direction}`}
                 >
                   <FinanceAuditMetric label="Amount" value={formatMoney(entry.amount)} />
@@ -783,7 +783,7 @@ function AdminFinanceAuditPanel({
                 <AuditRecordCard key={event.id} title={event.eventType} status={event.status}>
                   <FinanceAuditMetric label="Provider" value={providerLabel(event.provider)} />
                   <FinanceAuditMetric label="Signature Valid" value={event.signatureValid ? "Yes" : "No"} />
-                  <FinanceAuditMetric label="Reference" value={event.reference ?? "Not set"} />
+                  <FinanceAuditMetric label="Reference" value={Boolean(event.reference) ? "Recorded" : "Not set"} />
                   <FinanceAuditMetric label="Processed At" value={formatDateTime(event.processedAt)} />
                   <FinanceAuditMetric
                     label="Event Record"
