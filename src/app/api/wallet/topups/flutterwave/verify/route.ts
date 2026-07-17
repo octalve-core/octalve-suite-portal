@@ -154,10 +154,7 @@ export async function POST(request: Request) {
       data: {
         status: WALLET_TOPUP_STATUSES.FAILED,
         failedAt: new Date(),
-        failureReason:
-          error instanceof Error
-            ? error.message.slice(0, 250)
-            : "Flutterwave wallet funding verification failed",
+        failureReason: "Gateway verification failed",
       },
     });
 

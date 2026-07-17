@@ -147,10 +147,7 @@ export async function POST(request: Request) {
       data: {
         status: PAYMENT_TRANSACTION_STATUSES.FAILED,
         failedAt: new Date(),
-        failureReason:
-          error instanceof Error
-            ? error.message.slice(0, 250)
-            : "Paystack verification failed",
+        failureReason: "Gateway verification failed",
       },
     });
 

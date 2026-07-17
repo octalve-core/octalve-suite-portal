@@ -71,11 +71,8 @@ function getCallbackBaseUrl(request: Request) {
   return new URL(request.url).origin;
 }
 
-function safeFailureReason(value: unknown) {
-  const message =
-    value instanceof Error ? value.message : String(value ?? "Provider request failed");
-
-  return message.slice(0, 250);
+function safeFailureReason(_value: unknown) {
+  return "Provider checkout could not be completed.";
 }
 
 async function assertGatewayReady(provider: string) {
@@ -168,8 +165,7 @@ async function initializePaystackTopUp(input: {
       !payload.data?.authorization_url ||
       !payload.data?.reference
     ) {
-      const failureReason =
-        payload?.message || `Paystack initialize failed with status ${response.status}`;
+      const failureReason = "Paystack wallet checkout initialization failed";
 
       await prisma.walletTopUp.update({
         where: { id: topUp.id },
@@ -274,8 +270,7 @@ async function initializeFlutterwaveTopUp(input: {
       payload?.status !== "success" ||
       !payload.data?.link
     ) {
-      const failureReason =
-        payload?.message || `Flutterwave initialize failed with status ${response.status}`;
+      const failureReason = "Flutterwave wallet checkout initialization failed";
 
       await prisma.walletTopUp.update({
         where: { id: topUp.id },

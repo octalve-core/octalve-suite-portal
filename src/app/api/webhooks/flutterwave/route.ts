@@ -416,8 +416,8 @@ export async function POST(request: Request) {
       data: payload.data,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message.slice(0, 250) : "Webhook processing failed";
+    void error;
+    const message = "Webhook processing failed";
 
     await markWebhookEvent({
       id: webhookEvent.id,

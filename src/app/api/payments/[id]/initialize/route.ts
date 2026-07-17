@@ -80,9 +80,8 @@ function getCallbackBaseUrl(request: Request) {
   return new URL(request.url).origin;
 }
 
-function safeFailureReason(value: unknown) {
-  const message = value instanceof Error ? value.message : String(value ?? "Provider request failed");
-  return message.slice(0, 250);
+function safeFailureReason(_value: unknown) {
+  return "Provider checkout could not be completed.";
 }
 
 async function createGatewayTransaction(input: {
@@ -206,8 +205,7 @@ async function initializePaystackTransaction(input: {
       !payload.data?.authorization_url ||
       !payload.data?.reference
     ) {
-      const failureReason =
-        payload?.message || `Paystack initialize failed with status ${response.status}`;
+      const failureReason = "Paystack checkout initialization failed";
 
       await prisma.paymentTransaction.update({
         where: { id: record.transaction.id },
@@ -331,8 +329,7 @@ async function initializeFlutterwaveTransaction(input: {
       payload?.status !== "success" ||
       !payload.data?.link
     ) {
-      const failureReason =
-        payload?.message || `Flutterwave initialize failed with status ${response.status}`;
+      const failureReason = "Flutterwave checkout initialization failed";
 
       await prisma.paymentTransaction.update({
         where: { id: record.transaction.id },
@@ -479,12 +476,8 @@ export async function POST(request: Request, { params }: Params) {
         projectStatus: resultPayload.projectStatus,
       });
     } catch (error) {
-      return errorResponse(
-        error instanceof Error
-          ? error.message
-          : "Unable to complete wallet payment.",
-        400,
-      );
+      void error;
+      return errorResponse("Unable to complete wallet payment.", 400);
     }
   }
 
