@@ -166,6 +166,7 @@ export function PortalShell({
           pendingTotal={pendingTotal}
           paymentsCount={counts.payments}
           paymentAlerts={paymentAlertItems}
+          onLogout={handlePortalLogout}
         />
 
         <div className="min-w-0">

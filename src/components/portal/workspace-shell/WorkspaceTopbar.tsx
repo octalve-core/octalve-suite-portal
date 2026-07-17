@@ -6,6 +6,7 @@ import {
   Bell,
   ChevronDown,
   CreditCard,
+  LogOut,
   Search,
   Settings2,
   X,
@@ -53,15 +54,19 @@ export function WorkspaceTopbar({
   pendingTotal,
   paymentsCount,
   paymentAlerts,
+  onLogout,
 }: {
   role: Role;
   userName: string;
   pendingTotal: number;
   paymentsCount: number;
   paymentAlerts: WorkspaceTopbarPaymentAlert[];
+  onLogout: () => void;
 }) {
   const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const paymentsWrapRef = useRef<HTMLDivElement | null>(null);
+  const userMenuWrapRef = useRef<HTMLDivElement | null>(null);
 
   const paymentSummary = useMemo(() => {
     const unpaid = paymentAlerts.filter((item) => item.status === "UNPAID");
@@ -78,10 +83,14 @@ export function WorkspaceTopbar({
 
   useEffect(() => {
     function onClick(event: MouseEvent) {
-      if (!paymentsWrapRef.current) return;
+      const target = event.target as Node;
 
-      if (!paymentsWrapRef.current.contains(event.target as Node)) {
+      if (paymentsWrapRef.current && !paymentsWrapRef.current.contains(target)) {
         setPaymentsOpen(false);
+      }
+
+      if (userMenuWrapRef.current && !userMenuWrapRef.current.contains(target)) {
+        setUserMenuOpen(false);
       }
     }
 
@@ -123,7 +132,10 @@ export function WorkspaceTopbar({
           <div className="relative hidden md:inline-flex" ref={paymentsWrapRef}>
             <button
               type="button"
-              onClick={() => setPaymentsOpen((value) => !value)}
+              onClick={() => {
+                setPaymentsOpen((value) => !value);
+                setUserMenuOpen(false);
+              }}
               aria-expanded={paymentsOpen}
               aria-label={`${paymentsCount} pending payment records`}
               className={[
@@ -260,14 +272,6 @@ export function WorkspaceTopbar({
           </div>
 
           <Link
-            href={settingsHref(role)}
-            className="hidden min-h-12 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.035)] transition hover:border-blue-200 hover:text-[#0064E0] md:inline-flex"
-          >
-            <Settings2 size={18} />
-            <span>Settings</span>
-          </Link>
-
-          <Link
             href={
               pendingTotal > 0
                 ? role === "SUPER_ADMIN"
@@ -288,19 +292,76 @@ export function WorkspaceTopbar({
             ) : null}
           </Link>
 
-          <div className="flex min-w-0 items-center gap-3 pl-1">
-            <WorkspaceUserAvatar
-              name={userName}
-              className="!bg-slate-100 !text-slate-900 !ring-slate-200"
-            />
-            <div className="hidden min-w-0 lg:block">
-              <strong className="block max-w-[150px] truncate text-sm font-semibold text-slate-950">
-                {userName}
-              </strong>
-              <span className="mt-0.5 block text-xs font-medium text-[#334a7d]">
-                {roleEyebrow(role)}
+          <div className="relative flex min-w-0 items-center pl-1" ref={userMenuWrapRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen((value) => !value);
+                setPaymentsOpen(false);
+              }}
+              aria-expanded={userMenuOpen}
+              aria-label="Open account menu"
+              className="flex min-w-0 items-center gap-3 rounded-2xl border border-transparent p-1.5 pr-2 transition hover:border-slate-200 hover:bg-white hover:shadow-[0_8px_24px_rgba(15,23,42,0.035)]"
+            >
+              <WorkspaceUserAvatar
+                name={userName}
+                className="!bg-slate-100 !text-slate-900 !ring-slate-200"
+              />
+              <span className="hidden min-w-0 text-left lg:block">
+                <strong className="block max-w-[150px] truncate text-sm font-medium text-slate-900">
+                  {userName}
+                </strong>
+                <span className="mt-0.5 block text-xs font-medium text-[#334a7d]">
+                  {roleEyebrow(role)}
+                </span>
               </span>
-            </div>
+              <ChevronDown
+                size={15}
+                className={[
+                  "hidden text-slate-500 transition lg:block",
+                  userMenuOpen ? "rotate-180" : "rotate-0",
+                ].join(" ")}
+              />
+            </button>
+
+            {userMenuOpen ? (
+              <section
+                aria-label="Account menu"
+                className="absolute right-0 top-[calc(100%+12px)] z-90 w-[260px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)]"
+              >
+                <div className="border-b border-slate-100 p-4">
+                  <span className="block truncate text-sm font-medium text-slate-900">
+                    {userName}
+                  </span>
+                  <span className="mt-1 block text-xs font-medium text-slate-500">
+                    {roleEyebrow(role)}
+                  </span>
+                </div>
+
+                <div className="p-2">
+                  <Link
+                    href={settingsHref(role)}
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-[#0064E0]"
+                  >
+                    <Settings2 size={17} />
+                    Settings
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      void onLogout();
+                    }}
+                    className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm font-medium text-red-700 transition hover:bg-red-50"
+                  >
+                    <LogOut size={17} />
+                    Logout
+                  </button>
+                </div>
+              </section>
+            ) : null}
           </div>
         </div>
       </div>
