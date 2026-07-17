@@ -120,11 +120,11 @@ function DeliverablesTable({
                         </span>
                       ) : null}
 
-                      {deliverable.link ? (
+                      {safeExternalHref(deliverable.link) ? (
                         <a
-                          href={deliverable.link}
+                          href={safeExternalHref(deliverable.link)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer nofollow"
                           className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#0064E0] hover:underline"
                         >
                           {deliverableLinkLabel(deliverable)}
@@ -185,11 +185,11 @@ function DeliverablesTable({
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <DeliverableStatusChip status={deliverable.status} />
-                  {deliverable.link ? (
+                  {safeExternalHref(deliverable.link) ? (
                     <a
-                      href={deliverable.link}
+                      href={safeExternalHref(deliverable.link)}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer nofollow"
                       className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-[#0064E0]"
                     >
                       Open link
@@ -206,6 +206,23 @@ function DeliverablesTable({
   );
 }
 
+function safeExternalHref(value?: string | null) {
+  const trimmed = String(value ?? "").trim();
+
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.toString();
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
 export function ClientProjectPhaseAccordion({
   project,
   activePhaseId,

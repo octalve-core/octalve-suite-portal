@@ -101,6 +101,23 @@ function cn(...items: Array<string | false | null | undefined>) {
   return items.filter(Boolean).join(" ");
 }
 
+function safeExternalHref(value?: string | null) {
+  const trimmed = String(value ?? "").trim();
+
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.toString();
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
 function formatDate(value?: string) {
   if (!value) return "Not set";
 
@@ -241,10 +258,12 @@ function EmptyPanel({
   title,
   body,
   icon,
+  action,
 }: {
   title: string;
   body: string;
   icon?: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="rounded-[26px] border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
@@ -257,6 +276,7 @@ function EmptyPanel({
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
         {body}
       </p>
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
@@ -790,7 +810,15 @@ export function ProjectWorkspaceDetail({
   if (!project) {
     return (
       <div className="content narrow">
-        <EmptyPanel title="Project not found" body="This project may have been deleted or you may not have access to it." />
+        <EmptyPanel
+          title="Project not found"
+          body="This project may have been deleted or you may not have access to it."
+          action={
+            <Link href={config.backHref} className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white">
+              {config.backLabel}
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -803,7 +831,15 @@ export function ProjectWorkspaceDetail({
   if (!allowed) {
     return (
       <div className="content narrow">
-        <EmptyPanel title="No access to this project" body="This project is not assigned to your workspace profile." />
+        <EmptyPanel
+          title="No access to this project"
+          body="This project is not assigned to your workspace profile."
+          action={
+            <Link href={config.backHref} className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white">
+              {config.backLabel}
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -1163,11 +1199,11 @@ function PhaseDeliverables({
                         </span>
                       ) : null}
 
-                      {deliverable.link ? (
+                      {safeExternalHref(deliverable.link) ? (
                         <a
-                          href={deliverable.link}
+                          href={safeExternalHref(deliverable.link)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer nofollow"
                           className="mt-2 inline-flex text-sm font-bold text-[#0064E0] hover:underline"
                         >
                           Open deliverable link
@@ -1282,6 +1318,9 @@ export function PhaseWorkspaceDetail({
     updateDeliverable,
   } = useApp();
 
+  const config = roleConfig[role];
+  const fallbackHref = role === "staff" ? "/staff/phases" : config.backHref;
+  const fallbackLabel = role === "staff" ? "Back to Phases" : config.backLabel;
   const project =
     projectId
       ? state.projects.find((item) => item.id === projectId)
@@ -1295,7 +1334,15 @@ export function PhaseWorkspaceDetail({
   if (!project || !phase) {
     return (
       <div className="content narrow">
-        <EmptyPanel title="Phase not found" body="This phase may have been deleted or you may not have access to it." />
+        <EmptyPanel
+          title="Phase not found"
+          body="This phase may have been deleted or you may not have access to it."
+          action={
+            <Link href={fallbackHref} className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white">
+              {fallbackLabel}
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -1308,7 +1355,15 @@ export function PhaseWorkspaceDetail({
   if (!allowed) {
     return (
       <div className="content narrow">
-        <EmptyPanel title="No access to this phase" body="This phase is not assigned to your workspace profile." />
+        <EmptyPanel
+          title="No access to this phase"
+          body="This phase is not assigned to your workspace profile."
+          action={
+            <Link href={fallbackHref} className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white">
+              {fallbackLabel}
+            </Link>
+          }
+        />
       </div>
     );
   }
