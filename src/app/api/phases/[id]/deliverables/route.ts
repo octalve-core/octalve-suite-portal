@@ -20,8 +20,29 @@ export async function POST(request: Request, { params }: Params) {
 
   if (!name?.trim()) return errorResponse("Deliverable name is required", 400);
 
-  const phase = await prisma.projectPhase.findUnique({ where: { id } });
+  const phase = await prisma.projectPhase.findUnique({
+    where: { id },
+    include: {
+      project: {
+        select: {
+          projectManagerId: true,
+        },
+      },
+    },
+  });
   if (!phase) return errorResponse("Phase not found", 404);
+
+  const isAdmin = result.role === "SUPER_ADMIN";
+  const isAssignedStaff =
+    result.role === "STAFF" && phase.assignedStaffId === result.user.id;
+  const isAssignedProjectManager =
+    result.role === "PROJECT_MANAGER" &&
+    (phase.project.projectManagerId === result.user.id ||
+      phase.assignedStaffId === result.user.id);
+
+  if (!isAdmin && !isAssignedStaff && !isAssignedProjectManager) {
+    return errorResponse("Forbidden", 403);
+  }
 
   const deliverable = await prisma.deliverable.create({
     data: {

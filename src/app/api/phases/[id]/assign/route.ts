@@ -20,8 +20,24 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (!staffId) return errorResponse("staffId is required", 400);
 
-  const phase = await prisma.projectPhase.findUnique({ where: { id } });
+  const phase = await prisma.projectPhase.findUnique({
+    where: { id },
+    include: {
+      project: {
+        select: {
+          projectManagerId: true,
+        },
+      },
+    },
+  });
   if (!phase) return errorResponse("Phase not found", 404);
+
+  if (
+    result.role === "PROJECT_MANAGER" &&
+    phase.project.projectManagerId !== result.user.id
+  ) {
+    return errorResponse("Forbidden", 403);
+  }
 
   // Verify staffId belongs to a staff/PM user
   const staff = await prisma.user.findUnique({ where: { id: staffId } });

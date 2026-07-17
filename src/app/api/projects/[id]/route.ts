@@ -28,9 +28,17 @@ export async function GET(_request: Request, { params }: Params) {
 
   if (!project) return errorResponse("Project not found", 404);
 
-  // Access check: client can only view own projects, staff only assigned
   const { user, role } = result;
-  if (role === "CLIENT" && project.clientId !== user.id) {
+  const isAdmin = role === "SUPER_ADMIN";
+  const isClientOwner = role === "CLIENT" && project.clientId === user.id;
+  const isAssignedStaff =
+    role === "STAFF" && project.phases.some((phase) => phase.assignedStaffId === user.id);
+  const isAssignedProjectManager =
+    role === "PROJECT_MANAGER" &&
+    (project.projectManagerId === user.id ||
+      project.phases.some((phase) => phase.assignedStaffId === user.id));
+
+  if (!isAdmin && !isClientOwner && !isAssignedStaff && !isAssignedProjectManager) {
     return errorResponse("Forbidden", 403);
   }
 

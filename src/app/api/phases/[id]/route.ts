@@ -23,8 +23,16 @@ export async function GET(_request: Request, { params }: Params) {
 
   if (!phase) return errorResponse("Phase not found", 404);
 
-  // Access check for clients
-  if (result.role === "CLIENT" && phase.project.clientId !== result.user.id) {
+  const isAdmin = result.role === "SUPER_ADMIN";
+  const isClientOwner = result.role === "CLIENT" && phase.project.clientId === result.user.id;
+  const isAssignedStaff =
+    result.role === "STAFF" && phase.assignedStaffId === result.user.id;
+  const isAssignedProjectManager =
+    result.role === "PROJECT_MANAGER" &&
+    (phase.project.projectManagerId === result.user.id ||
+      phase.assignedStaffId === result.user.id);
+
+  if (!isAdmin && !isClientOwner && !isAssignedStaff && !isAssignedProjectManager) {
     return errorResponse("Forbidden", 403);
   }
 

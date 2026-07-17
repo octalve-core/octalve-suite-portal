@@ -25,6 +25,7 @@ export async function POST(_request: Request, { params }: Params) {
       project: {
         select: {
           clientId: true,
+          projectManagerId: true,
           title: true,
           client: {
             select: {
@@ -38,6 +39,17 @@ export async function POST(_request: Request, { params }: Params) {
   });
 
   if (!phase) return errorResponse("Phase not found", 404);
+
+  const isAdmin = result.role === "SUPER_ADMIN";
+  const isAssignedProjectManager =
+    result.role === "PROJECT_MANAGER" &&
+    (phase.project.projectManagerId === result.user.id ||
+      phase.assignedStaffId === result.user.id);
+
+  if (!isAdmin && !isAssignedProjectManager) {
+    return errorResponse("Forbidden", 403);
+  }
+
   if (phase.status === "APPROVED") return errorResponse("Phase is already approved", 400);
   if (phase.status === "LOCKED") return errorResponse("Phase is locked", 400);
 

@@ -13,10 +13,15 @@ async function checkAccess(phaseId: string, userId: string, role: string) {
     include: { project: { select: { clientId: true, projectManagerId: true } } },
   });
   if (!phase) return { phase: null, allowed: false };
-
-  if (role === "SUPER_ADMIN" || role === "PROJECT_MANAGER") return { phase, allowed: true };
+  if (role === "SUPER_ADMIN") return { phase, allowed: true };
   if (role === "CLIENT" && phase.project.clientId === userId) return { phase, allowed: true };
   if (role === "STAFF" && phase.assignedStaffId === userId) return { phase, allowed: true };
+  if (
+    role === "PROJECT_MANAGER" &&
+    (phase.project.projectManagerId === userId || phase.assignedStaffId === userId)
+  ) {
+    return { phase, allowed: true };
+  }
 
   return { phase, allowed: false };
 }
