@@ -24,15 +24,15 @@ import type { WorkspaceCountState } from "./workspace-shell/workspace-shell-type
 function projectHref(role: Role, projectId: string) {
   if (role === "SUPER_ADMIN") return `/admin/projects/${projectId}`;
   if (role === "CLIENT") return `/client/projects/${projectId}`;
-  return `/staff/projects/${projectId}`;
-}
 
+  return "/staff/projects";
+}
 function phaseHref(role: Role, projectId: string, phaseId: string) {
   if (role === "CLIENT") return `/client/phases/${phaseId}`;
-  if (role === "SUPER_ADMIN") return `/admin/projects/${projectId}`;
+  if (role === "SUPER_ADMIN") return `/admin/projects/${projectId}/phases/${phaseId}`;
+
   return `/staff/phases/${phaseId}`;
 }
-
 function paymentHref(role: Role, paymentId: string) {
   if (role === "SUPER_ADMIN") return `/admin/payments/${paymentId}`;
   if (role === "CLIENT") return `/client/payments/${paymentId}`;
@@ -152,7 +152,7 @@ function userSearchItem(user: User): WorkspaceSearchItem {
     title: user.name || user.company || (isClient ? "Client" : "Team member"),
     eyebrow: isClient ? "Client" : "Team",
     description: user.company || user.specialty || user.role,
-    href: isClient ? `/admin/clients/${user.id}` : "/admin/team",
+    href: isClient ? `/admin/clients/${user.id}` : `/admin/team/${user.id}`,
     keywords: compactSearchKeywords([
       user.name,
       user.company,

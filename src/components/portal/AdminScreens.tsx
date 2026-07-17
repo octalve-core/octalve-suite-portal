@@ -448,7 +448,8 @@ export function AdminCreateProject() {
 
       router.push(`/admin/projects/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project.");
+      void err;
+      setError("Failed to create project. Please check the required details and try again.");
       setLoading(false);
     }
   }
