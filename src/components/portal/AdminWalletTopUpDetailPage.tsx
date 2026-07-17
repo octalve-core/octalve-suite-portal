@@ -304,7 +304,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
                 ledgerEntries.map((entry) => (
                   <AuditRecordCard
                     key={entry.id}
-                    title={entry.reference}
+                    title="Wallet ledger entry"
                     status={`${entry.entryType} / ${entry.direction}`}
                   >
                     <DetailMetric label="Amount" value={formatNaira(entry.amount)} />
@@ -312,7 +312,7 @@ export function AdminWalletTopUpDetailPage({ topUpId }: { topUpId: string }) {
                     <DetailMetric label="Description" value={entry.description ?? "Not set"} />
                     <DetailMetric label="Created" value={formatDateTime(entry.createdAt)} />
                     <DetailMetric label="Project" value={entry.project?.title ?? "Not linked"} />
-                    <DetailMetric label="Payment" value={entry.payment?.reference ?? "Not linked"} />
+                    <DetailMetric label="Payment" value={entry.payment ? "Recorded" : "Not linked"} />
                   </AuditRecordCard>
                 ))
               ) : (

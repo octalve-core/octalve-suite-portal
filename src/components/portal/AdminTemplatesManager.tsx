@@ -160,11 +160,7 @@ export function AdminTemplatesManager() {
         `${missingCatalogItems.length} missing official template${missingCatalogItems.length === 1 ? "" : "s"} created successfully. Existing templates were not overwritten.`,
       );
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not create missing official templates.",
-      );
+      void err; setError("Could not create missing official templates. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -209,7 +205,7 @@ export function AdminTemplatesManager() {
       await refresh();
       setNotice("Official template metadata backfilled successfully. Existing phases and deliverables were preserved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not backfill official template metadata.");
+      void err; setError("Could not backfill official template metadata. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -233,9 +229,7 @@ export function AdminTemplatesManager() {
       await refresh();
       setNotice(`"${template.name}" duplicated successfully.`);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not duplicate template.",
-      );
+      void err; setError("Could not duplicate template. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -257,7 +251,7 @@ export function AdminTemplatesManager() {
       await refresh();
       setNotice(`"${template.name}" deleted successfully.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete template.");
+      void err; setError("Could not delete template. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }

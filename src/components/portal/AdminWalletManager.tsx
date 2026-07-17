@@ -217,7 +217,7 @@ function LedgerRow({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <strong className="text-sm font-medium text-slate-700">
-                {entry.description || entry.reference}
+                {entry.description || "Wallet ledger entry"}
               </strong>
               <Badge className={entry.direction === "IN" ? "badge-green" : "badge-slate"}>
                 {entry.entryType} / {entry.direction}
@@ -243,8 +243,8 @@ function LedgerRow({
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
         <MiniMetric label="Balance After" value={typeof entry.balanceAfter === "number" ? formatNaira(entry.balanceAfter) : "Not set"} />
         <MiniMetric label="Project" value={entry.project?.title ?? "Not linked"} />
-        <MiniMetric label="Payment" value={entry.payment?.reference ?? "Not linked"} />
-        <MiniMetric label="Top-up" value={entry.topUp?.reference ?? "Not linked"} />
+        <MiniMetric label="Payment" value={entry.payment ? "Recorded" : "Not linked"} />
+        <MiniMetric label="Top-up" value={entry.topUp ? "Recorded" : "Not linked"} />
       </div>
     </div>
   );

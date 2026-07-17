@@ -288,7 +288,8 @@ export function AdminTemplateEditPage() {
       await refresh();
       setNotice("Template updated successfully.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save template.");
+      void err;
+      setError("Could not save template. Please refresh and try again.");
     } finally {
       setLoading(false);
     }

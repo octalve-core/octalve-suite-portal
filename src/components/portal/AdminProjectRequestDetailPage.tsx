@@ -213,7 +213,8 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
       await refresh();
       router.push(`/admin/projects/${projectId}`);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to approve request.");
+      void error;
+      setError("Failed to approve request. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -238,14 +239,14 @@ export function AdminProjectRequestDetailPage({ requestId }: { requestId: string
       });
 
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "Failed to reject request.");
+        throw new Error("Request rejection failed.");
       }
 
       await refresh();
       router.push("/admin/project-requests");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to reject request.");
+      void error;
+      setError("Failed to reject request. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }

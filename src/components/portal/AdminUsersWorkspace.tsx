@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -653,7 +654,8 @@ export function AdminUserDetailPage({
 }) {
   const { state, currentUser, updateTeamMember, deleteTeamMember } = useApp();
 
-  const user = (state.users ?? []).find((item) => item.id === userId) as UserWithMeta | undefined;
+    const router = useRouter();
+const user = (state.users ?? []).find((item) => item.id === userId) as UserWithMeta | undefined;
 
   const [form, setForm] = useState<{
     name: string;
@@ -722,7 +724,8 @@ export function AdminUserDetailPage({
         role: canChangeRole ? form.role : normalizeUserRole(activeUser),
       });
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to update user.");
+      void error;
+      setError("Failed to update user. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -740,9 +743,10 @@ export function AdminUserDetailPage({
 
     try {
       await deleteTeamMember(activeUser.id);
-      window.location.href = "/admin/team";
+      router.replace("/admin/team");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to delete user.");
+      void error;
+      setError("Failed to delete user. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
