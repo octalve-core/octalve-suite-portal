@@ -210,15 +210,14 @@ export function PortalShell({
         localStorage.removeItem("octalve-session");
         localStorage.removeItem("octalve-user");
         localStorage.removeItem("token");
-        localStorage.removeItem("accessToken");
-      } catch {
+} catch {
         // Storage may be unavailable in restricted browsers.
       }
 
       router.replace("/login");
 
       window.setTimeout(() => {
-        window.location.href = "/login";
+        router.refresh();
       }, 80);
     }
   }
