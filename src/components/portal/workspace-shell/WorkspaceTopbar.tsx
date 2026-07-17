@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
   ChevronDown,
   CreditCard,
   LogOut,
   Search,
   Settings2,
+  WalletCards,
   X,
 } from "lucide-react";
 
@@ -272,22 +272,14 @@ export function WorkspaceTopbar({
           </div>
 
           <Link
-            href={
-              pendingTotal > 0
-                ? role === "SUPER_ADMIN"
-                  ? "/admin/project-requests"
-                  : role === "CLIENT"
-                    ? "/client/approvals"
-                    : "/staff/phases"
-                : settingsHref(role)
-            }
-            className="relative grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-800 shadow-[0_8px_24px_rgba(15,23,42,0.035)] md:hidden"
-            aria-label="Alerts"
+            href={paymentsHref(role)}
+            className="relative grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-[#0064E0] shadow-[0_8px_24px_rgba(15,23,42,0.035)] md:hidden"
+            aria-label={`${paymentsCount} pending payment records`}
           >
-            <Bell size={18} />
-            {pendingTotal > 0 ? (
-              <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white ring-2 ring-white">
-                {pendingTotal}
+            <WalletCards size={18} />
+            {paymentsCount > 0 ? (
+              <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#0064E0] px-1.5 py-0.5 text-[10px] font-bold text-white ring-2 ring-white">
+                {paymentsCount > 9 ? "9+" : paymentsCount}
               </span>
             ) : null}
           </Link>
