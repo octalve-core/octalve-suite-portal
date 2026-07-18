@@ -81,14 +81,20 @@ async function updateLinkedAutomationRecords(
   const now = new Date();
 
   if (input.transactionId) {
-    const transactionData = {
+    const transactionData: Prisma.PaymentTransactionUpdateInput = {
       status: PAYMENT_TRANSACTION_STATUSES.CONFIRMED,
       verifiedAt: now,
       confirmedAt: now,
       providerStatus: input.providerStatus ?? undefined,
-      providerReference: input.providerReference ?? undefined,
-      webhookEventId: input.webhookEventId ?? undefined,
     };
+
+    if (input.providerReference != null) {
+      Object.assign(transactionData, { providerReference: input.providerReference });
+    }
+
+    if (input.webhookEventId != null) {
+      Object.assign(transactionData, { webhookEventId: input.webhookEventId });
+    }
 
     await tx.paymentTransaction.update({
       where: { id: input.transactionId },
