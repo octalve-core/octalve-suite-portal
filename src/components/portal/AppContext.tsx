@@ -90,6 +90,11 @@ type AppContextValue = {
   deleteTeamMember: (userId: string) => Promise<void>;
   flagClientThreat: (userId: string, reason: string) => Promise<void>;
   clearClientThreat: (userId: string) => Promise<void>;
+  promoteClientRole: (
+    userId: string,
+    role: Extract<Role, "STAFF" | "PROJECT_MANAGER">,
+    confirmText: string,
+  ) => Promise<void>;
   deleteClient: (userId: string, confirmEmail: string, confirmText: string) => Promise<void>;
   deleteProject: (projectId: string, confirmCode?: string) => Promise<void>;
   markPaymentPaid: (paymentId: string) => Promise<void>;
@@ -406,6 +411,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncPortalData();
   }
 
+  async function promoteClientRole(
+    userId: string,
+    role: Extract<Role, "STAFF" | "PROJECT_MANAGER">,
+    confirmText: string,
+  ) {
+    const response = await fetch(`/api/admin/clients/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "UPDATE_CLIENT_ROLE", role, confirmText }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Client role upgrade failed");
+    }
+
+    await syncPortalData();
+  }
   async function deleteClient(userId: string, confirmEmail: string, confirmText: string) {
     const response = await fetch(`/api/admin/clients/${userId}`, {
       method: "DELETE",
@@ -533,6 +555,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteTeamMember,
     flagClientThreat,
     clearClientThreat,
+    promoteClientRole,
     deleteClient,
     deleteProject,
     markPaymentPaid,

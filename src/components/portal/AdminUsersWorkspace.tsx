@@ -663,6 +663,7 @@ export function AdminUserDetailPage({
     deleteTeamMember,
     flagClientThreat,
     clearClientThreat,
+    promoteClientRole,
     deleteClient,
   } = useApp();
 
@@ -684,10 +685,14 @@ export function AdminUserDetailPage({
   }));
 
   const [loadingAction, setLoadingAction] = useState<
-    "save" | "delete" | "flag" | "clearFlag" | "deleteClient" | null
+    "save" | "delete" | "flag" | "clearFlag" | "promoteClient" | "deleteClient" | null
   >(null);
   const [error, setError] = useState("");
   const [threatReason, setThreatReason] = useState("");
+  const [clientPromotionRole, setClientPromotionRole] = useState<
+    Extract<Role, "STAFF" | "PROJECT_MANAGER">
+  >("STAFF");
+  const [clientPromotionText, setClientPromotionText] = useState("");
   const [deleteClientEmail, setDeleteClientEmail] = useState("");
   const [deleteClientText, setDeleteClientText] = useState("");
 
@@ -722,6 +727,7 @@ export function AdminUserDetailPage({
   const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
   const canDelete = isSuperAdmin && activeRole !== "CLIENT" && currentUser?.id !== activeUser.id;
   const canManageClientDanger = isSuperAdmin && isClientDetail && currentUser?.id !== activeUser.id;
+  const canPromoteClient = canManageClientDanger && !activeUser.banned;
   const canEditProfile = mode === "team" && activeRole !== "CLIENT";
   const canChangeRole = canEditProfile && currentUser?.id !== activeUser.id;
 
@@ -814,6 +820,27 @@ export function AdminUserDetailPage({
     }
   }
 
+  async function promoteClientToTeamRole() {
+    if (!canPromoteClient) return;
+
+    if (clientPromotionText.trim() !== "PROMOTE CLIENT") {
+      setError("Type PROMOTE CLIENT to confirm this role upgrade.");
+      return;
+    }
+
+    setError("");
+    setLoadingAction("promoteClient");
+
+    try {
+      await promoteClientRole(activeUser.id, clientPromotionRole, clientPromotionText.trim());
+      router.replace(`/admin/team/${activeUser.id}`);
+    } catch (error) {
+      void error;
+      setError("Failed to upgrade client role. Please refresh and try again.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
   async function removeClient() {
     if (!canManageClientDanger) return;
 
@@ -1062,6 +1089,66 @@ export function AdminUserDetailPage({
               </Button>
             ) : null}
 
+            {canManageClientDanger ? (
+              <div className="mt-5 rounded-3xl border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#0064E0] ring-1 ring-blue-200">
+                    <UserCog size={18} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[#0064E0]">
+                      Client Role Upgrade
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-blue-900/70">
+                      Promote this client into your internal delivery team without using the team edit endpoint.
+                    </p>
+                    {activeUser.banned ? (
+                      <p className="mt-2 rounded-2xl border border-red-200 bg-white p-3 text-xs font-bold text-red-700">
+                        Clear the threat flag before upgrading this client.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <label className="mt-4 block">
+                  <span className="text-sm font-bold text-blue-950">New internal role</span>
+                  <Select
+                    value={clientPromotionRole}
+                    onChange={(event) =>
+                      setClientPromotionRole(
+                        event.target.value as Extract<Role, "STAFF" | "PROJECT_MANAGER">,
+                      )
+                    }
+                    disabled={!canPromoteClient || Boolean(loadingAction)}
+                    className="mt-2 h-12 rounded-2xl border-blue-200 bg-white text-sm"
+                  >
+                    <option value="STAFF">Staff</option>
+                    <option value="PROJECT_MANAGER">Project Manager</option>
+                  </Select>
+                </label>
+
+                <label className="mt-3 block">
+                  <span className="text-sm font-bold text-blue-950">Type PROMOTE CLIENT</span>
+                  <Input
+                    value={clientPromotionText}
+                    onChange={(event) => setClientPromotionText(event.target.value)}
+                    placeholder="PROMOTE CLIENT"
+                    disabled={!canPromoteClient || Boolean(loadingAction)}
+                    className="mt-2 h-12 rounded-2xl border-blue-200 bg-white text-sm"
+                  />
+                </label>
+
+                <Button
+                  className="mt-3 w-full"
+                  onClick={promoteClientToTeamRole}
+                  loading={loadingAction === "promoteClient"}
+                  disabled={!canPromoteClient || Boolean(loadingAction)}
+                >
+                  <UserCog size={16} />
+                  Promote Client
+                </Button>
+              </div>
+            ) : null}
             {canManageClientDanger ? (
               <div className="mt-5 rounded-3xl border border-red-200 bg-red-50 p-4">
                 <div className="flex items-start gap-3">

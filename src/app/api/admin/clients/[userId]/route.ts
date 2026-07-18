@@ -12,6 +12,23 @@ function cleanConfirm(value: unknown) {
   return String(value ?? "").trim();
 }
 
+type ClientPromotionRole = "STAFF" | "PROJECT_MANAGER";
+
+function cleanPromotionRole(value: unknown): ClientPromotionRole | null {
+  const role = String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (role === "STAFF") return "STAFF";
+
+  if (role === "PROJECT_MANAGER" || role === "PROJECTMANAGER" || role === "PM" || role === "PROJECT_LEAD") {
+    return "PROJECT_MANAGER";
+  }
+
+  return null;
+}
+
 async function getClientOrError(userId: string) {
   const client = await prisma.user.findUnique({
     where: { id: userId },
@@ -53,6 +70,7 @@ async function getClientOrError(userId: string) {
  * Supported actions:
  * - FLAG_THREAT: bans/flags a client with an admin reason.
  * - CLEAR_THREAT: removes the threat flag/ban marker.
+ * - UPDATE_CLIENT_ROLE: promotes a client to Staff or Project Manager.
  */
 export async function PATCH(request: Request, { params }: Params) {
   const { userId } = await params;
@@ -127,6 +145,45 @@ export async function PATCH(request: Request, { params }: Params) {
     });
   }
 
+  if (action === "UPDATE_CLIENT_ROLE") {
+    const targetRole = cleanPromotionRole(body.role);
+    const confirmText = cleanConfirm(body.confirmText);
+
+    if (!targetRole) {
+      return errorResponse("Invalid client role upgrade target", 400);
+    }
+
+    if (confirmText !== "PROMOTE CLIENT") {
+      return errorResponse("Client role upgrade confirmation text did not match", 400);
+    }
+
+    if (client.banned) {
+      return errorResponse("Clear threat flag before upgrading client role", 400);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: client.id },
+      data: {
+        role: targetRole,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        specialty: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      action: "UPDATE_CLIENT_ROLE",
+      user: updated,
+    });
+  }
   return errorResponse("Unsupported client action", 400);
 }
 

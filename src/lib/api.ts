@@ -37,6 +37,10 @@ import type {
 // Fetch Helpers
 // -----------------------------------------------------------------------------
 
+function isRetryableFetchError(error: unknown) {
+  return error instanceof TypeError && String(error) === "TypeError: Failed to fetch";
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit, retries = 2): Promise<T> {
   try {
     const res = await fetch(url, {
@@ -49,7 +53,7 @@ async function fetchJson<T>(url: string, init?: RequestInit, retries = 2): Promi
     }
     return res.json();
   } catch (error) {
-    if (retries > 0 && error instanceof TypeError && error.message === "Failed to fetch") {
+    if (retries > 0 && isRetryableFetchError(error)) {
       // Small delay before retry
       await new Promise((resolve) => setTimeout(resolve, 500));
       return fetchJson<T>(url, init, retries - 1);
