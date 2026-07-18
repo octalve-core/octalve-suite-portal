@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -799,11 +800,21 @@ export function ProjectWorkspaceDetail({
   role: WorkspaceRole;
   projectId: string;
 }) {
-  const { state, currentUser, assignPhase, requestPhaseApproval } = useApp();
+  const {
+    state,
+    currentUser,
+    assignPhase,
+    requestPhaseApproval,
+    deleteProject,
+  } = useApp();
+  const router = useRouter();
   const config = roleConfig[role];
 
   const [tab, setTab] = useState<ProjectTab>("phases");
   const [assigning, setAssigning] = useState<ProjectPhase | null>(null);
+  const [deleteConfirmCode, setDeleteConfirmCode] = useState("");
+  const [deleteProjectLoading, setDeleteProjectLoading] = useState(false);
+  const [deleteProjectError, setDeleteProjectError] = useState("");
 
   const project = state.projects.find((item) => item.id === projectId);
 
@@ -847,6 +858,31 @@ export function ProjectWorkspaceDetail({
   const client = state.users.find((user) => user.id === project.clientId);
   const manager = state.users.find((user) => user.id === project.projectManagerId);
 
+  async function removeProject() {
+    if (role !== "admin" || !project) return;
+
+    const targetProject = project;
+    const typedCode = deleteConfirmCode.trim();
+
+    if (typedCode !== targetProject.projectCode) {
+      setDeleteProjectError("Project code confirmation does not match.");
+      return;
+    }
+
+    setDeleteProjectError("");
+    setDeleteProjectLoading(true);
+
+    try {
+      await deleteProject(targetProject.id, typedCode);
+      router.replace("/admin/projects");
+    } catch (error) {
+      void error;
+      setDeleteProjectError("Failed to delete project. Please refresh and try again.");
+    } finally {
+      setDeleteProjectLoading(false);
+    }
+  }
+
   return (
     <div className="content">
       <Link href={config.backHref} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-950">
@@ -855,6 +891,51 @@ export function ProjectWorkspaceDetail({
       </Link>
 
       <ProjectHero project={project} role={role} client={client} manager={manager} />
+
+      {role === "admin" ? (
+        <section className="mt-5 rounded-[26px] border border-red-200 bg-red-50 p-5 shadow-[0_14px_34px_rgba(127,29,29,0.08)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-sm font-black uppercase tracking-[0.18em] text-red-700">
+                Project Danger Zone
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-red-700/80">
+                Permanently delete this project from the server. This action requires the exact project code.
+              </p>
+              {deleteProjectError ? (
+                <p className="mt-3 rounded-2xl border border-red-200 bg-white p-3 text-sm font-semibold text-red-700">
+                  {deleteProjectError}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="w-full max-w-md">
+              <label className="block">
+                <span className="text-sm font-bold text-red-900">
+                  Type project code: {project.projectCode}
+                </span>
+                <Input
+                  value={deleteConfirmCode}
+                  onChange={(event) => setDeleteConfirmCode(event.target.value)}
+                  placeholder={project.projectCode}
+                  className="mt-2 h-12 rounded-2xl border-red-200 bg-white text-sm"
+                />
+              </label>
+
+              <Button
+                variant="danger"
+                className="mt-3 w-full"
+                loading={deleteProjectLoading}
+                disabled={deleteProjectLoading}
+                onClick={removeProject}
+              >
+                <Trash2 size={16} />
+                Delete Project From Server
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className="mt-7 inline-flex rounded-2xl bg-slate-100 p-1">
         {[
@@ -917,7 +998,6 @@ export function ProjectWorkspaceDetail({
     </div>
   );
 }
-
 function PhaseDeliverables({
   phase,
   role,

@@ -12,6 +12,7 @@ import {
   Mail,
   Phone,
   Search,
+  ShieldAlert,
   ShieldCheck,
   Trash2,
   UserCog,
@@ -27,6 +28,9 @@ import { Badge, Button, Card, Input, Select } from "./UI";
 type DirectoryMode = "clients" | "team";
 
 type UserWithMeta = User & {
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: string | null;
   createdAt?: string;
   image?: string | null;
   _count?: {
@@ -652,10 +656,20 @@ export function AdminUserDetailPage({
   userId: string;
   mode: DirectoryMode;
 }) {
-  const { state, currentUser, updateTeamMember, deleteTeamMember } = useApp();
+  const {
+    state,
+    currentUser,
+    updateTeamMember,
+    deleteTeamMember,
+    flagClientThreat,
+    clearClientThreat,
+    deleteClient,
+  } = useApp();
 
-    const router = useRouter();
-const user = (state.users ?? []).find((item) => item.id === userId) as UserWithMeta | undefined;
+  const router = useRouter();
+  const user = (state.users ?? []).find((item) => item.id === userId) as
+    | UserWithMeta
+    | undefined;
 
   const [form, setForm] = useState<{
     name: string;
@@ -669,8 +683,13 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
     role: normalizeUserRole(user),
   }));
 
-  const [loadingAction, setLoadingAction] = useState<"save" | "delete" | null>(null);
+  const [loadingAction, setLoadingAction] = useState<
+    "save" | "delete" | "flag" | "clearFlag" | "deleteClient" | null
+  >(null);
   const [error, setError] = useState("");
+  const [threatReason, setThreatReason] = useState("");
+  const [deleteClientEmail, setDeleteClientEmail] = useState("");
+  const [deleteClientText, setDeleteClientText] = useState("");
 
   if (!user) {
     return (
@@ -696,13 +715,19 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
   }
 
   const activeUser = user;
-
+  const activeRole = normalizeUserRole(activeUser);
   const data = getUserProjects(activeUser, state.projects);
   const backHref = mode === "clients" ? "/admin/clients" : "/admin/team";
-  const canDelete = normalizeUserRole(activeUser) !== "CLIENT" && currentUser?.id !== activeUser.id;
-  const canChangeRole = currentUser?.id !== activeUser.id;
+  const isClientDetail = mode === "clients" && activeRole === "CLIENT";
+  const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
+  const canDelete = isSuperAdmin && activeRole !== "CLIENT" && currentUser?.id !== activeUser.id;
+  const canManageClientDanger = isSuperAdmin && isClientDetail && currentUser?.id !== activeUser.id;
+  const canEditProfile = mode === "team" && activeRole !== "CLIENT";
+  const canChangeRole = canEditProfile && currentUser?.id !== activeUser.id;
 
   async function saveUser() {
+    if (!canEditProfile) return;
+
     if (!form.name.trim()) {
       setError("Name is required.");
       return;
@@ -721,7 +746,7 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
         name: form.name.trim(),
         email: form.email.trim(),
         specialty: form.specialty.trim() || undefined,
-        role: canChangeRole ? form.role : normalizeUserRole(activeUser),
+        role: canChangeRole ? form.role : activeRole,
       });
     } catch (error) {
       void error;
@@ -735,7 +760,6 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
     if (!canDelete) return;
 
     const ok = window.confirm(`Delete ${activeUser.name}? This will unassign their workload first.`);
-
     if (!ok) return;
 
     setError("");
@@ -747,6 +771,71 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
     } catch (error) {
       void error;
       setError("Failed to delete user. Please refresh and try again.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
+
+  async function flagThreat() {
+    if (!canManageClientDanger) return;
+
+    if (threatReason.trim().length < 10) {
+      setError("Add a clear threat reason before flagging this client.");
+      return;
+    }
+
+    setError("");
+    setLoadingAction("flag");
+
+    try {
+      await flagClientThreat(activeUser.id, threatReason.trim());
+      setThreatReason("");
+    } catch (error) {
+      void error;
+      setError("Failed to flag client. Please refresh and try again.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
+
+  async function clearThreat() {
+    if (!canManageClientDanger) return;
+
+    setError("");
+    setLoadingAction("clearFlag");
+
+    try {
+      await clearClientThreat(activeUser.id);
+    } catch (error) {
+      void error;
+      setError("Failed to clear client threat flag. Please refresh and try again.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
+
+  async function removeClient() {
+    if (!canManageClientDanger) return;
+
+    if (deleteClientEmail.trim().toLowerCase() !== activeUser.email.toLowerCase()) {
+      setError("Client email confirmation does not match.");
+      return;
+    }
+
+    if (deleteClientText.trim() !== "DELETE CLIENT") {
+      setError("Type DELETE CLIENT to confirm this server deletion.");
+      return;
+    }
+
+    setError("");
+    setLoadingAction("deleteClient");
+
+    try {
+      await deleteClient(activeUser.id, deleteClientEmail.trim(), deleteClientText.trim());
+      router.replace("/admin/clients");
+    } catch (error) {
+      void error;
+      setError("Failed to delete client. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -767,25 +856,31 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <RoleChip role={normalizeUserRole(user)} />
-                {user.company ? (
+                <RoleChip role={activeRole} />
+                {activeUser.company ? (
                   <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-white">
-                    {user.company}
+                    {activeUser.company}
+                  </span>
+                ) : null}
+                {activeUser.banned ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-red-300/40 bg-red-500/20 px-3 py-1 text-xs font-bold text-red-50">
+                    <ShieldAlert size={13} />
+                    Threat flagged
                   </span>
                 ) : null}
               </div>
 
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.06em] sm:text-5xl">
-                {user.name}
+                {activeUser.name}
               </h1>
 
               <p className="mt-2 max-w-3xl text-sm font-medium leading-7 text-white/70 sm:text-[15px]">
-                {user.email} • {user.specialty || user.company || "Octalve workspace user"}
+                {activeUser.email} • {activeUser.specialty || activeUser.company || "Octalve workspace user"}
               </p>
             </div>
 
             <div className="grid h-20 w-20 place-items-center rounded-[24px] bg-white/10 text-xl font-black text-white ring-1 ring-white/15">
-              {getInitials(user.name)}
+              {getInitials(activeUser.name)}
             </div>
           </div>
         </div>
@@ -812,9 +907,9 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
         />
         <StatCard
           label="Role"
-          value={ROLE_OPTIONS.indexOf(activeUser.role) + 1}
-          helper={getRoleLabel(activeUser.role)}
-          tone={ROLE_ICON_CLASSES[activeUser.role]}
+          value={ROLE_OPTIONS.indexOf(activeRole) + 1}
+          helper={getRoleLabel(activeRole)}
+          tone={ROLE_ICON_CLASSES[activeRole]}
           icon={<UserRound size={19} />}
         />
       </section>
@@ -822,10 +917,10 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
         <main className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <DetailBlock label="Email" value={user.email} icon={<Mail size={17} />} />
-            <DetailBlock label="Phone" value={user.phone || "Not set"} icon={<Phone size={17} />} />
-            <DetailBlock label="Company" value={user.company || "Not set"} icon={<BriefcaseBusiness size={17} />} />
-            <DetailBlock label="Joined" value={formatDate(user.createdAt)} icon={<Clock3 size={17} />} />
+            <DetailBlock label="Email" value={activeUser.email} icon={<Mail size={17} />} />
+            <DetailBlock label="Phone" value={activeUser.phone || "Not set"} icon={<Phone size={17} />} />
+            <DetailBlock label="Company" value={activeUser.company || "Not set"} icon={<BriefcaseBusiness size={17} />} />
+            <DetailBlock label="Joined" value={formatDate(activeUser.createdAt)} icon={<Clock3 size={17} />} />
           </div>
 
           <Card className="border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] sm:p-6">
@@ -886,7 +981,9 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
                   Profile & Role
                 </h2>
                 <p className="text-sm font-medium text-slate-500">
-                  Update identity and promote or downgrade role.
+                  {canEditProfile
+                    ? "Update identity and promote or downgrade role."
+                    : "Client profile editing is locked here. Use security actions below."}
                 </p>
               </div>
             </div>
@@ -896,6 +993,7 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
                 <span className="text-sm font-bold text-slate-800">Name</span>
                 <Input
                   value={form.name}
+                  disabled={!canEditProfile}
                   onChange={(event) => setForm({ ...form, name: event.target.value })}
                   className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
                 />
@@ -906,6 +1004,7 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
                 <Input
                   type="email"
                   value={form.email}
+                  disabled={!canEditProfile}
                   onChange={(event) => setForm({ ...form, email: event.target.value })}
                   className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
                 />
@@ -915,6 +1014,7 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
                 <span className="text-sm font-bold text-slate-800">Specialty</span>
                 <Input
                   value={form.specialty}
+                  disabled={!canEditProfile}
                   onChange={(event) => setForm({ ...form, specialty: event.target.value })}
                   placeholder="e.g. UI Designer, Developer, PM"
                   className="mt-2 h-12 rounded-2xl border-slate-200 text-sm placeholder:text-slate-400"
@@ -937,7 +1037,7 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
                     </option>
                   ))}
                 </Select>
-                {!canChangeRole ? (
+                {!canChangeRole && canEditProfile ? (
                   <span className="mt-2 block text-xs font-semibold text-orange-600">
                     You cannot change your own role from this screen.
                   </span>
@@ -951,14 +1051,103 @@ const user = (state.users ?? []).find((item) => item.id === userId) as UserWithM
               </div>
             ) : null}
 
-            <Button
-              className="mt-5 w-full"
-              onClick={saveUser}
-              loading={loadingAction === "save"}
-              disabled={Boolean(loadingAction)}
-            >
-              Save Changes
-            </Button>
+            {canEditProfile ? (
+              <Button
+                className="mt-5 w-full"
+                onClick={saveUser}
+                loading={loadingAction === "save"}
+                disabled={Boolean(loadingAction)}
+              >
+                Save Changes
+              </Button>
+            ) : null}
+
+            {canManageClientDanger ? (
+              <div className="mt-5 rounded-3xl border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-red-600 ring-1 ring-red-200">
+                    <ShieldAlert size={18} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.16em] text-red-700">
+                      Client Danger Zone
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-red-700/80">
+                      Current status: {activeUser.banned ? "Threat flagged" : "Not flagged"}.
+                    </p>
+                    {activeUser.banReason ? (
+                      <p className="mt-1 text-xs font-semibold text-red-700/80">
+                        {activeUser.banReason}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <label className="mt-4 block">
+                  <span className="text-sm font-bold text-red-900">Threat reason</span>
+                  <Input
+                    value={threatReason}
+                    onChange={(event) => setThreatReason(event.target.value)}
+                    placeholder="Reason for flagging this client"
+                    className="mt-2 h-12 rounded-2xl border-red-200 bg-white text-sm"
+                  />
+                </label>
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <Button
+                    variant="danger"
+                    onClick={flagThreat}
+                    loading={loadingAction === "flag"}
+                    disabled={Boolean(loadingAction)}
+                  >
+                    <ShieldAlert size={16} />
+                    Flag Threat
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    onClick={clearThreat}
+                    loading={loadingAction === "clearFlag"}
+                    disabled={Boolean(loadingAction)}
+                  >
+                    Clear Flag
+                  </Button>
+                </div>
+
+                <div className="mt-5 border-t border-red-200 pt-4">
+                  <label className="block">
+                    <span className="text-sm font-bold text-red-900">Confirm client email</span>
+                    <Input
+                      value={deleteClientEmail}
+                      onChange={(event) => setDeleteClientEmail(event.target.value)}
+                      placeholder={activeUser.email}
+                      className="mt-2 h-12 rounded-2xl border-red-200 bg-white text-sm"
+                    />
+                  </label>
+
+                  <label className="mt-3 block">
+                    <span className="text-sm font-bold text-red-900">Type DELETE CLIENT</span>
+                    <Input
+                      value={deleteClientText}
+                      onChange={(event) => setDeleteClientText(event.target.value)}
+                      placeholder="DELETE CLIENT"
+                      className="mt-2 h-12 rounded-2xl border-red-200 bg-white text-sm"
+                    />
+                  </label>
+
+                  <Button
+                    variant="danger"
+                    className="mt-3 w-full"
+                    onClick={removeClient}
+                    loading={loadingAction === "deleteClient"}
+                    disabled={Boolean(loadingAction)}
+                  >
+                    <Trash2 size={16} />
+                    Delete Client From Server
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             {canDelete ? (
               <Button

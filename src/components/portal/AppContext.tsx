@@ -88,7 +88,10 @@ type AppContextValue = {
     payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
   ) => Promise<void>;
   deleteTeamMember: (userId: string) => Promise<void>;
-  deleteProject: (projectId: string) => Promise<void>;
+  flagClientThreat: (userId: string, reason: string) => Promise<void>;
+  clearClientThreat: (userId: string) => Promise<void>;
+  deleteClient: (userId: string, confirmEmail: string, confirmText: string) => Promise<void>;
+  deleteProject: (projectId: string, confirmCode?: string) => Promise<void>;
   markPaymentPaid: (paymentId: string) => Promise<void>;
   confirmPayment: (paymentId: string) => Promise<void>;
   rejectPayment: (paymentId: string, note?: string) => Promise<void>;
@@ -255,7 +258,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("octalve-session");
       localStorage.removeItem("octalve-user");
       localStorage.removeItem("token");
-      localStorage.removeItem("accessToken");
     } catch {
       // Storage may be unavailable in restricted browsers.
     }
@@ -376,8 +378,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await syncPortalData();
   }
 
-  async function deleteProject(projectId: string) {
-    await api.projects.delete(projectId);
+  async function flagClientThreat(userId: string, reason: string) {
+    const response = await fetch(`/api/admin/clients/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "FLAG_THREAT", reason }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Client threat flag failed");
+    }
+
+    await syncPortalData();
+  }
+
+  async function clearClientThreat(userId: string) {
+    const response = await fetch(`/api/admin/clients/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "CLEAR_THREAT" }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Client threat clear failed");
+    }
+
+    await syncPortalData();
+  }
+
+  async function deleteClient(userId: string, confirmEmail: string, confirmText: string) {
+    const response = await fetch(`/api/admin/clients/${userId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmEmail, confirmText }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Client delete failed");
+    }
+
+    await syncPortalData();
+  }
+
+  async function deleteProject(projectId: string, confirmCode?: string) {
+    if (!confirmCode?.trim()) {
+      throw new Error("Project delete confirmation required");
+    }
+
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmCode: confirmCode.trim() }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Project delete failed");
+    }
+
     await syncPortalData();
   }
 
@@ -474,6 +531,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     createTeamMember,
     updateTeamMember,
     deleteTeamMember,
+    flagClientThreat,
+    clearClientThreat,
+    deleteClient,
     deleteProject,
     markPaymentPaid,
     confirmPayment,
