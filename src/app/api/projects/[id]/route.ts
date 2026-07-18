@@ -158,17 +158,60 @@ export async function PATCH(request: Request, { params }: Params) {
 
   return NextResponse.json(updated);
 }
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   const { id } = await params;
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
-  const existing = await prisma.project.findUnique({ where: { id } });
+  const existing = await prisma.project.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      projectCode: true,
+      clientEmail: true,
+      _count: {
+        select: {
+          phases: true,
+          payments: true,
+          paymentTransactions: true,
+          reviews: true,
+          walletLedgerEntries: true,
+        },
+      },
+    },
+  });
+
   if (!existing) return errorResponse("Project not found", 404);
 
-  await prisma.project.delete({ where: { id } });
+  const body = await request.json().catch(() => ({}));
+  const confirmCode = String(body.confirmCode ?? "").trim();
 
-  return NextResponse.json({ success: true });
+  if (confirmCode !== existing.projectCode) {
+    return errorResponse("Project delete confirmation code did not match", 400);
+  }
+
+  const deleted = await prisma.$transaction(async (tx) => {
+    await tx.project.delete({ where: { id: existing.id } });
+
+    return {
+      id: existing.id,
+      title: existing.title,
+      projectCode: existing.projectCode,
+      clientEmail: existing.clientEmail,
+      phaseCount: existing._count.phases,
+      paymentCount: existing._count.payments,
+      transactionCount: existing._count.paymentTransactions,
+      reviewCount: existing._count.reviews,
+      walletLedgerEntryCount: existing._count.walletLedgerEntries,
+    };
+  });
+
+  return NextResponse.json({
+    success: true,
+    deleted,
+  });
 }
