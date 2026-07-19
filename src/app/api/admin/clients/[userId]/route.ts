@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 
@@ -27,6 +28,30 @@ function cleanPromotionRole(value: unknown): ClientPromotionRole | null {
   }
 
   return null;
+}
+async function auditClientAction(input: {
+  actorId: string;
+  actorRole: "SUPER_ADMIN";
+  action: keyof typeof ADMIN_AUDIT_ACTIONS;
+  clientId: string;
+  clientEmail: string;
+  reason?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  await writeAdminAuditLog({
+    actorId: input.actorId,
+    actorRole: input.actorRole,
+    action: ADMIN_AUDIT_ACTIONS[input.action],
+    targetType: "CLIENT",
+    targetId: input.clientId,
+    targetLabel: input.clientEmail,
+    riskLevel:
+      input.action === "DEACTIVATE_CLIENT" || input.action === "UPDATE_CLIENT_ROLE"
+        ? "HIGH"
+        : "MEDIUM",
+    reason: input.reason,
+    metadata: input.metadata,
+  });
 }
 
 async function getClientOrError(userId: string) {
@@ -116,6 +141,16 @@ export async function PATCH(request: Request, { params }: Params) {
       },
     });
 
+    await auditClientAction({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: "FLAG_THREAT",
+      clientId: client.id,
+      clientEmail: client.email,
+      reason,
+      metadata: { clientRole: client.role },
+    });
+
     return NextResponse.json({
       success: true,
       action: "FLAG_THREAT",
@@ -146,6 +181,15 @@ export async function PATCH(request: Request, { params }: Params) {
         deactivatedAt: true,
         deactivationReason: true,
       },
+    });
+
+    await auditClientAction({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: "CLEAR_THREAT",
+      clientId: client.id,
+      clientEmail: client.email,
+      metadata: { clientRole: client.role },
     });
 
     return NextResponse.json({
@@ -198,6 +242,23 @@ export async function PATCH(request: Request, { params }: Params) {
       },
     });
 
+    await auditClientAction({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: "DEACTIVATE_CLIENT",
+      clientId: client.id,
+      clientEmail: client.email,
+      reason,
+      metadata: {
+        clientRole: client.role,
+        clientProjectCount: client._count.clientProjects,
+        projectRequestCount: client._count.projectRequests,
+        reviewCount: client._count.reviews,
+        walletTopUpCount: client._count.walletTopUps,
+        walletLedgerEntryCount: client._count.walletLedgerEntries,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       action: "DEACTIVATE_CLIENT",
@@ -243,6 +304,15 @@ export async function PATCH(request: Request, { params }: Params) {
       },
     });
 
+    await auditClientAction({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: "REACTIVATE_CLIENT",
+      clientId: client.id,
+      clientEmail: client.email,
+      metadata: { clientRole: client.role },
+    });
+
     return NextResponse.json({
       success: true,
       action: "REACTIVATE_CLIENT",
@@ -281,6 +351,18 @@ export async function PATCH(request: Request, { params }: Params) {
         banExpires: true,
       deactivatedAt: true,
       deactivationReason: true,
+      },
+    });
+
+    await auditClientAction({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: "UPDATE_CLIENT_ROLE",
+      clientId: client.id,
+      clientEmail: client.email,
+      metadata: {
+        previousRole: client.role,
+        newRole: targetRole,
       },
     });
 

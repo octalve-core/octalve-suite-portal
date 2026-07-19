@@ -120,6 +120,7 @@ model User {
   notifications         Notification[]
   walletLedgerEntries  WalletLedgerEntry[]
   walletTopUps         WalletTopUp[]
+  adminActionAuditLogs AdminActionAuditLog[] @relation("AdminActionAuditActor")
 }
 
 model Session {
@@ -624,4 +625,23 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([channel, isEnabled])
+}
+model AdminActionAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actor       User?    @relation("AdminActionAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole   Role?
+  action      String
+  targetType  String
+  targetId    String?
+  targetLabel String?
+  riskLevel   String   @default("MEDIUM")
+  reason      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@index([riskLevel, createdAt])
 }

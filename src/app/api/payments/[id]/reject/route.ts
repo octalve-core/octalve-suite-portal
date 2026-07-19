@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 
@@ -59,6 +60,23 @@ export async function POST(request: Request, { params }: Params) {
         href: `/client/payments/${id}`,
       },
     });
+  });
+
+  await writeAdminAuditLog({
+    actorId: result.user.id,
+    actorRole: "SUPER_ADMIN",
+    action: ADMIN_AUDIT_ACTIONS.PAYMENT_REJECT,
+    targetType: "PAYMENT",
+    targetId: payment.id,
+    targetLabel: payment.reference,
+    riskLevel: "HIGH",
+    reason: note ?? undefined,
+    metadata: {
+      projectId: payment.projectId,
+      paymentType: payment.type,
+      amount: payment.amount,
+      previousStatus: payment.status,
+    },
   });
 
   return NextResponse.json({ success: true });

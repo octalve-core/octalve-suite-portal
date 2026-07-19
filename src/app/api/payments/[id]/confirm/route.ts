@@ -5,6 +5,7 @@ import {
   PAYMENT_CONFIRMATION_SOURCES,
   PAYMENT_PROVIDERS,
 } from "@/lib/payment-constants";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { confirmProjectPayment } from "@/lib/payment-confirmation";
 
 type Params = { params: Promise<{ id: string }> };
@@ -45,6 +46,22 @@ export async function POST(_request: Request, { params }: Params) {
     provider: PAYMENT_PROVIDERS.MANUAL_BANK,
     source: PAYMENT_CONFIRMATION_SOURCES.ADMIN_MANUAL,
     confirmedById: result.user.id,
+  });
+
+  await writeAdminAuditLog({
+    actorId: result.user.id,
+    actorRole: "SUPER_ADMIN",
+    action: ADMIN_AUDIT_ACTIONS.PAYMENT_CONFIRM,
+    targetType: "PAYMENT",
+    targetId: payment.id,
+    targetLabel: payment.reference,
+    riskLevel: "HIGH",
+    metadata: {
+      projectId: payment.projectId,
+      paymentType: payment.type,
+      amount: payment.amount,
+      previousStatus: payment.status,
+    },
   });
 
   return NextResponse.json({ success: true });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 
@@ -115,6 +116,22 @@ export async function DELETE(_request: Request, { params }: Params) {
         deactivationReason: true,
       },
     });
+  });
+
+  await writeAdminAuditLog({
+    actorId: result.user.id,
+    actorRole: "SUPER_ADMIN",
+    action: ADMIN_AUDIT_ACTIONS.TEAM_MEMBER_DEACTIVATE,
+    targetType: "TEAM_MEMBER",
+    targetId: existing.id,
+    targetLabel: existing.email,
+    riskLevel: "HIGH",
+    reason: "Team account deactivated by admin",
+    metadata: {
+      role: existing.role,
+      assignedPhaseCount: existing.assignedPhases?.length ?? 0,
+      managedProjectCount: existing.managedProjects?.length ?? 0,
+    },
   });
 
   return NextResponse.json({ success: true, user: updated });

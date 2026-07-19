@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
 
@@ -119,6 +120,19 @@ export async function PATCH(request: Request, { params }: Params) {
         deactivatedAt: null,
         deactivationReason: null,
         deactivatedFromStatus: null,
+      },
+    });
+
+    await writeAdminAuditLog({
+      actorId: result.user.id,
+      actorRole: "SUPER_ADMIN",
+      action: ADMIN_AUDIT_ACTIONS.PROJECT_REACTIVATE,
+      targetType: "PROJECT",
+      targetId: target.id,
+      targetLabel: target.projectCode,
+      riskLevel: "HIGH",
+      metadata: {
+        restoredStatus,
       },
     });
 
@@ -260,6 +274,25 @@ export async function DELETE(request: Request, { params }: Params) {
       deactivatedAt: true,
       deactivationReason: true,
       deactivatedFromStatus: true,
+    },
+  });
+
+  await writeAdminAuditLog({
+    actorId: result.user.id,
+    actorRole: "SUPER_ADMIN",
+    action: ADMIN_AUDIT_ACTIONS.PROJECT_DEACTIVATE,
+    targetType: "PROJECT",
+    targetId: existing.id,
+    targetLabel: existing.projectCode,
+    riskLevel: "HIGH",
+    reason,
+    metadata: {
+      previousStatus: existing.status,
+      phaseCount: existing._count.phases,
+      paymentCount: existing._count.payments,
+      transactionCount: existing._count.paymentTransactions,
+      reviewCount: existing._count.reviews,
+      walletLedgerEntryCount: existing._count.walletLedgerEntries,
     },
   });
 
