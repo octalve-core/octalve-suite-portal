@@ -63,36 +63,59 @@ export async function PATCH(request: Request, { params }: Params) {
  * Unassigns from phases, unsets as PM on projects, then deletes user.
  * Role: SUPER_ADMIN only.
  */
+/**
+ * DELETE /api/team/[id]   Deactivate a team member.
+ * Unassigns from phases, unsets as PM on projects, then disables access.
+ * Role: SUPER_ADMIN only.
+ */
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
+
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
-  // Prevent self-deletion
-  if (id === result.user.id) return errorResponse("Cannot delete yourself", 400);
+  if (id === result.user.id) return errorResponse("Cannot deactivate yourself", 400);
 
   const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) return errorResponse("Team member not found", 404);
-  if (existing.role === "CLIENT") return errorResponse("Cannot delete client via team endpoint", 400);
+  if (!existing) return errorResponse("User not found", 404);
+  if (existing.role === "CLIENT") return errorResponse("Cannot deactivate client via team endpoint", 400);
 
-  await prisma.$transaction(async (tx) => {
-    // Unassign from phases
+  const updated = await prisma.$transaction(async (tx) => {
     await tx.projectPhase.updateMany({
       where: { assignedStaffId: id },
       data: { assignedStaffId: null },
     });
 
-    // Unset as PM on projects
     await tx.project.updateMany({
       where: { projectManagerId: id },
       data: { projectManagerId: null },
     });
 
-    // Delete the user
-    await tx.user.delete({ where: { id } });
+    return tx.user.update({
+      where: { id },
+      data: {
+        banned: true,
+        banReason: "Deactivated: Team account deactivated by admin",
+        banExpires: null,
+        deactivatedAt: new Date(),
+        deactivationReason: "Team account deactivated by admin",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        specialty: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
+        deactivatedAt: true,
+        deactivationReason: true,
+      },
+    });
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, user: updated });
 }

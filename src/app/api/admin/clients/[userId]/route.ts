@@ -40,6 +40,8 @@ async function getClientOrError(userId: string) {
       banned: true,
       banReason: true,
       banExpires: true,
+      deactivatedAt: true,
+      deactivationReason: true,
       _count: {
         select: {
           clientProjects: true,
@@ -109,6 +111,8 @@ export async function PATCH(request: Request, { params }: Params) {
         banned: true,
         banReason: true,
         banExpires: true,
+      deactivatedAt: true,
+      deactivationReason: true,
       },
     });
 
@@ -120,6 +124,10 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   if (action === "CLEAR_THREAT") {
+    if (client.deactivatedAt || String(client.banReason ?? "").startsWith("Deactivated:")) {
+      return errorResponse("Reactivate client account instead", 400);
+    }
+
     const updated = await prisma.user.update({
       where: { id: client.id },
       data: {
@@ -135,6 +143,8 @@ export async function PATCH(request: Request, { params }: Params) {
         banned: true,
         banReason: true,
         banExpires: true,
+        deactivatedAt: true,
+        deactivationReason: true,
       },
     });
 
@@ -145,6 +155,100 @@ export async function PATCH(request: Request, { params }: Params) {
     });
   }
 
+  if (action === "DEACTIVATE_CLIENT") {
+    const reason = cleanReason(body.reason);
+    const confirmEmail = cleanConfirm(body.confirmEmail).toLowerCase();
+    const confirmText = cleanConfirm(body.confirmText);
+
+    if (reason.length < 10) {
+      return errorResponse("Client deactivation reason is required", 400);
+    }
+
+    if (confirmEmail !== client.email.toLowerCase()) {
+      return errorResponse("Client email confirmation did not match", 400);
+    }
+
+    if (confirmText !== "DEACTIVATE CLIENT") {
+      return errorResponse("Client deactivation confirmation text did not match", 400);
+    }
+
+    if (String(client.banReason ?? "").startsWith("Threat flag:")) {
+      return errorResponse("Clear threat flag before normal deactivation", 400);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: client.id },
+      data: {
+        banned: true,
+        banReason: `Deactivated: ${reason}`,
+        banExpires: null,
+        deactivatedAt: new Date(),
+        deactivationReason: reason,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
+        deactivatedAt: true,
+        deactivationReason: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      action: "DEACTIVATE_CLIENT",
+      client: updated,
+    });
+  }
+
+  if (action === "REACTIVATE_CLIENT") {
+    const confirmEmail = cleanConfirm(body.confirmEmail).toLowerCase();
+    const confirmText = cleanConfirm(body.confirmText);
+
+    if (confirmEmail !== client.email.toLowerCase()) {
+      return errorResponse("Client email confirmation did not match", 400);
+    }
+
+    if (confirmText !== "REACTIVATE CLIENT") {
+      return errorResponse("Client reactivation confirmation text did not match", 400);
+    }
+
+    if (String(client.banReason ?? "").startsWith("Threat flag:")) {
+      return errorResponse("Clear threat flag before reactivating this client", 400);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: client.id },
+      data: {
+        banned: false,
+        banReason: null,
+        banExpires: null,
+        deactivatedAt: null,
+        deactivationReason: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
+        deactivatedAt: true,
+        deactivationReason: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      action: "REACTIVATE_CLIENT",
+      client: updated,
+    });
+  }
   if (action === "UPDATE_CLIENT_ROLE") {
     const targetRole = cleanPromotionRole(body.role);
     const confirmText = cleanConfirm(body.confirmText);
@@ -175,6 +279,8 @@ export async function PATCH(request: Request, { params }: Params) {
         banned: true,
         banReason: true,
         banExpires: true,
+      deactivatedAt: true,
+      deactivationReason: true,
       },
     });
 
@@ -191,11 +297,10 @@ export async function PATCH(request: Request, { params }: Params) {
  * DELETE /api/admin/clients/[userId]
  * SUPER_ADMIN only.
  *
- * Hard-deletes a client account from the server.
- * Requires exact email confirmation and DELETE CLIENT confirmation text.
+ * Permanent client deletion is disabled. Use DEACTIVATE_CLIENT instead.
  */
-export async function DELETE(request: Request, { params }: Params) {
-  const { userId } = await params;
+export async function DELETE(_request: Request, { params }: Params) {
+  await params;
 
   const result = await getSessionOrThrow();
   if (result.error) return result.error;
@@ -203,43 +308,5 @@ export async function DELETE(request: Request, { params }: Params) {
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
-  if (userId === result.user.id) {
-    return errorResponse("Cannot delete yourself", 400);
-  }
-
-  const { error, client } = await getClientOrError(userId);
-  if (error) return error;
-
-  const body = await request.json().catch(() => ({}));
-  const confirmEmail = cleanConfirm(body.confirmEmail).toLowerCase();
-  const confirmText = cleanConfirm(body.confirmText);
-
-  if (confirmEmail !== client.email.toLowerCase()) {
-    return errorResponse("Client delete email confirmation did not match", 400);
-  }
-
-  if (confirmText !== "DELETE CLIENT") {
-    return errorResponse("Client delete confirmation text did not match", 400);
-  }
-
-  const deleted = await prisma.$transaction(async (tx) => {
-    await tx.user.delete({
-      where: { id: client.id },
-    });
-
-    return {
-      id: client.id,
-      email: client.email,
-      projectCount: client._count.clientProjects,
-      requestCount: client._count.projectRequests,
-      reviewCount: client._count.reviews,
-      walletTopUpCount: client._count.walletTopUps,
-      walletLedgerEntryCount: client._count.walletLedgerEntries,
-    };
-  });
-
-  return NextResponse.json({
-    success: true,
-    deleted,
-  });
+  return errorResponse("Permanent client deletion is disabled. Use deactivation.", 405);
 }

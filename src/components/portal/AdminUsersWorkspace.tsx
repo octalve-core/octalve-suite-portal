@@ -665,6 +665,7 @@ export function AdminUserDetailPage({
     clearClientThreat,
     promoteClientRole,
     deleteClient,
+    reactivateClient,
   } = useApp();
 
   const router = useRouter();
@@ -685,7 +686,7 @@ export function AdminUserDetailPage({
   }));
 
   const [loadingAction, setLoadingAction] = useState<
-    "save" | "delete" | "flag" | "clearFlag" | "promoteClient" | "deleteClient" | null
+    "save" | "delete" | "flag" | "clearFlag" | "promoteClient" | "deleteClient" | "reactivateClient" | null
   >(null);
   const [error, setError] = useState("");
   const [threatReason, setThreatReason] = useState("");
@@ -725,6 +726,10 @@ export function AdminUserDetailPage({
   const backHref = mode === "clients" ? "/admin/clients" : "/admin/team";
   const isClientDetail = mode === "clients" && activeRole === "CLIENT";
   const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
+  const isClientDeactivated =
+    Boolean(activeUser.deactivatedAt) || String(activeUser.banReason ?? "").startsWith("Deactivated:");
+  const isThreatFlagged =
+    Boolean(activeUser.banned) && !isClientDeactivated;
   const canDelete = isSuperAdmin && activeRole !== "CLIENT" && currentUser?.id !== activeUser.id;
   const canManageClientDanger = isSuperAdmin && isClientDetail && currentUser?.id !== activeUser.id;
   const canPromoteClient = canManageClientDanger && !activeUser.banned;
@@ -841,6 +846,34 @@ export function AdminUserDetailPage({
       setLoadingAction(null);
     }
   }
+  async function reactivateClientAccount() {
+    if (!canManageClientDanger) return;
+
+    if (deleteClientEmail.trim().toLowerCase() !== activeUser.email.toLowerCase()) {
+      setError("Client email confirmation does not match.");
+      return;
+    }
+
+    if (deleteClientText.trim() !== "REACTIVATE CLIENT") {
+      setError("Type REACTIVATE CLIENT to confirm account reactivation.");
+      return;
+    }
+
+    setError("");
+    setLoadingAction("reactivateClient");
+
+    try {
+      await reactivateClient(activeUser.id, deleteClientEmail.trim(), deleteClientText.trim());
+      setDeleteClientEmail("");
+      setDeleteClientText("");
+      router.replace("/admin/clients");
+    } catch (error) {
+      void error;
+      setError("Failed to reactivate client. Please refresh and try again.");
+    } finally {
+      setLoadingAction(null);
+    }
+  }
   async function removeClient() {
     if (!canManageClientDanger) return;
 
@@ -849,8 +882,8 @@ export function AdminUserDetailPage({
       return;
     }
 
-    if (deleteClientText.trim() !== "DELETE CLIENT") {
-      setError("Type DELETE CLIENT to confirm this server deletion.");
+    if (deleteClientText.trim() !== "DEACTIVATE CLIENT") {
+      setError("Type DEACTIVATE CLIENT to confirm account deactivation.");
       return;
     }
 
@@ -858,11 +891,11 @@ export function AdminUserDetailPage({
     setLoadingAction("deleteClient");
 
     try {
-      await deleteClient(activeUser.id, deleteClientEmail.trim(), deleteClientText.trim());
+      await deleteClient(activeUser.id, deleteClientEmail.trim(), deleteClientText.trim(), threatReason.trim() || "Client account deactivated by admin");
       router.replace("/admin/clients");
     } catch (error) {
       void error;
-      setError("Failed to delete client. Please refresh and try again.");
+      setError("Failed to deactivate client. Please refresh and try again.");
     } finally {
       setLoadingAction(null);
     }
@@ -1160,7 +1193,7 @@ export function AdminUserDetailPage({
                       Client Danger Zone
                     </h3>
                     <p className="mt-1 text-sm leading-6 text-red-700/80">
-                      Current status: {activeUser.banned ? "Threat flagged" : "Not flagged"}.
+                      Current status: {isClientDeactivated ? "Deactivated" : isThreatFlagged ? "Threat flagged" : "Active"}.
                     </p>
                     {activeUser.banReason ? (
                       <p className="mt-1 text-xs font-semibold text-red-700/80">
@@ -1213,11 +1246,13 @@ export function AdminUserDetailPage({
                   </label>
 
                   <label className="mt-3 block">
-                    <span className="text-sm font-bold text-red-900">Type DELETE CLIENT</span>
+                    <span className="text-sm font-bold text-red-900">
+                      {isClientDeactivated ? "Type REACTIVATE CLIENT" : "Type DEACTIVATE CLIENT"}
+                    </span>
                     <Input
                       value={deleteClientText}
                       onChange={(event) => setDeleteClientText(event.target.value)}
-                      placeholder="DELETE CLIENT"
+                      placeholder={isClientDeactivated ? "REACTIVATE CLIENT" : "DEACTIVATE CLIENT"}
                       className="mt-2 h-12 rounded-2xl border-red-200 bg-white text-sm"
                     />
                   </label>
@@ -1225,12 +1260,12 @@ export function AdminUserDetailPage({
                   <Button
                     variant="danger"
                     className="mt-3 w-full"
-                    onClick={removeClient}
-                    loading={loadingAction === "deleteClient"}
+                    onClick={isClientDeactivated ? reactivateClientAccount : removeClient}
+                    loading={loadingAction === "deleteClient" || loadingAction === "reactivateClient"}
                     disabled={Boolean(loadingAction)}
                   >
                     <Trash2 size={16} />
-                    Delete Client From Server
+                    {isClientDeactivated ? "Reactivate Client" : "Deactivate Client"}
                   </Button>
                 </div>
               </div>

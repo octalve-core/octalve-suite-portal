@@ -66,6 +66,12 @@ export async function GET() {
       break;
   }
 
+  if (role !== "SUPER_ADMIN") {
+    where = where
+      ? { AND: [where, { status: { not: "DEACTIVATED" } }] }
+      : { status: { not: "DEACTIVATED" } };
+  }
+
   const projects = await prisma.project.findMany({
     where,
     include: projectIncludes,

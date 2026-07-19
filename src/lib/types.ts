@@ -29,7 +29,8 @@ export type ProjectStatus =
   | "AWAITING_BALANCE"
   | "BALANCE_PENDING_CONFIRMATION"
   | "COMPLETED"
-  | "REJECTED";
+  | "REJECTED"
+  | "DEACTIVATED";
 export type PhaseStatus = "LOCKED" | "NOT_STARTED" | "IN_PROGRESS" | "AWAITING_APPROVAL" | "CHANGES_REQUESTED" | "APPROVED";
 export type DeliverableStatus = "DRAFT" | "READY_FOR_REVIEW" | "NEEDS_CHANGES" | "APPROVED";
 export type PaymentStatus = "UNPAID" | "PENDING_CONFIRMATION" | "CONFIRMED" | "REJECTED";
@@ -208,6 +209,11 @@ export type User = {
   phone?: string;
   company?: string;
   role: Role;
+  banned?: boolean;
+  banReason?: string | null;
+  banExpires?: string | null;
+  deactivatedAt?: string | null;
+  deactivationReason?: string | null;
   specialty?: string;
 };
 
@@ -307,6 +313,9 @@ export type Project = {
   template?: ProjectTemplate | null;
   packageType: PackageType;
   status: ProjectStatus;
+  deactivatedAt?: string | null;
+  deactivationReason?: string | null;
+  deactivatedFromStatus?: ProjectStatus | null;
   targetDate?: string;
   projectCode: string;
   projectManagerId?: string;

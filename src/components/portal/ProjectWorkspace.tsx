@@ -402,7 +402,7 @@ export function ProjectWorkspaceList({ role }: { role: WorkspaceRole }) {
           <option value="ACTIVE">Active</option>
           <option value="AWAITING_BALANCE">Awaiting Balance</option>
           <option value="COMPLETED">Completed</option>
-          <option value="ARCHIVED">Archived</option>
+          <option value="DEACTIVATED">Deactivated</option>
         </Select>
 
         <Select
@@ -806,6 +806,7 @@ export function ProjectWorkspaceDetail({
     assignPhase,
     requestPhaseApproval,
     deleteProject,
+    reactivateProject,
   } = useApp();
   const router = useRouter();
   const config = roleConfig[role];
@@ -857,6 +858,7 @@ export function ProjectWorkspaceDetail({
 
   const client = state.users.find((user) => user.id === project.clientId);
   const manager = state.users.find((user) => user.id === project.projectManagerId);
+  const isProjectDeactivated = project.status === "DEACTIVATED";
 
   async function removeProject() {
     if (role !== "admin" || !project) return;
@@ -877,12 +879,36 @@ export function ProjectWorkspaceDetail({
       router.replace("/admin/projects");
     } catch (error) {
       void error;
-      setDeleteProjectError("Failed to delete project. Please refresh and try again.");
+      setDeleteProjectError("Failed to update project activation state. Please refresh and try again.");
     } finally {
       setDeleteProjectLoading(false);
     }
   }
 
+  async function reactivateCurrentProject() {
+    if (role !== "admin" || !project) return;
+
+    const targetProject = project;
+    const typedCode = deleteConfirmCode.trim();
+
+    if (typedCode !== targetProject.projectCode) {
+      setDeleteProjectError("Project code confirmation does not match.");
+      return;
+    }
+
+    setDeleteProjectError("");
+    setDeleteProjectLoading(true);
+
+    try {
+      await reactivateProject(targetProject.id, typedCode);
+      router.replace("/admin/projects");
+    } catch (error) {
+      void error;
+      setDeleteProjectError("Failed to update project activation state. Please refresh and try again.");
+    } finally {
+      setDeleteProjectLoading(false);
+    }
+  }
   return (
     <div className="content">
       <Link href={config.backHref} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-950">
@@ -897,10 +923,10 @@ export function ProjectWorkspaceDetail({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-sm font-black uppercase tracking-[0.18em] text-red-700">
-                Project Danger Zone
+                Project Control Zone
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-red-700/80">
-                Permanently delete this project from the server. This action requires the exact project code.
+                Deactivate or reactivate this project without deleting server records. This action requires the exact project code.
               </p>
               {deleteProjectError ? (
                 <p className="mt-3 rounded-2xl border border-red-200 bg-white p-3 text-sm font-semibold text-red-700">
@@ -927,10 +953,10 @@ export function ProjectWorkspaceDetail({
                 className="mt-3 w-full"
                 loading={deleteProjectLoading}
                 disabled={deleteProjectLoading}
-                onClick={removeProject}
+                onClick={isProjectDeactivated ? reactivateCurrentProject : removeProject}
               >
                 <Trash2 size={16} />
-                Delete Project From Server
+                {isProjectDeactivated ? "Reactivate Project" : "Deactivate Project"}
               </Button>
             </div>
           </div>

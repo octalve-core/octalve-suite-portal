@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import type { Role } from "@/lib/types";
@@ -21,10 +22,29 @@ export type AuthResult =
  */
 export async function getSessionOrThrow(): Promise<AuthResult> {
   const session = await auth.api.getSession({ headers: await headers() });
+
   if (!session) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  const role = (session.user.role ?? "CLIENT") as Role;
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      role: true,
+      banned: true,
+    },
+  });
+
+  if (!dbUser) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  if (dbUser.banned) {
+    return { error: NextResponse.json({ error: "Account access is disabled" }, { status: 403 }) };
+  }
+
+  const role = (dbUser.role ?? session.user.role ?? "CLIENT") as Role;
   return { session, user: session.user, role };
 }
 

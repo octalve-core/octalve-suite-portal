@@ -39,6 +39,7 @@ enum ProjectStatus {
   BALANCE_PENDING_CONFIRMATION
   COMPLETED
   REJECTED
+  DEACTIVATED
 }
 
 enum PhaseStatus {
@@ -100,6 +101,10 @@ model User {
   banned     Boolean   @default(false)
   banReason  String?
   banExpires DateTime?
+
+  // Soft deactivation fields. banned=true blocks access while preserving records.
+  deactivatedAt     DateTime?
+  deactivationReason String?
 
   sessions Session[]
   accounts Account[]
@@ -235,6 +240,10 @@ model Project {
   clientEmail       String           // Snapshot of client email at project creation time
   packageType       PackageType
   status            ProjectStatus    @default(APPROVED_AWAITING_DEPOSIT)
+
+  deactivatedAt         DateTime?
+  deactivationReason    String?
+  deactivatedFromStatus ProjectStatus?
   targetDate        DateTime?
   projectCode       String           @unique
   projectManagerId  String?

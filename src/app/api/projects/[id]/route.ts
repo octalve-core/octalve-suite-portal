@@ -81,6 +81,50 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const body = await request.json();
 
+  if (String(body.action ?? "") === "REACTIVATE_PROJECT") {
+    if (result.role !== "SUPER_ADMIN") {
+      return errorResponse("Forbidden", 403);
+    }
+
+    const target = await prisma.project.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        projectCode: true,
+        status: true,
+        deactivatedFromStatus: true,
+      },
+    });
+
+    if (!target) return errorResponse("Project not found", 404);
+
+    const confirmCode = String(body.confirmCode ?? "").trim();
+    if (confirmCode !== target.projectCode) {
+      return errorResponse("Project reactivation confirmation code did not match", 400);
+    }
+
+    if (target.status !== "DEACTIVATED") {
+      return errorResponse("Project is not deactivated", 400);
+    }
+
+    const restoredStatus =
+      target.deactivatedFromStatus && target.deactivatedFromStatus !== "DEACTIVATED"
+        ? target.deactivatedFromStatus
+        : "ACTIVE";
+
+    const updated = await prisma.project.update({
+      where: { id },
+      data: {
+        status: restoredStatus,
+        deactivatedAt: null,
+        deactivationReason: null,
+        deactivatedFromStatus: null,
+      },
+    });
+
+    return NextResponse.json(updated);
+  }
+
   const data: {
     title?: string;
     targetDate?: Date | null;
@@ -172,6 +216,8 @@ export async function DELETE(request: Request, { params }: Params) {
       id: true,
       title: true,
       projectCode: true,
+      status: true,
+      deactivatedFromStatus: true,
       clientEmail: true,
       _count: {
         select: {
@@ -189,29 +235,43 @@ export async function DELETE(request: Request, { params }: Params) {
 
   const body = await request.json().catch(() => ({}));
   const confirmCode = String(body.confirmCode ?? "").trim();
+  const reason = String(body.reason ?? "Project deactivated by admin").trim().slice(0, 500);
 
   if (confirmCode !== existing.projectCode) {
-    return errorResponse("Project delete confirmation code did not match", 400);
+    return errorResponse("Project deactivation confirmation code did not match", 400);
   }
 
-  const deleted = await prisma.$transaction(async (tx) => {
-    await tx.project.delete({ where: { id: existing.id } });
+  const deactivated = await prisma.project.update({
+    where: { id: existing.id },
+    data: {
+      status: "DEACTIVATED",
+      deactivatedAt: new Date(),
+      deactivationReason: reason || "Project deactivated by admin",
+      deactivatedFromStatus:
+        existing.status === "DEACTIVATED"
+          ? existing.deactivatedFromStatus ?? "ACTIVE"
+          : existing.status,
+    },
+    select: {
+      id: true,
+      title: true,
+      projectCode: true,
+      status: true,
+      deactivatedAt: true,
+      deactivationReason: true,
+      deactivatedFromStatus: true,
+    },
+  });
 
-    return {
-      id: existing.id,
-      title: existing.title,
-      projectCode: existing.projectCode,
-      clientEmail: existing.clientEmail,
+  return NextResponse.json({
+    success: true,
+    deactivated,
+    affected: {
       phaseCount: existing._count.phases,
       paymentCount: existing._count.payments,
       transactionCount: existing._count.paymentTransactions,
       reviewCount: existing._count.reviews,
       walletLedgerEntryCount: existing._count.walletLedgerEntries,
-    };
-  });
-
-  return NextResponse.json({
-    success: true,
-    deleted,
+    },
   });
 }

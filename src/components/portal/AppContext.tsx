@@ -95,8 +95,15 @@ type AppContextValue = {
     role: Extract<Role, "STAFF" | "PROJECT_MANAGER">,
     confirmText: string,
   ) => Promise<void>;
-  deleteClient: (userId: string, confirmEmail: string, confirmText: string) => Promise<void>;
-  deleteProject: (projectId: string, confirmCode?: string) => Promise<void>;
+  deleteClient: (
+    userId: string,
+    confirmEmail: string,
+    confirmText: string,
+    reason?: string,
+  ) => Promise<void>;
+  reactivateClient: (userId: string, confirmEmail: string, confirmText: string) => Promise<void>;
+  deleteProject: (projectId: string, confirmCode?: string, reason?: string) => Promise<void>;
+  reactivateProject: (projectId: string, confirmCode: string) => Promise<void>;
   markPaymentPaid: (paymentId: string) => Promise<void>;
   confirmPayment: (paymentId: string) => Promise<void>;
   rejectPayment: (paymentId: string, note?: string) => Promise<void>;
@@ -428,33 +435,85 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     await syncPortalData();
   }
-  async function deleteClient(userId: string, confirmEmail: string, confirmText: string) {
+  async function deleteClient(
+    userId: string,
+    confirmEmail: string,
+    confirmText: string,
+    reason = "Client account deactivated by admin",
+  ) {
     const response = await fetch(`/api/admin/clients/${userId}`, {
-      method: "DELETE",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ confirmEmail, confirmText }),
+      body: JSON.stringify({
+        action: "DEACTIVATE_CLIENT",
+        confirmEmail,
+        confirmText,
+        reason,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error("Client delete failed");
+      throw new Error("Client deactivation failed");
     }
 
     await syncPortalData();
   }
 
-  async function deleteProject(projectId: string, confirmCode?: string) {
+  async function reactivateClient(userId: string, confirmEmail: string, confirmText: string) {
+    const response = await fetch(`/api/admin/clients/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "REACTIVATE_CLIENT",
+        confirmEmail,
+        confirmText,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Client reactivation failed");
+    }
+
+    await syncPortalData();
+  }
+
+  async function deleteProject(projectId: string, confirmCode?: string, reason = "Project deactivated by admin") {
     if (!confirmCode?.trim()) {
-      throw new Error("Project delete confirmation required");
+      throw new Error("Project deactivation confirmation required");
     }
 
     const response = await fetch(`/api/projects/${projectId}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ confirmCode: confirmCode.trim() }),
+      body: JSON.stringify({
+        confirmCode: confirmCode.trim(),
+        reason,
+      }),
     });
 
     if (!response.ok) {
-      throw new Error("Project delete failed");
+      throw new Error("Project deactivation failed");
+    }
+
+    await syncPortalData();
+  }
+
+  async function reactivateProject(projectId: string, confirmCode: string) {
+    if (!confirmCode.trim()) {
+      throw new Error("Project reactivation confirmation required");
+    }
+
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "REACTIVATE_PROJECT",
+        confirmCode: confirmCode.trim(),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Project reactivation failed");
     }
 
     await syncPortalData();
@@ -557,7 +616,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clearClientThreat,
     promoteClientRole,
     deleteClient,
+    reactivateClient,
     deleteProject,
+    reactivateProject,
     markPaymentPaid,
     confirmPayment,
     rejectPayment,
