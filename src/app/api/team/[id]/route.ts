@@ -6,7 +6,7 @@ import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helper
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * PATCH /api/team/[id] — Update a team member.
+ * PATCH /api/team/[id] Ã¢â‚¬â€ Update a team member.
  * Role: SUPER_ADMIN only.
  */
 export async function PATCH(request: Request, { params }: Params) {
@@ -60,11 +60,6 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 /**
- * DELETE /api/team/[id] — Delete a team member.
- * Unassigns from phases, unsets as PM on projects, then deletes user.
- * Role: SUPER_ADMIN only.
- */
-/**
  * DELETE /api/team/[id]   Deactivate a team member.
  * Unassigns from phases, unsets as PM on projects, then disables access.
  * Role: SUPER_ADMIN only.
@@ -82,6 +77,22 @@ export async function DELETE(_request: Request, { params }: Params) {
   const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) return errorResponse("User not found", 404);
   if (existing.role === "CLIENT") return errorResponse("Cannot deactivate client via team endpoint", 400);
+
+  if (existing.role === "SUPER_ADMIN") {
+    return errorResponse("Cannot deactivate a super admin account", 400);
+  }
+
+  const teamAuditCounts = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          assignedPhases: true,
+          managedProjects: true,
+        },
+      },
+    },
+  });
 
   const updated = await prisma.$transaction(async (tx) => {
     await tx.projectPhase.updateMany({
@@ -129,8 +140,8 @@ export async function DELETE(_request: Request, { params }: Params) {
     reason: "Team account deactivated by admin",
     metadata: {
       role: existing.role,
-      assignedPhaseCount: existing.assignedPhases?.length ?? 0,
-      managedProjectCount: existing.managedProjects?.length ?? 0,
+      assignedPhaseCount: teamAuditCounts?._count.assignedPhases ?? 0,
+      managedProjectCount: teamAuditCounts?._count.managedProjects ?? 0,
     },
   });
 
