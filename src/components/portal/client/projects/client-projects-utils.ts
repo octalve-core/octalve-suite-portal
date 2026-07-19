@@ -35,6 +35,7 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   BALANCE_PENDING_CONFIRMATION: "Balance Pending Confirmation",
   COMPLETED: "Completed",
   REJECTED: "Rejected",
+  DEACTIVATED: "Deactivated",
 };
 
 export const REQUEST_STATUS_LABELS: Record<ProjectRequest["status"], string> = {
