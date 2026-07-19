@@ -1,6 +1,37 @@
 import { NextResponse } from "next/server";
+import { ADMIN_AUDIT_ACTIONS, writeAdminAuditLog } from "@/lib/admin-audit";
 import { prisma } from "@/lib/prisma";
 import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helpers";
+
+type TeamRole = "STAFF" | "PROJECT_MANAGER" | "SUPER_ADMIN";
+
+function cleanText(value: unknown, maxLength: number) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function cleanConfirm(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function cleanTeamRole(value: unknown): TeamRole | null {
+  const role = String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (role === "STAFF") return "STAFF";
+  if (role === "PROJECT_MANAGER" || role === "PROJECTMANAGER" || role === "PM" || role === "PROJECT_LEAD") {
+    return "PROJECT_MANAGER";
+  }
+  if (role === "SUPER_ADMIN" || role === "SUPERADMIN" || role === "ADMIN") {
+    return "SUPER_ADMIN";
+  }
+
+  return null;
+}
 
 /**
  * GET /api/team — List all non-client team members.
@@ -32,9 +63,9 @@ export async function GET() {
 
 /**
  * POST /api/team — Create a new team member.
- * Creates a Prisma User record with the given role. No Better Auth credentials are created;
- * the team member can sign up or be invited separately.
  * Role: SUPER_ADMIN only.
+ *
+ * Creating a SUPER_ADMIN requires exact confirmation text.
  */
 export async function POST(request: Request) {
   const result = await getSessionOrThrow();
@@ -42,25 +73,29 @@ export async function POST(request: Request) {
   const forbidden = requireRoles(result.role, "SUPER_ADMIN");
   if (forbidden) return forbidden;
 
-  const body = await request.json();
-  const { name, email, specialty, role } = body;
+  const body = await request.json().catch(() => ({}));
+  const name = cleanText(body.name, 120);
+  const email = cleanText(body.email, 254).toLowerCase();
+  const specialty = cleanText(body.specialty, 160);
+  const role = cleanTeamRole(body.role);
 
-  if (!name?.trim()) return errorResponse("Name is required", 400);
-  if (!email?.trim()) return errorResponse("Email is required", 400);
+  if (!name) return errorResponse("Name is required", 400);
+  if (!email) return errorResponse("Email is required", 400);
+  if (!role) return errorResponse("Invalid role for team member", 400);
 
-  const validRoles = ["STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
-  if (!validRoles.includes(role)) return errorResponse("Invalid role for team member", 400);
+  if (role === "SUPER_ADMIN" && cleanConfirm(body.confirmText) !== "CREATE SUPER ADMIN") {
+    return errorResponse("Super admin creation confirmation text did not match", 400);
+  }
 
-  // Check for existing user
-  const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return errorResponse("A user with this email already exists", 400);
 
   const member = await prisma.user.create({
     data: {
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      role: role,
-      specialty: specialty ?? null,
+      name,
+      email,
+      role,
+      specialty: specialty || null,
     },
     select: {
       id: true,
@@ -68,6 +103,20 @@ export async function POST(request: Request) {
       email: true,
       role: true,
       specialty: true,
+    },
+  });
+
+  await writeAdminAuditLog({
+    actorId: result.user.id,
+    actorRole: "SUPER_ADMIN",
+    action: ADMIN_AUDIT_ACTIONS.TEAM_MEMBER_CREATE,
+    targetType: "TEAM_MEMBER",
+    targetId: member.id,
+    targetLabel: member.email,
+    riskLevel: role === "SUPER_ADMIN" ? "CRITICAL" : "HIGH",
+    metadata: {
+      createdRole: role,
+      hasSpecialty: Boolean(member.specialty),
     },
   });
 

@@ -6,7 +6,7 @@ import { getSessionOrThrow, requireRoles, errorResponse } from "@/lib/api-helper
 type Params = { params: Promise<{ id: string }> };
 
 /**
- * GET /api/projects/[id] — Single project detail with all nested data.
+ * GET /api/projects/[id] â€” Single project detail with all nested data.
  */
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
@@ -47,11 +47,11 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 /**
- * DELETE /api/projects/[id] — Delete a project.
+ * DELETE /api/projects/[id] — Soft-deactivate a project.
  * Role: SUPER_ADMIN only.
  */
 /**
- * PATCH /api/projects/[id] — Update project settings.
+ * PATCH /api/projects/[id] â€” Update project settings.
  * Role: SUPER_ADMIN or assigned PROJECT_MANAGER.
  */
 export async function PATCH(request: Request, { params }: Params) {
