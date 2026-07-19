@@ -54,3 +54,4 @@ tsconfig.tsbuildinfo
 
 _audit/
 inspection-exports/
+.env*
