@@ -29,11 +29,20 @@ import type {
   AdminPaymentFinanceAudit,
   AdminWalletOverview,
   AdminWalletTopUpAudit,
+  AdminActionAuditPage,
   PackageType,
   Role,
 } from "@/lib/types";
 
 type EditableTeamRole = Extract<Role, "STAFF" | "PROJECT_MANAGER">;
+
+type AdminAuditListParams = {
+  page?: number;
+  pageSize?: number;
+  action?: string;
+  riskLevel?: string;
+  targetType?: string;
+};
 
 // -----------------------------------------------------------------------------
 // Fetch Helpers
@@ -154,6 +163,23 @@ export const api = {
     overview: () => fetchJson<AdminWalletOverview>("/api/admin/wallet"),
     topUpAudit: (id: string) =>
       fetchJson<AdminWalletTopUpAudit>(`/api/admin/wallet/${id}`),
+  },
+
+  // Admin Audit
+  adminAudit: {
+    list: (params: AdminAuditListParams = {}) => {
+      const search = new URLSearchParams();
+
+      if (params.page) search.set("page", String(params.page));
+      if (params.pageSize) search.set("pageSize", String(params.pageSize));
+      if (params.action) search.set("action", params.action);
+      if (params.riskLevel) search.set("riskLevel", params.riskLevel);
+      if (params.targetType) search.set("targetType", params.targetType);
+
+      const query = search.toString();
+
+      return fetchJson<AdminActionAuditPage>("/api/admin/audit" + (query ? "?" + query : ""));
+    },
   },
 
   // Payments

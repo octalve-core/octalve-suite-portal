@@ -555,3 +555,39 @@ export type AppState = {
   reviews: Review[];
   notifications: NotificationItem[];
 };
+
+export type AdminActionRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type AdminActionAuditRecord = {
+  id: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorEmail?: string | null;
+  actorRole?: Role | string | null;
+  action: string;
+  targetType: string;
+  targetId?: string | null;
+  targetLabel?: string | null;
+  riskLevel: AdminActionRiskLevel | string;
+  reason?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+export type AdminActionAuditPage = {
+  items: AdminActionAuditRecord[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  summary: {
+    shownCount: number;
+    totalCount: number;
+    criticalCount: number;
+    highCount: number;
+  };
+};

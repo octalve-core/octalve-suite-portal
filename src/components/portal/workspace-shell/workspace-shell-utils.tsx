@@ -74,6 +74,7 @@ export function navForRole(
     { label: "Wallet", shortLabel: "Wallet", href: "/admin/wallet", icon: navIcon(WalletCards) },
     { label: "Analytics", shortLabel: "Data", href: "/admin/analytics", icon: navIcon(BarChart3) },
     { label: "Reviews", shortLabel: "Reviews", href: "/admin/reviews", icon: navIcon(Star) },
+    { label: "Audit", shortLabel: "Audit", href: "/admin/audit", icon: navIcon(FileText) },
     { label: "Settings", shortLabel: "Settings", href: "/admin/settings", icon: navIcon(Settings2) },
   ];
 }
