@@ -24,6 +24,8 @@ import {
   User,
 } from "@/lib/types";
 
+type EditableTeamRole = Extract<Role, "STAFF" | "PROJECT_MANAGER">;
+
 const SELECTED_PROJECT_KEY = "octalve-suite-selected-project-v2";
 
 type AppContextValue = {
@@ -81,11 +83,13 @@ type AppContextValue = {
     name: string;
     email: string;
     specialty: string;
-    role: Role;
+    role: EditableTeamRole;
   }) => Promise<string>;
   updateTeamMember: (
     userId: string,
-    payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
+    payload: Partial<Pick<User, "name" | "email" | "specialty">> & {
+      role?: EditableTeamRole;
+    },
   ) => Promise<void>;
   deleteTeamMember: (userId: string) => Promise<void>;
   flagClientThreat: (userId: string, reason: string) => Promise<void>;
@@ -370,7 +374,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     name: string;
     email: string;
     specialty: string;
-    role: Role;
+    role: EditableTeamRole;
   }) {
     const res = await api.team.create(payload);
     await syncPortalData();
@@ -379,7 +383,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   async function updateTeamMember(
     userId: string,
-    payload: Partial<Pick<User, "name" | "email" | "specialty" | "role">>,
+    payload: Partial<Pick<User, "name" | "email" | "specialty">> & {
+      role?: EditableTeamRole;
+    },
   ) {
     await api.team.update(userId, payload);
     await syncPortalData();

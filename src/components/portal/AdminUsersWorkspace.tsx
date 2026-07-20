@@ -68,6 +68,10 @@ const ROLE_ICON_CLASSES: Record<Role, string> = {
 
 const ROLE_OPTIONS: Role[] = ["CLIENT", "STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
 const TEAM_ROLES: Role[] = ["STAFF", "PROJECT_MANAGER", "SUPER_ADMIN"];
+const EDITABLE_TEAM_ROLES: Array<Extract<Role, "STAFF" | "PROJECT_MANAGER">> = [
+  "STAFF",
+  "PROJECT_MANAGER",
+];
 
 function normalizeUserRole(
   userOrRole?: { role?: Role | string | null } | Role | string | null,
@@ -734,7 +738,11 @@ export function AdminUserDetailPage({
   const canManageClientDanger = isSuperAdmin && isClientDetail && currentUser?.id !== activeUser.id;
   const canPromoteClient = canManageClientDanger && !activeUser.banned;
   const canEditProfile = mode === "team" && activeRole !== "CLIENT";
-  const canChangeRole = canEditProfile && currentUser?.id !== activeUser.id;
+  const canChangeRole =
+    canEditProfile &&
+    currentUser?.id !== activeUser.id &&
+    activeRole !== "SUPER_ADMIN" &&
+    EDITABLE_TEAM_ROLES.includes(form.role as Extract<Role, "STAFF" | "PROJECT_MANAGER">);
 
   async function saveUser() {
     if (!canEditProfile) return;
@@ -757,7 +765,9 @@ export function AdminUserDetailPage({
         name: form.name.trim(),
         email: form.email.trim(),
         specialty: form.specialty.trim() || undefined,
-        role: canChangeRole ? form.role : activeRole,
+        role: canChangeRole
+          ? (form.role as Extract<Role, "STAFF" | "PROJECT_MANAGER">)
+          : undefined,
       });
     } catch (error) {
       void error;
@@ -1091,7 +1101,10 @@ export function AdminUserDetailPage({
                   }
                   className="mt-2 h-12 rounded-2xl border-slate-200 text-sm"
                 >
-                  {ROLE_OPTIONS.map((role) => (
+                  {activeRole === "SUPER_ADMIN" ? (
+                    <option value="SUPER_ADMIN">Admin</option>
+                  ) : null}
+                  {EDITABLE_TEAM_ROLES.map((role) => (
                     <option key={role} value={role}>
                       {getRoleLabel(role)}
                     </option>
@@ -1099,7 +1112,11 @@ export function AdminUserDetailPage({
                 </Select>
                 {!canChangeRole && canEditProfile ? (
                   <span className="mt-2 block text-xs font-semibold text-orange-600">
-                    You cannot change your own role from this screen.
+                    {activeRole === "SUPER_ADMIN"
+                      ? "Super-admin role changes require the protected approval flow."
+                      : currentUser?.id === activeUser.id
+                        ? "You cannot change your own role from this screen."
+                        : "Only Staff and Project Manager roles can be changed here."}
                   </span>
                 ) : null}
               </label>
@@ -1280,7 +1297,7 @@ export function AdminUserDetailPage({
                 disabled={Boolean(loadingAction)}
               >
                 <Trash2 size={16} />
-                Delete Team Member
+                Deactivate Team Member
               </Button>
             ) : null}
           </Card>

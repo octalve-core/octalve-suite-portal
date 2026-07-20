@@ -33,6 +33,8 @@ import type {
   Role,
 } from "@/lib/types";
 
+type EditableTeamRole = Extract<Role, "STAFF" | "PROJECT_MANAGER">;
+
 // -----------------------------------------------------------------------------
 // Fetch Helpers
 // -----------------------------------------------------------------------------
@@ -223,10 +225,14 @@ export const api = {
   // Team
   team: {
     list: () => fetchJson<User[]>("/api/team"),
-    create: (data: { name: string; email: string; specialty: string; role: Role }) =>
+    create: (data: { name: string; email: string; specialty: string; role: EditableTeamRole }) =>
       post<User>("/api/team", data),
-    update: (id: string, data: Partial<Pick<User, "name" | "email" | "specialty" | "role">>) =>
-      patch<User>(`/api/team/${id}`, data),
+    update: (
+      id: string,
+      data: Partial<Pick<User, "name" | "email" | "specialty">> & {
+        role?: EditableTeamRole;
+      },
+    ) => patch<User>(`/api/team/${id}`, data),
     delete: (id: string) => del(`/api/team/${id}`),
   },
 
